@@ -22,6 +22,11 @@ import pandas as pd
 import market_data as md
 import smart_money as smc
 
+try:
+    import dow_cash as dcash
+except Exception:  # pragma: no cover
+    dcash = None
+
 _CACHE: Dict[str, Dict[str, Any]] = {}
 _LOCK = threading.Lock()
 
@@ -99,6 +104,59 @@ def _fmt_num(x: Optional[float], decimals: int = 0) -> str:
         return f"{float(x):,.{decimals}f}"
     except Exception:
         return "—"
+
+
+def _live_dow_cash() -> Dict[str, Any]:
+    """Platform-like live Dow price from dow-analyzer1 rules.
+
+    Analysis candles still come from DIA for history, but the displayed live
+    quote should prefer ^DJI when the cash market is open and YM=F - live basis
+    when it is closed.
+    """
+    if dcash is None:
+        return {"ok": False, "error": "dow_cash module unavailable"}
+    try:
+        return dcash.cash_price(ttl=20.0)
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:200]}
+
+
+def _apply_live_price(payload: Dict[str, Any]) -> Dict[str, Any]:
+    try:
+        p = payload.get("price") or {}
+        live = _live_dow_cash()
+        p["analysis_proxy"] = {
+            "last": p.get("last"),
+            "open": p.get("open"),
+            "high": p.get("high"),
+            "low": p.get("low"),
+            "change": p.get("change"),
+            "change_pct": p.get("change_pct"),
+            "source": "DIA × display_scale candles",
+        }
+        p["live_source"] = live
+        if live.get("ok") and live.get("price") is not None:
+            last = round(float(live["price"]), 0)
+            prev = live.get("prev_close")
+            chg = live.get("change")
+            chg_pct = live.get("change_pct")
+            p["last"] = last
+            if prev is not None:
+                p["prev_close"] = round(float(prev), 2)
+            if chg is not None:
+                p["change"] = round(float(chg), 0)
+            if chg_pct is not None:
+                p["change_pct"] = round(float(chg_pct), 3)
+            p["display"] = _fmt_num(last, 0)
+            p["source_fa"] = live.get("source_fa")
+            p["delay_fa"] = live.get("delay_fa")
+            p["basis"] = live.get("basis")
+            p["live_symbol"] = live.get("symbol")
+            payload["price"] = p
+            payload.setdefault("meta", {})["display_price_source"] = "dow_cash: ^DJI or YM=F-basis"
+        return payload
+    except Exception:
+        return payload
 
 
 def market_state(now: Optional[datetime] = None) -> Dict[str, Any]:
@@ -481,7 +539,7 @@ def build_analysis(
                 data["meta"] = dict(data["meta"])
                 data["meta"]["cached"] = True
                 data["meta"]["age"] = int(now - hit["ts"])
-                return data
+                return _apply_live_price(data)
 
     fetched = md.fetch_ohlcv(interval, bars)
     df = fetched.df
@@ -578,7 +636,7 @@ def build_analysis(
     payload.update(_hft_fake_block(res, scale, decimals))
     payload.update(_sweeps_blocks(res, scale, decimals))
 
-    payload = _clean(payload)
+    payload = _clean(_apply_live_price(payload))
     with _LOCK:
         _CACHE[key] = {"ts": time.time(), "data": payload}
     return payload
@@ -591,17 +649,32 @@ def ticker(interval: str = "1h") -> Dict[str, Any]:
     decimals = 0 if scale >= 50 else 2
     last = float(df["Close"].iloc[-1])
     prev = float(df["Close"].iloc[-2]) if len(df) > 1 else last
+    proxy_price = _round_price(last, scale, decimals)
+    proxy_change = _round_price(last - prev, scale, decimals)
+    proxy_change_pct = _round_raw((last - prev) / prev * 100 if prev else 0, 2)
+    live = _live_dow_cash()
+    price = proxy_price
+    change = proxy_change
+    change_pct = proxy_change_pct
+    if live.get("ok") and live.get("price") is not None:
+        price = round(float(live["price"]), 0)
+        if live.get("change") is not None:
+            change = round(float(live["change"]), 0)
+        if live.get("change_pct") is not None:
+            change_pct = round(float(live["change_pct"]), 3)
     return _clean({
         "ok": True,
         "asset": "US30",
         "symbol": fetched.symbol,
         "provider": fetched.provider,
         "source_note": fetched.source_note,
-        "price": _round_price(last, scale, decimals),
-        "change": _round_price(last - prev, scale, decimals),
-        "change_pct": _round_raw((last - prev) / prev * 100 if prev else 0, 2),
+        "price": price,
+        "change": change,
+        "change_pct": change_pct,
         "time": pd.Timestamp(df.index[-1]).isoformat(),
         "market": market_state(),
+        "live_source": live,
+        "analysis_proxy": {"price": proxy_price, "change": proxy_change, "change_pct": proxy_change_pct, "source": "DIA × display_scale"},
     })
 
 

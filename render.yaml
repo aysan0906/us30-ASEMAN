@@ -19,3 +19,5 @@ services:
         value: 1h
       - key: WITH_COALITION
         value: "false"
+      - key: YAHOO_INCLUDE_PREPOST
+        value: "false"

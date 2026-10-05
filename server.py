@@ -24,6 +24,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 import market_data as md
 import us30_engine as engine
 import aseman_resources as aseman
+import dow_analyzer_resources as dowres
+import execution_guard as execguard
 
 APP_DIR = Path(__file__).resolve().parent
 
@@ -115,6 +117,10 @@ def analyze(
     equity: float = Query(10000, gt=0, description="For educational position sizing"),
     risk_pct: float = Query(1.0, gt=0, le=10, description="Risk percent for educational position sizing"),
     include_aseman: bool = Query(True, description="Attach ASEMAN extracted institutional suite"),
+    include_dow: bool = Query(True, description="Attach dow-analyzer1 extracted resource suite"),
+    guard_balance: float = Query(10.0, gt=0, description="Broker guard balance, default from user reference"),
+    guard_leverage: float = Query(50.0, gt=0, description="Broker guard leverage"),
+    guard_lot: float = Query(0.01, gt=0, description="Broker guard lot size"),
 ):
     try:
         data = engine.build_analysis(
@@ -130,6 +136,15 @@ def analyze(
                 data["aseman_suite"] = aseman.build_aseman_suite(data)
             except Exception as pack_error:
                 data["aseman_suite"] = {"success": False, "error": str(pack_error)}
+        if include_dow:
+            try:
+                data["dow_suite"] = dowres.suite(light=True, interval=interval)
+            except Exception as dow_error:
+                data["dow_suite"] = {"ok": False, "error": str(dow_error)}
+        try:
+            data["execution_guard"] = execguard.evaluate(data, interval=interval, balance=guard_balance, leverage=guard_leverage, lot=guard_lot)
+        except Exception as guard_error:
+            data["execution_guard"] = {"ok": False, "error": str(guard_error)}
         return data
     except Exception as e:
         return JSONResponse(status_code=502, content={"ok": False, "error": str(e)})
@@ -220,6 +235,163 @@ def aseman_suite(
 ):
     data = engine.build_analysis(interval=interval, bars=bars, force=fresh, equity=equity, risk_pct=risk_pct)
     return aseman.build_aseman_suite(data)
+
+
+@app.get("/api/dow/manifest")
+def dow_manifest():
+    return dowres.extraction_manifest()
+
+
+@app.get("/api/dow/profile")
+def dow_profile():
+    return dowres.profile()
+
+
+@app.get("/api/dow/reference")
+def dow_reference():
+    return dowres.reference_config()
+
+
+@app.get("/api/dow/broker")
+def dow_broker():
+    return dowres.broker_profile()
+
+
+@app.get("/api/dow/data-health")
+def dow_data_health():
+    try:
+        import dow_cash as dcash
+        return {"ok": True, "compare": dcash.compare(), "basis": dcash.compute_basis(), "freshest": dcash.freshest()}
+    except Exception as e:
+        return JSONResponse(status_code=502, content={"ok": False, "error": str(e)})
+
+
+@app.get("/api/dow/guard")
+def dow_guard(
+    interval: str = Query("1h"),
+    bars: int = Query(120, ge=80, le=600),
+    fresh: bool = Query(False),
+    balance: float = Query(10.0, gt=0),
+    leverage: float = Query(50.0, gt=0),
+    lot: float = Query(0.01, gt=0),
+):
+    data = engine.build_analysis(interval=interval, bars=bars, force=fresh, with_coalition=False)
+    return execguard.evaluate(data, interval=interval, balance=balance, leverage=leverage, lot=lot)
+
+
+@app.get("/api/dow/cash")
+def dow_cash():
+    return dowres.cash()
+
+
+@app.get("/api/dow/hours")
+def dow_hours():
+    return dowres.hours()
+
+
+@app.get("/api/dow/window")
+def dow_window():
+    return dowres.window()
+
+
+@app.get("/api/dow/quality")
+def dow_quality(
+    score: Optional[float] = Query(None),
+    interval: str = Query("1d"),
+):
+    return dowres.quality(score, interval)
+
+
+@app.get("/api/dow/backtest")
+def dow_backtest():
+    return dowres.backtest()
+
+
+@app.get("/api/dow/macro")
+def dow_macro(with_earnings: bool = Query(False)):
+    return dowres.macro(with_earnings)
+
+
+@app.get("/api/dow/extras")
+def dow_extras():
+    return dowres.extras()
+
+
+@app.get("/api/dow/econ")
+def dow_econ(what: str = Query("all", description="all, surprise, critical, ff")):
+    return dowres.econ(what)
+
+
+@app.get("/api/dow/context")
+def dow_context(with_mtf: bool = Query(False)):
+    return dowres.context(with_mtf)
+
+
+@app.get("/api/dow/orderflow")
+def dow_orderflow(interval: str = Query("1h")):
+    return dowres.orderflow(interval)
+
+
+@app.get("/api/dow/volatility")
+def dow_volatility():
+    return dowres.volatility()
+
+
+@app.get("/api/dow/real")
+def dow_real(what: str = Query("all", description="all, calendar, treasury, putcall, vix, news, earnings")):
+    return dowres.real_data(what)
+
+
+@app.get("/api/dow/sentiment")
+def dow_sentiment():
+    return dowres.sentiment()
+
+
+@app.get("/api/dow/intelligence")
+def dow_intelligence(
+    interval: str = Query("1h"),
+    bars: int = Query(220, ge=120, le=700),
+    with_ml: bool = Query(False),
+):
+    return dowres.intelligence(interval, bars, with_ml)
+
+
+@app.get("/api/dow/validated")
+def dow_validated(interval: str = Query("1d")):
+    return dowres.validated(interval)
+
+
+@app.get("/api/dow/tradeplan")
+def dow_tradeplan(
+    interval: str = Query("1h"),
+    equity: float = Query(10000, gt=0),
+    risk: float = Query(1.0, gt=0, le=20),
+    multi: bool = Query(False),
+):
+    return dowres.trade_plan(interval, equity, risk, multi)
+
+
+@app.get("/api/dow/cross")
+def dow_cross():
+    return dowres.cross_asset()
+
+
+@app.get("/api/dow/agent")
+def dow_agent(
+    interval: str = Query("1h"),
+    equity: float = Query(10000, gt=0),
+    with_ml: bool = Query(False),
+    with_mtf: bool = Query(False),
+):
+    return dowres.agent(interval, equity, with_ml, with_mtf)
+
+
+@app.get("/api/dow/suite")
+def dow_suite(
+    light: bool = Query(True),
+    interval: str = Query("1h"),
+):
+    return dowres.suite(light, interval)
 
 
 def get_dashboard_html() -> str:

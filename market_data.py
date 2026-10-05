@@ -37,6 +37,9 @@ INTERVAL_PERIODS = {
 
 VALID_INTERVALS = tuple(INTERVAL_PERIODS.keys())
 
+YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
+YAHOO_HEADERS = {"User-Agent": "Mozilla/5.0"}
+
 
 @dataclass
 class FetchResult:
@@ -121,26 +124,66 @@ def _normalize_df(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def fetch_yahoo(interval: str, bars: int, symbol: Optional[str] = None) -> FetchResult:
-    try:
-        import yfinance as yf
-    except ImportError as e:
-        raise RuntimeError("yfinance نصب نیست؛ requirements.txt را نصب کنید") from e
+def _fetch_yahoo_chart_json(symbol: str, interval: str, period: str, include_prepost: bool = False) -> Dict:
+    """Direct Yahoo chart endpoint used in dow-analyzer1.
 
+    The explicit User-Agent is intentional; without it Yahoo often returns 429.
+    """
+    url = YAHOO_CHART_URL.format(symbol=quote(symbol, safe=""))
+    params = {
+        "interval": interval,
+        "range": period,
+        "includePrePost": "true" if include_prepost else "false",
+    }
+    r = requests.get(url, params=params, headers=YAHOO_HEADERS, timeout=request_timeout())
+    r.raise_for_status()
+    j = r.json()
+    err = (j.get("chart") or {}).get("error")
+    if err:
+        raise RuntimeError(err.get("description") or err.get("code") or "Yahoo chart error")
+    res = (j.get("chart") or {}).get("result") or []
+    if not res:
+        raise RuntimeError("Yahoo chart result خالی است")
+    return res[0]
+
+
+def _yahoo_result_to_df(res: Dict) -> pd.DataFrame:
+    ts = res.get("timestamp") or []
+    q = ((res.get("indicators") or {}).get("quote") or [{}])[0]
+    opens = q.get("open") or []
+    highs = q.get("high") or []
+    lows = q.get("low") or []
+    closes = q.get("close") or []
+    vols = q.get("volume") or []
+    rows = []
+    for i, t in enumerate(ts):
+        try:
+            o, h, l, c = opens[i], highs[i], lows[i], closes[i]
+            if o is None or h is None or l is None or c is None:
+                continue
+            rows.append({
+                "time": pd.to_datetime(int(t), unit="s", utc=True),
+                "Open": o, "High": h, "Low": l, "Close": c,
+                "Volume": 0 if i >= len(vols) or vols[i] is None else vols[i],
+            })
+        except Exception:
+            continue
+    if not rows:
+        raise RuntimeError("Yahoo candles بعد از فیلتر None خالی شد")
+    return pd.DataFrame(rows).set_index("time")
+
+
+def fetch_yahoo(interval: str, bars: int, symbol: Optional[str] = None) -> FetchResult:
     sym = symbol or selected_symbol() or "DIA"
     period = INTERVAL_PERIODS.get(interval, "1y")
-    # Pull more than requested so SMC/ICT calculations have enough warm-up candles.
-    df = yf.Ticker(sym).history(interval=interval, period=period, auto_adjust=False)
-    df = _normalize_df(df)
-    min_bars = max(80, int(bars) + 40)
-    if len(df) < min_bars and interval != "1d":
-        # fallback to a slower interval if Yahoo limits intraday data unexpectedly
-        pass
+    include_prepost = _bool_env("YAHOO_INCLUDE_PREPOST", False)
+    res = _fetch_yahoo_chart_json(sym, interval, period, include_prepost=include_prepost)
+    df = _normalize_df(_yahoo_result_to_df(res))
     return FetchResult(
         df=df,
-        provider="yahoo",
+        provider="yahoo_chart",
         symbol=sym,
-        source_note=f"Yahoo Finance / {sym}",
+        source_note=f"Yahoo Finance chart endpoint / {sym} / UA Mozilla/5.0",
         fetched_at=time.time(),
         display_scale=display_scale_for(sym),
         raw_price_is_index=(display_scale_for(sym) == 1.0),

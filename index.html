@@ -310,6 +310,14 @@
       </div>
 
       <div class="card pad col-12">
+        <div class="card-head">
+          <div><h2 class="title">منابع استخراج‌شده از پروژه قبلی dow-analyzer1</h2><p class="subtitle">Cash Price / NYSE Hours / Quality Gate / Backtest / Context / Window</p></div>
+          <span id="dowBadge" class="tag buy">DOW</span>
+        </div>
+        <div id="dowBox" class="list"></div>
+      </div>
+
+      <div class="card pad col-12">
         <div class="card-head"><div><h2 class="title">تشخیص و وضعیت پروژه</h2><p class="subtitle">Render env / provider / cache</p></div></div>
         <pre id="debug" style="white-space:pre-wrap;direction:ltr;text-align:left;background:rgba(255,255,255,.035);border:1px solid var(--border-soft);border-radius:14px;padding:14px;color:#b9c6d8;overflow:auto"></pre>
       </div>
@@ -355,7 +363,7 @@
       try {
         const equity = Number($('equity').value || 10000);
         const risk = Number($('risk').value || 1);
-        const url = `/api/analyze?interval=${encodeURIComponent(state.interval)}&bars=180&fresh=${fresh ? 'true' : 'false'}&coalition=${state.coalition ? 'true':'false'}&equity=${equity}&risk_pct=${risk}`;
+        const url = `/api/analyze?interval=${encodeURIComponent(state.interval)}&bars=180&fresh=${fresh ? 'true' : 'false'}&coalition=${state.coalition ? 'true':'false'}&equity=${equity}&risk_pct=${risk}&include_aseman=true&include_dow=true`;
         const data = await api(url);
         state.data = data;
         render(data);
@@ -405,7 +413,8 @@
       renderFlow(data.flow || {});
       renderRisk(data);
       renderAseman(data.aseman_suite || {});
-      $('debug').textContent = JSON.stringify({meta:data.meta, providerStatus:'GET /api/providers', market:data.market, coalition:data.coalition, aseman:data.aseman_suite?.extracted_modules}, null, 2);
+      renderDow(data.dow_suite || {}, data.execution_guard || {});
+      $('debug').textContent = JSON.stringify({meta:data.meta, providerStatus:'GET /api/providers', market:data.market, coalition:data.coalition, aseman:data.aseman_suite?.extracted_modules, dow:data.dow_suite?.manifest?.modules_count}, null, 2);
     }
 
     function renderPlan(sig, sizing) {
@@ -512,6 +521,30 @@
         `<div class="small-note">برای Kelly باید پلن Entry/Stop/TP فعال باشد.</div>`;
 
       $('alphaTable').innerHTML = (alpha.leaders || []).slice(0,12).map(x => `<tr><td class="mono">${escapeHtml(x.symbol)}</td><td>${escapeHtml(x.name)}</td><td class="mono ${clsByChange(x.change_1d)}">${x.change_1d >= 0 ? '+' : ''}${pct(x.change_1d)}</td><td class="mono ${clsByChange(x.change_5d)}">${x.change_5d >= 0 ? '+' : ''}${pct(x.change_5d)}</td><td class="mono ${clsByChange(x.alpha_vs_dia)}">${x.alpha_vs_dia >= 0 ? '+' : ''}${pct(x.alpha_vs_dia)}</td><td>${escapeHtml(x.status || '')}</td></tr>`).join('') || `<tr><td colspan="6" class="small-note">Alpha Matrix در دسترس نیست.</td></tr>`;
+    }
+
+    function renderDow(d, guard={}) {
+      if (!d || !d.ok) {
+        $('dowBox').innerHTML = `<div class="small-note">منابع dow-analyzer1 هنوز بارگذاری نشده است.</div>`;
+        $('dowBadge').className = 'tag warn';
+        return;
+      }
+      const prof = d.profile?.asset_profile || {}, cash = d.cash?.cash_price || {}, best = cash.best || {}, hours = d.hours?.status || {}, win = d.window || {}, qual = d.quality_evidence || {}, bt = d.backtest || {}, ctx = d.context || {}, broker = d.broker?.computed || {}, ref = d.reference || {};
+      const us30Daily = (bt.summary || []).find(x => String(x.run || '').includes('US30-1d')) || {};
+      const gate = ctx.gate || {};
+      const gb = guard.broker_margin || {}, gr = guard.plan_risk || {}, gs = guard.spread || {};
+      $('dowBadge').className = `tag ${gate.allowed === false ? 'sell' : gate.mode === 'CAUTION' ? 'warn' : 'buy'}`;
+      $('dowBadge').textContent = `${d.manifest?.modules_count || 0} ماژول`;
+      $('dowBox').innerHTML = `
+        <div class="item"><div class="top"><span class="name">پروفایل US30</span><span class="tag buy">${escapeHtml(prof.candle_symbol || 'DIA')} × ${fmt(prof.display_scale,0)}</span></div><div class="detail">Options: ${escapeHtml(prof.options_symbol || 'DIA')} | Peers: ${escapeHtml((prof.smt_peers || []).join(' / '))} | ${escapeHtml(prof.hours?.note || '')}</div></div>
+        <div class="item"><div class="top"><span class="name">قیمت نقدی داو</span><span class="tag ${best.exact ? 'buy':'warn'}">${fmt(best.index || cash.index,0)}</span></div><div class="detail">منبع: ${escapeHtml(best.label || cash.source_fa || '—')} | age: ${fmt(best.age,1)} دقیقه | basis: ${fmt(best.basis || cash.basis,0)}</div></div>
+        <div class="item"><div class="top"><span class="name">ساعت بازار NYSE</span><span class="tag ${hours.is_open ? 'buy':'warn'}">${hours.is_open ? 'OPEN':'CLOSED'}</span></div><div class="detail">${escapeHtml(hours.status_fa || hours.phase_fa || '—')} | Tehran: ${escapeHtml(hours.tehran_time || '—')} | NY: ${escapeHtml(hours.new_york_time || '—')}</div></div>
+        <div class="item"><div class="top"><span class="name">Quality Gate بک‌تست‌شده</span><span class="tag buy">min ${fmt(qual.minimum,0)} / strong ${fmt(qual.strong,0)}</span></div><div class="detail">Best R: ${fmt(qual.best_r,1)} | منبع: ${escapeHtml(qual.source || 'signal_filter.py')} | تایم‌فریم معتبرتر: 1D</div></div>
+        <div class="item"><div class="top"><span class="name">تله بین‌بازاری DXY</span><span class="tag warn">وزن ۰</span></div><div class="detail">DXY↔Dow: r=${fmt(ref.intermarket_measured?.['DX-Y.NYB']?.measured_corr_2y,3)} | t=${fmt(ref.intermarket_measured?.['DX-Y.NYB']?.t_stat,2)}؛ بنابراین دلار برای داو وتوی جهت‌دار نیست.</div></div>
+        <div class="item"><div class="top"><span class="name">بروکر ترِندو / مارجین نمونه</span><span class="tag ${broker.can_open_min_lot ? 'buy':'sell'}">0.01 lot</span></div><div class="detail">Notional: $${fmt(broker.notional_usd,2)} | Margin: $${fmt(broker.required_margin_usd,2)} | ${escapeHtml(broker.verdict_fa || '—')}</div></div>
+        <div class="item"><div class="top"><span class="name">گارد اجرایی حساب ۱۰ دلاری</span><span class="tag ${guard.trade_allowed ? 'buy':'sell'}">${escapeHtml(guard.status_fa || '—')}</span></div><div class="detail">Margin: $${fmt(gb.required_margin_usd,2)} / short $${fmt(gb.margin_shortage_usd,2)} | Risk: $${fmt(gr.risk_usd,2)} (${fmt(gr.risk_pct_of_balance,1)}%) | Spread: ${fmt(gs.spread_points,2)}pt (${escapeHtml(gs.zone || '—')})<br>Blockers: ${(guard.blockers || []).slice(0,3).map(escapeHtml).join(' / ') || '—'}</div></div>
+        <div class="item"><div class="top"><span class="name">Backtest US30-1D</span><span class="tag ${Number(us30Daily.avg_r) > 0 ? 'buy':'warn'}">Win ${fmt(us30Daily.win_rate,1)}%</span></div><div class="detail">n=${fmt(us30Daily.n,0)} | AvgR ${fmt(us30Daily.avg_r,3)} | Strong win ${fmt(us30Daily.strong?.win_rate,1)}% | Grade B win ${fmt(us30Daily.by_grade?.B?.win_rate,1)}%</div></div>
+        <div class="item"><div class="top"><span class="name">Trade Gate و Window</span><span class="tag ${gate.allowed === false ? 'sell' : gate.mode === 'CAUTION' ? 'warn' : 'buy'}">${escapeHtml(gate.mode || win.grade || '—')}</span></div><div class="detail">Window grade: ${escapeHtml(win.grade || '—')} | Ratio: ${fmt(win.ratio,2)} | Blocks: ${(gate.blocks || []).map(escapeHtml).join(' / ') || '—'} | Warnings: ${(gate.warnings || []).map(escapeHtml).join(' / ') || '—'}</div></div>`;
     }
 
     function drawChart(candles, vp, plan) {

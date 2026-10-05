@@ -284,19 +284,19 @@ class AsemanMacroShieldUS30:
 
         score = 0.0
         notes = []
-        # For US30, stronger dollar/yields/VIX are usually headwinds.
-        if (dxy.get("chg") or 0) > 0.25:
-            score -= 18; notes.append("DXY در حال تقویت است؛ فشار منفی روی سهام.")
-        elif (dxy.get("chg") or 0) < -0.25:
-            score += 14; notes.append("DXY ضعیف شده؛ برای US30 حمایتی است.")
-        if (us10y.get("chg") or 0) > 0.8:
-            score -= 22; notes.append("بازده ۱۰ساله جهش دارد؛ ارزش‌گذاری سهام تحت فشار.")
-        elif (us10y.get("chg") or 0) < -0.8:
-            score += 18; notes.append("افت بازده اوراق به نفع داوجونز است.")
-        if (vix.get("price") or 0) >= 22 or (vix.get("chg") or 0) > 8:
-            score -= 24; notes.append("VIX بالا/جهشی است؛ ریسک‌گریزی بازار زیاد شده.")
+        # 2026-10-01 reference: DXY↔Dow over ~2y had r=-0.012, t=-0.27.
+        # So DXY is informational for US30, not a directional veto.
+        if abs(dxy.get("chg") or 0) > 0.25:
+            notes.append(f"DXY فقط زمینه‌ای است نه وتو؛ تغییر فعلی {dxy.get('chg'):+.2f}٪.")
+        # US10Y effect on Dow was weak (t≈-1.50); score it mildly only on large moves.
+        if (us10y.get("chg") or 0) > 2.0:
+            score -= 8; notes.append("جهش بزرگ بازده ۱۰ساله هشدار فشار ارزش‌گذاری سهام است.")
+        elif (us10y.get("chg") or 0) < -2.0:
+            score += 6; notes.append("افت بزرگ بازده اوراق می‌تواند به نفع داوجونز باشد.")
+        if (vix.get("price") or 0) >= 25 or (vix.get("chg") or 0) > 12:
+            score -= 10; notes.append("VIX بالا/جهشی است؛ هشدار نوسان و شکست جعلی، نه وتوی دائمی خرید.")
         elif (vix.get("price") or 0) and (vix.get("price") or 0) < 16:
-            score += 8; notes.append("VIX پایین است؛ پنجره ریسک‌پذیری بازتر است.")
+            score += 5; notes.append("VIX پایین است؛ پنجره ریسک‌پذیری آرام‌تر است.")
         if (spx.get("chg") or 0) > 0 and (ndx.get("chg") or 0) > 0:
             score += 10; notes.append("SPX و NDX همسو مثبت‌اند؛ breadth بین‌شاخصی مناسب است.")
         elif (spx.get("chg") or 0) < 0 and (ndx.get("chg") or 0) < 0:
@@ -761,15 +761,15 @@ class AsemanGoldenFiltersUS30:
             "description": macro.get("shield_action"),
             "importance": "جلوگیری از ورود در پنجره شکار نقدینگی CPI/FOMC/NFP",
         })
-        # 2 DXY/US10Y
+        # 2 US10Y with DXY informational only
         if direction == "LONG":
-            f = chg("dxy") <= 0.25 and chg("us10y") <= 0.8
-            desc = "دلار/بازده مزاحم جدی لانگ نیستند." if f else "تقویت دلار یا بازده اوراق علیه لانگ US30 است."
+            f = chg("us10y") <= 2.0
+            desc = "DXY طبق بک‌تست برای داو وتو نیست؛ فقط جهش بزرگ US10Y هشدار لانگ است." if f else "جهش بزرگ بازده اوراق می‌تواند لانگ US30 را تضعیف کند."
         else:
-            f = chg("dxy") >= -0.35 or chg("us10y") >= -0.8
-            desc = "دلار/بازده از سناریوی شورت حمایت نسبی می‌کنند." if f else "افت دلار و بازده می‌تواند شورت را فشرده کند."
+            f = True
+            desc = "DXY برای داو وزن جهت‌دار ندارد؛ US10Y فقط به‌عنوان هشدار زمینه‌ای ثبت می‌شود."
         pass_count += int(f)
-        filters.append({"id": 2, "name": "DXY + US10Y", "name_fa": "دلار و بازده اوراق", "passed": f, "status": "PASS" if f else "FAIL", "value_display": f"DXY {chg('dxy'):+.2f}% | US10Y {chg('us10y'):+.2f}%", "description": desc, "importance": "مهم‌ترین وتوی کلان برای شاخص‌های سهام"})
+        filters.append({"id": 2, "name": "US10Y + DXY info", "name_fa": "بازده اوراق + دلار زمینه‌ای", "passed": f, "status": "PASS" if f else "FAIL", "value_display": f"DXY {chg('dxy'):+.2f}% (وزن ۰) | US10Y {chg('us10y'):+.2f}%", "description": desc, "importance": "اصلاح تله رایج: DXY برای داوجونز وتوی جهت‌دار نیست؛ t=-0.27"})
         # 3 VIX
         if direction == "LONG":
             f = px("vix") < 22 and chg("vix") < 8
