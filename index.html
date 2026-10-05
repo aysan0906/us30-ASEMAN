@@ -141,6 +141,12 @@
     .skeleton::after { content:''; position:absolute; inset:0; transform:translateX(100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent); animation: shimmer 1.2s infinite; }
     @keyframes shimmer { 100% { transform: translateX(-100%); } }
     .alert { margin-top: 16px; border: 1px solid rgba(255,209,102,.24); background: rgba(255,209,102,.08); color: #ffe9ac; padding: 12px 14px; border-radius: 14px; line-height: 1.9; font-size: .84rem; }
+    .module-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    .module-actions .btn { font-size:.76rem; padding:8px 10px; }
+    .textarea { width:100%; min-height:76px; resize:vertical; direction:rtl; text-align:right; line-height:1.8; }
+    .chat-answer { white-space:pre-wrap; line-height:1.9; }
+    .mini-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; }
+    @media (max-width: 800px) { .mini-grid { grid-template-columns: 1fr; } }
     .footer { color: var(--dim); text-align: center; padding: 26px 10px; font-size: .78rem; }
     @media (max-width: 1100px) { .hero { grid-template-columns: 1fr; } .col-3,.col-4,.col-5,.col-6,.col-7,.col-8 { grid-column: span 12; } .metrics { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 640px) { .wrap { padding: 10px; } .controls { justify-content: stretch; } .btn { flex: 1; } .metrics { grid-template-columns: 1fr; } canvas { height: 310px; } .brand { min-width: 100%; } }
@@ -318,6 +324,65 @@
       </div>
 
       <div class="card pad col-12">
+        <div class="card-head">
+          <div><h2 class="title">🧭 ترمینال سطح نهادی — ماژول‌های درخواستی</h2><p class="subtitle">برای اجرای بخش‌های سنگین، دکمه‌ها را بزنید؛ خروجی‌ها از داده واقعی داشبورد ساخته می‌شوند.</p></div>
+          <span class="tag warn">ON DEMAND</span>
+        </div>
+        <div class="module-actions">
+          <button class="btn" onclick="runModule('calendar')">تقویم اقتصادی و اخبار کلان</button>
+          <button class="btn" onclick="runModule('layers')">دید تریدر نهادی — پنج لایه</button>
+          <button class="btn" onclick="runModule('institutional')">تحلیل سطح نهادی</button>
+          <button class="btn" onclick="runModule('validated')">سیگنال اعتبارسنجی‌شده</button>
+          <button class="btn" onclick="runModule('backtest')">بکتست پول هوشمند</button>
+          <button class="btn" onclick="runModule('agent')">ایجنت معاملاتی هوشمند</button>
+          <button class="btn" onclick="renderFromCurrent()">هیت‌مپ و نمودار پول هوشمند</button>
+        </div>
+        <div class="small-note" style="margin-top:10px">کلان اقتصادی از FRED، نرخ بهره ZQ=F، درآمدهای داو، IV/Skew، VIX structure، CVD، فصلی‌بودن و بردار ویژگی در endpointهای جدا اجرا می‌شوند تا Render قفل نشود.</div>
+      </div>
+
+      <div class="card pad col-6">
+        <div class="card-head"><div><h2 class="title">تقویم اقتصادی، اخبار کلان و واقعی در برابر پیش‌بینی</h2><p class="subtitle">CPI/FOMC/NFP/GDP/PCE + actual/forecast/previous</p></div></div>
+        <div id="calendarModule" class="list"><div class="small-note">برای اجرا دکمه «تقویم اقتصادی و اخبار کلان» را بزنید.</div></div>
+      </div>
+
+      <div class="card pad col-6">
+        <div class="card-head"><div><h2 class="title">جدول سیگنال نهادی و پوزیشن نهادها</h2><p class="subtitle">Sentiment / Options / Put-Call / COT reference / Fear & Greed</p></div></div>
+        <div id="institutionalSignalModule" class="list"><div class="small-note">برای اجرا دکمه «تحلیل سطح نهادی» را بزنید.</div></div>
+      </div>
+
+      <div class="card pad col-6">
+        <div class="card-head"><div><h2 class="title">هیت‌مپ نقدینگی، تسویه و گره حجمی</h2><p class="subtitle">BSL/SSL Sweep · POC/VAH/VAL · اصلاح به گره حجمی</p></div></div>
+        <div id="heatmapModule" class="list"><div class="small-note">برای اجرا دکمه «هیت‌مپ و نمودار پول هوشمند» را بزنید.</div></div>
+      </div>
+
+      <div class="card pad col-6">
+        <div class="card-head"><div><h2 class="title">ائتلاف بازیگران بزرگ، HFT و سفارشات عمده</h2><p class="subtitle">Bank Coalition / HFT footprint / Block Trades / Heavy Orders</p></div></div>
+        <div id="bigPlayersModule" class="list"><div class="small-note">برای اجرا دکمه «هیت‌مپ و نمودار پول هوشمند» یا «ایجنت» را بزنید.</div></div>
+      </div>
+
+      <div class="card pad col-6">
+        <div class="card-head"><div><h2 class="title">دید تریدر نهادی — پنج لایه</h2><p class="subtitle">DXY/US10Y/VIX/SMT · PDH/PDL/PWH/PWL · News Window · Options · Killzone</p></div></div>
+        <div id="layersModule" class="list"><div class="small-note">برای اجرا دکمه «دید تریدر نهادی — پنج لایه» را بزنید.</div></div>
+      </div>
+
+      <div class="card pad col-6">
+        <div class="card-head"><div><h2 class="title">سیگنال اعتبارسنجی‌شده و بکتست استراتژی پول هوشمند</h2><p class="subtitle">ICT چهارمرحله‌ای: Sweep → Reclaim → Structure → Flow/Regime</p></div></div>
+        <div id="validatedModule" class="list"><div class="small-note">برای اجرا دکمه «سیگنال اعتبارسنجی‌شده» یا «بکتست» را بزنید.</div></div>
+      </div>
+
+      <div class="card pad col-6">
+        <div class="card-head"><div><h2 class="title">ایجنت معاملاتی هوشمند و حالت آموزش</h2><p class="subtitle">۲۵ عامل را توضیح می‌دهد؛ تصمیم نهایی با کارت سیگنال و گارد اجرایی است.</p></div></div>
+        <textarea id="agentQuestion" class="input textarea" placeholder="مثلاً: الان وقت معامله است؟ چرا این سیگنال؟ حد ضرر کجا باشد؟"></textarea>
+        <div class="module-actions"><button class="btn primary" onclick="askAgent()">ارسال سوال به ایجنت</button><button class="btn" onclick="fillQuestion('سیگنال الان چیست؟')">سیگنال الان؟</button><button class="btn" onclick="fillQuestion('چرا این سیگنال؟')">چرا؟</button><button class="btn" onclick="fillQuestion('الان وقت معامله است؟')">وقت معامله؟</button></div>
+        <div id="agentChatModule" class="list" style="margin-top:10px"><div class="small-note">ایجنت قاعده‌محور است و فقط از داده واقعی داشبورد جواب می‌دهد.</div></div>
+      </div>
+
+      <div class="card pad col-6">
+        <div class="card-head"><div><h2 class="title">سیگنال نهایی پول هوشمند + آموزش مبتدی</h2><p class="subtitle">BOS/CHoCH/FVG/OB · Fake Trend · Sweep · Execution Guard</p></div></div>
+        <div id="educationModule" class="list"><div class="small-note">بعد از بارگذاری تحلیل، خلاصه آموزشی اینجا پر می‌شود.</div></div>
+      </div>
+
+      <div class="card pad col-12">
         <div class="card-head"><div><h2 class="title">تشخیص و وضعیت پروژه</h2><p class="subtitle">Render env / provider / cache</p></div></div>
         <pre id="debug" style="white-space:pre-wrap;direction:ltr;text-align:left;background:rgba(255,255,255,.035);border:1px solid var(--border-soft);border-radius:14px;padding:14px;color:#b9c6d8;overflow:auto"></pre>
       </div>
@@ -353,6 +418,10 @@
       const j = await res.json();
       if (!res.ok || j.ok === false) throw new Error(j.error || `HTTP ${res.status}`);
       return j;
+    }
+    async function rawApi(path) {
+      const res = await fetch(path, {cache:'no-store'});
+      try { return await res.json(); } catch(e) { return {ok:false, error:`HTTP ${res.status}`}; }
     }
 
     async function load(fresh=false) {
@@ -414,6 +483,8 @@
       renderRisk(data);
       renderAseman(data.aseman_suite || {});
       renderDow(data.dow_suite || {}, data.execution_guard || {});
+      renderEducation(data);
+      renderFromCurrent(false);
       $('debug').textContent = JSON.stringify({meta:data.meta, providerStatus:'GET /api/providers', market:data.market, coalition:data.coalition, aseman:data.aseman_suite?.extracted_modules, dow:data.dow_suite?.manifest?.modules_count}, null, 2);
     }
 
@@ -545,6 +616,127 @@
         <div class="item"><div class="top"><span class="name">گارد اجرایی حساب ۱۰ دلاری</span><span class="tag ${guard.trade_allowed ? 'buy':'sell'}">${escapeHtml(guard.status_fa || '—')}</span></div><div class="detail">Margin: $${fmt(gb.required_margin_usd,2)} / short $${fmt(gb.margin_shortage_usd,2)} | Risk: $${fmt(gr.risk_usd,2)} (${fmt(gr.risk_pct_of_balance,1)}%) | Spread: ${fmt(gs.spread_points,2)}pt (${escapeHtml(gs.zone || '—')})<br>Blockers: ${(guard.blockers || []).slice(0,3).map(escapeHtml).join(' / ') || '—'}</div></div>
         <div class="item"><div class="top"><span class="name">Backtest US30-1D</span><span class="tag ${Number(us30Daily.avg_r) > 0 ? 'buy':'warn'}">Win ${fmt(us30Daily.win_rate,1)}%</span></div><div class="detail">n=${fmt(us30Daily.n,0)} | AvgR ${fmt(us30Daily.avg_r,3)} | Strong win ${fmt(us30Daily.strong?.win_rate,1)}% | Grade B win ${fmt(us30Daily.by_grade?.B?.win_rate,1)}%</div></div>
         <div class="item"><div class="top"><span class="name">Trade Gate و Window</span><span class="tag ${gate.allowed === false ? 'sell' : gate.mode === 'CAUTION' ? 'warn' : 'buy'}">${escapeHtml(gate.mode || win.grade || '—')}</span></div><div class="detail">Window grade: ${escapeHtml(win.grade || '—')} | Ratio: ${fmt(win.ratio,2)} | Blocks: ${(gate.blocks || []).map(escapeHtml).join(' / ') || '—'} | Warnings: ${(gate.warnings || []).map(escapeHtml).join(' / ') || '—'}</div></div>`;
+    }
+
+    function renderEducation(data) {
+      const sig = data.signal || {}, guard = data.execution_guard || {}, st = data.structure || {}, fake = data.fake || {}, hft = data.hft || {};
+      const dir = dirText(sig.direction);
+      const parts = [
+        `<div class="item"><div class="top"><span class="name">سیگنال نهایی پول هوشمند</span><span class="tag ${dirClass(sig.direction)}">${escapeHtml(dir)} / ${escapeHtml(sig.grade || '—')}</span></div><div class="detail">${escapeHtml(sig.verdict_fa || '—')}<br>گارد اجرایی: ${escapeHtml(guard.status_fa || '—')}</div></div>`,
+        `<div class="item"><div class="top"><span class="name">ساختار بازار</span><span class="tag warn">BOS / CHoCH</span></div><div class="detail">Bias: ${escapeHtml(st.bias || '—')} | آخرین رخدادها از بخش structure خوانده می‌شود؛ FVG و Order Block در کارت‌های بالا نمایش داده شده‌اند.</div></div>`,
+        `<div class="item"><div class="top"><span class="name">تشخیص روند فیک و HFT</span><span class="tag warn">${fmt(fake.score,1)} / ${fmt(hft.hft_index,1)}</span></div><div class="detail">Fake: ${escapeHtml(fake.verdict || '—')}<br>HFT: ${escapeHtml(hft.regime || '—')}</div></div>`,
+        `<div class="item"><div class="detail">حالت آموزش: BOS یعنی شکست ساختار، CHoCH یعنی تغییر کاراکتر بازار، FVG خلأ نقدینگی، Order Block آخرین ناحیه دفاع پول هوشمند، و BSL/SSL نقاط جمع‌آوری استاپ‌های خریداران/فروشندگان هستند.</div></div>`
+      ];
+      $('educationModule').innerHTML = parts.join('');
+    }
+
+    function renderFromCurrent(scroll=true) {
+      const data = state.data || {};
+      const vp = data.volume_profile || {}, liq = data.liquidity || {}, flow = data.flow || {}, hft = data.hft || {}, fake = data.fake || {}, coalition = data.coalition || {}, sweeps = data.sweeps || [], blocks = data.blocks || {};
+      const heat = [];
+      heat.push(`<div class="item"><div class="top"><span class="name">POC / گره حجمی</span><span class="tag warn">${fmt(vp.poc,0)}</span></div><div class="detail">VAH ${fmt(vp.vah,0)} | VAL ${fmt(vp.val,0)} | فاصله تا POC ${pct(vp.poc_dist_pct)}. اصلاح به گره یعنی قیمت به سمت ناحیه بیشترین حجم معامله‌شده کشیده شود.</div></div>`);
+      (liq.bsl || []).slice(0,3).forEach(x => heat.push(`<div class="item"><div class="top"><span class="name">BSL / نقدینگی خرید</span><span class="tag buy">${fmt(x.price,0)}</span></div><div class="detail">فاصله ${pct(x.dist_pct)} | hits ${x.hits || 1}</div></div>`));
+      (liq.ssl || []).slice(0,3).forEach(x => heat.push(`<div class="item"><div class="top"><span class="name">SSL / نقدینگی فروش</span><span class="tag sell">${fmt(x.price,0)}</span></div><div class="detail">فاصله ${pct(x.dist_pct)} | hits ${x.hits || 1}</div></div>`));
+      sweeps.slice(-4).reverse().forEach(x => heat.push(`<div class="item"><div class="top"><span class="name">Sweep / جمع‌آوری نقدینگی</span><span class="tag ${x.dir==='bull'?'buy':'sell'}">${fmt(x.level,0)}</span></div><div class="detail">${escapeHtml(x.type || '')} | عمق ${fmt(x.depth_atr,2)} ATR | VolZ ${fmt(x.vol_z,2)}</div></div>`));
+      $('heatmapModule').innerHTML = heat.join('') || `<div class="small-note">هیت‌مپ نقدینگی هنوز داده ندارد.</div>`;
+
+      $('bigPlayersModule').innerHTML = `
+        <div class="item"><div class="top"><span class="name">ائتلاف بازیگران بزرگ</span><span class="tag ${coalition.ok ? 'buy':'warn'}">${coalition.ok ? fmt(coalition.score,2):'خاموش'}</span></div><div class="detail">Agreement: ${fmt(coalition.agreement,2)} | Heavy: ${fmt(coalition.heavy,2)} | ${escapeHtml(coalition.basket_fa || coalition.error || 'برای محاسبه سنگین، دکمه بانک‌ها را روشن کنید.')}</div></div>
+        <div class="item"><div class="top"><span class="name">ردپای ربات‌های HFT</span><span class="tag warn">${fmt(hft.hft_index,1)}/100</span></div><div class="detail">${escapeHtml(hft.regime || '—')}</div></div>
+        <div class="item"><div class="top"><span class="name">سفارشات سنگین و حجم‌های عمده</span><span class="tag warn">${fmt(blocks.n,0)}</span></div><div class="detail">Imbalance: ${fmt(blocks.imbalance,2)} | Buy notion: ${fmt(blocks.buy_notional,0)} | Sell notion: ${fmt(blocks.sell_notional,0)}</div></div>
+        <div class="item"><div class="top"><span class="name">تشخیص روند فیک</span><span class="tag warn">${fmt(fake.score,1)}</span></div><div class="detail">${escapeHtml(fake.verdict || '—')}</div></div>`;
+      if (scroll) $('heatmapModule').scrollIntoView({behavior:'smooth', block:'center'});
+    }
+
+    async function runModule(kind) {
+      const setLoad = (id, txt='در حال اجرا...') => { $(id).innerHTML = `<div class="item"><div class="detail">${txt}</div></div>`; };
+      try {
+        if (kind === 'calendar') {
+          setLoad('calendarModule');
+          const [econ, macro, news] = await Promise.all([rawApi('/api/dow/econ?what=all'), rawApi('/api/dow/macro?with_earnings=true'), rawApi('/api/aseman/news')]);
+          renderCalendarModule(econ, macro, news);
+        } else if (kind === 'layers') {
+          setLoad('layersModule');
+          const d = await rawApi(`/api/dow/institutional-layers?interval=${encodeURIComponent(state.interval)}`);
+          renderLayersModule(d);
+        } else if (kind === 'institutional') {
+          setLoad('institutionalSignalModule');
+          const [sent, vol, real] = await Promise.all([rawApi('/api/dow/sentiment'), rawApi('/api/dow/volatility'), rawApi('/api/dow/real?what=all')]);
+          renderInstitutionalSignal(sent, vol, real);
+        } else if (kind === 'validated') {
+          setLoad('validatedModule');
+          const d = await rawApi('/api/dow/validated?interval=1d');
+          renderValidatedModule(d, null);
+        } else if (kind === 'backtest') {
+          setLoad('validatedModule');
+          const d = await api('/api/dow/backtest');
+          renderValidatedModule(null, d);
+        } else if (kind === 'agent') {
+          setLoad('agentChatModule', 'در حال اجرای ایجنت سنگین یا دریافت snapshot...');
+          const d = await rawApi(`/api/dow/agent?interval=${encodeURIComponent(state.interval)}&with_ml=false&with_mtf=true`);
+          renderAgentModule(d);
+        }
+      } catch (err) {
+        const id = kind === 'calendar' ? 'calendarModule' : kind === 'layers' ? 'layersModule' : kind === 'institutional' ? 'institutionalSignalModule' : kind === 'agent' ? 'agentChatModule' : 'validatedModule';
+        $(id).innerHTML = `<div class="item"><div class="detail">خطا: ${escapeHtml(err.message || err)}</div></div>`;
+      }
+    }
+
+    function renderCalendarModule(econ, macro, news) {
+      const rows = [];
+      (econ.events || econ.items || []).slice(0,6).forEach(ev => rows.push(`<div class="item"><div class="top"><span class="name">${escapeHtml(ev.name || ev.title || ev.event || 'رویداد')}</span><span class="tag warn">${escapeHtml(ev.impact || ev.impact_fa || '')}</span></div><div class="detail">زمان: ${escapeHtml(ev.when || ev.date || ev.date_tehran || '—')} | Actual: ${escapeHtml(ev.actual ?? '—')} | Forecast: ${escapeHtml(ev.forecast ?? '—')} | Previous: ${escapeHtml(ev.previous ?? '—')}</div></div>`));
+      const score = macro.macro_score || macro.score || macro.data?.score;
+      rows.unshift(`<div class="item"><div class="top"><span class="name">خلاصه کلان و فیوز خبری</span><span class="tag ${news.badge==='RED'?'sell':news.badge==='GREEN'?'buy':'warn'}">${escapeHtml(news.circuit_status || news.circuit_title || 'News')}</span></div><div class="detail">Macro/FRED score: ${fmt(score,1)} | ${escapeHtml(news.circuit_advice || '')}</div></div>`);
+      $('calendarModule').innerHTML = rows.join('') || '<div class="small-note">تقویم داده‌ای برنگرداند.</div>';
+    }
+
+    function renderLayersModule(d) {
+      const L = d.layers || {};
+      const rows = [
+        ['لایه ۱ وتوی بین‌بازاری', L.layer1_intermarket_veto, 'DXY / US10Y / VIX / SMT'],
+        ['لایه ۲ نقشه نقدینگی و خوشه استاپ‌ها', L.layer2_liquidity_orderflow, 'PDH/PDL/PWH/PWL + CVD/Block'],
+        ['لایه ۳ پنجره خبری و FedWatch', L.layer3_macro_news_window, 'News Window + Macro/FRED'],
+        ['لایه ۴ احساسات و جریان آپشن', L.layer4_sentiment_options, 'Put/Call + IV/Skew + Sentiment'],
+        ['لایه ۵ کیل‌زون و فصلی‌بودن', L.layer5_time_seasonality, 'Session + Window + Seasonality']
+      ];
+      $('layersModule').innerHTML = rows.map(([name,obj,desc]) => `<div class="item"><div class="top"><span class="name">${name}</span><span class="tag buy">RUN</span></div><div class="detail">${desc}<br><span class="mono">${escapeHtml(JSON.stringify(obj || {}).slice(0,260))}${JSON.stringify(obj || {}).length>260?'...':''}</span></div></div>`).join('') + `<div class="item"><div class="detail">${escapeHtml(d.feature_vector_note || '')}</div></div>`;
+    }
+
+    function renderInstitutionalSignal(sent, vol, real) {
+      const opt = vol.options || {}, vix = vol.vix || {}, sigs = vol.signals || [];
+      $('institutionalSignalModule').innerHTML = `
+        <div class="item"><div class="top"><span class="name">پوزیشن نهادها و احساسات بازار</span><span class="tag warn">Sentiment</span></div><div class="detail">Fear & Greed / StockTwits / COT reference از endpoint sentiment خوانده شد.<br>${escapeHtml((sent.summary || sent.label || sent.error || 'داده sentiment را در debug ببینید'))}</div></div>
+        <div class="item"><div class="top"><span class="name">جریان آپشن DIA</span><span class="tag ${tagClassByBadge(opt.pcr_bias || '')}">PCR ${fmt(opt.pcr_ratio || opt.put_call_ratio,2)}</span></div><div class="detail">IV/Skew/VIX: VIX ${fmt(vix.last || vix.price,2)} | Signals: ${(sigs || []).map(escapeHtml).join(' / ') || '—'}</div></div>
+        <div class="item"><div class="top"><span class="name">داده موسسات و جریان پول هوشمند</span><span class="tag buy">ICT</span></div><div class="detail">Treasury / FOMC / earnings / real data: ${escapeHtml(real.source || real.source_tier || 'real-data layer')}</div></div>`;
+    }
+
+    function renderValidatedModule(valid, bt) {
+      if (valid) {
+        $('validatedModule').innerHTML = `<div class="item"><div class="top"><span class="name">سیگنال اعتبارسنجی‌شده</span><span class="tag ${valid.ok ? 'buy':'sell'}">${escapeHtml(valid.qualifies ? 'QUALIFIED':'NOT QUALIFIED')}</span></div><div class="detail">Score: ${fmt(valid.score,2)} | Direction: ${escapeHtml(valid.direction || '—')} | Plan: ${valid.plan ? 'دارد' : 'ندارد'}<br>${escapeHtml(valid.note_fa || valid.error || '')}</div></div>`;
+      } else if (bt) {
+        const s = (bt.summary || []).find(x => String(x.run||'').includes('US30-1d')) || {};
+        $('validatedModule').innerHTML = `<div class="item"><div class="top"><span class="name">بکتست Smart Money US30-1D</span><span class="tag buy">t≈3.98</span></div><div class="detail">n=${fmt(s.n,0)} | win=${fmt(s.win_rate,1)}% | avgR=${fmt(s.avg_r,3)} | strong win=${fmt(s.strong?.win_rate,1)}%<br>مدل ورود چهارمرحله‌ای ICT: شکار نقدینگی ← بازپس‌گیری ← تایید ساختاری ← فیلتر جریان سفارش و رژیم بازار.</div></div>`;
+      }
+    }
+
+    function renderAgentModule(d) {
+      const dec = d.decision || d.data?.decision || {};
+      const parts = d.parts || d.data?.parts || [];
+      $('agentChatModule').innerHTML = `<div class="item"><div class="top"><span class="name">ایجنت معاملاتی هوشمند</span><span class="tag ${dirClass(dec.direction)}">${escapeHtml(dec.label || '—')}</span></div><div class="detail">Score: ${fmt(dec.score,2)} | Grade: ${escapeHtml(dec.grade || '—')} | Confidence: ${fmt(dec.confidence,1)}%<br>۲۵ عامل بررسی می‌شود، اما تصمیم اجرای واقعی با سیگنال اعتبارسنجی‌شده و گارد اجرایی است.</div></div>` + (parts || []).slice(0,8).map(p => `<div class="item"><div class="top"><span class="name">${escapeHtml(p.name || p[0] || '')}</span><span class="tag ${Number(p.weight ?? p[1])>0?'buy':'sell'}">${fmt(p.weight ?? p[1],2)}</span></div><div class="detail">${escapeHtml(p.detail || p[2] || '')}</div></div>`).join('');
+    }
+
+    function fillQuestion(q) { $('agentQuestion').value = q; }
+    async function askAgent() {
+      const q = $('agentQuestion').value.trim();
+      if (!q) return;
+      $('agentChatModule').innerHTML = `<div class="item"><div class="detail">در حال پاسخ...</div></div>`;
+      try {
+        const res = await fetch('/api/dow/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({q, interval: state.interval})});
+        const d = await res.json();
+        $('agentChatModule').innerHTML = `<div class="item"><div class="top"><span class="name">پاسخ ایجنت</span><span class="tag ${d.confident ? 'buy':'warn'}">${escapeHtml(d.topic || 'راهنما')}</span></div><div class="detail chat-answer">${escapeHtml(d.answer || d.error || '—')}<br><br>منبع: ${escapeHtml(d.source || '—')}</div></div>`;
+      } catch (err) {
+        $('agentChatModule').innerHTML = `<div class="item"><div class="detail">خطا: ${escapeHtml(err.message || err)}</div></div>`;
+      }
     }
 
     function drawChart(candles, vp, plan) {

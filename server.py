@@ -26,6 +26,7 @@ import us30_engine as engine
 import aseman_resources as aseman
 import dow_analyzer_resources as dowres
 import execution_guard as execguard
+import snapshot as snap
 
 APP_DIR = Path(__file__).resolve().parent
 
@@ -266,6 +267,36 @@ def dow_data_health():
         return JSONResponse(status_code=502, content={"ok": False, "error": str(e)})
 
 
+@app.get("/api/snapshot")
+def snapshot_status():
+    """Snapshot status for Render/GitHub Actions precomputed cache."""
+    return snap.status()
+
+
+@app.post("/api/snapshot")
+async def snapshot_push(request: Request):
+    """Securely receive precomputed items from GitHub Actions.
+
+    Header/query key: X-Snapshot-Key or ?key=...
+    Body: {"items": {"agent:US30:1d": {...}}, "built_at": 123}
+    """
+    if not snap.enabled():
+        return JSONResponse(status_code=503, content={"ok": False, "error": "SNAPSHOT_KEY تنظیم نشده"})
+    given = request.headers.get("X-Snapshot-Key") or request.query_params.get("key") or ""
+    if not snap.check_key(given):
+        return JSONResponse(status_code=403, content={"ok": False, "error": "کلید نامعتبر"})
+    body = await request.json()
+    items = body.get("items") if isinstance(body, dict) else None
+    if not isinstance(items, dict) or not items:
+        return JSONResponse(status_code=400, content={"ok": False, "error": "items خالی است"})
+    saved = []
+    for k, v in items.items():
+        if isinstance(k, str) and 1 <= len(k) <= 120:
+            snap.save(k, v, built_at=body.get("built_at"))
+            saved.append(k)
+    return {"ok": True, "saved": saved, "count": len(saved)}
+
+
 @app.get("/api/dow/guard")
 def dow_guard(
     interval: str = Query("1h"),
@@ -282,6 +313,45 @@ def dow_guard(
 @app.get("/api/dow/cash")
 def dow_cash():
     return dowres.cash()
+
+
+@app.api_route("/api/dow/chat", methods=["GET", "POST"])
+async def dow_chat(request: Request, q: str = Query(""), interval: str = Query("1d")):
+    """Rule-based agent chat: answers only from dashboard data, no fabricated numbers."""
+    try:
+        question = q
+        if request.method == "POST":
+            body = await request.json()
+            if isinstance(body, dict):
+                question = body.get("q") or body.get("question") or question
+                interval = body.get("interval") or interval
+        if not question:
+            try:
+                import qa_bot
+                return {"ok": True, "suggestions": qa_bot.suggestions(), "answer": "سوال را بنویسید."}
+            except Exception:
+                return {"ok": False, "error": "سوالی نوشته نشده"}
+        import qa_bot
+        return qa_bot.ask(str(question), "US30", interval)
+    except Exception as e:
+        return {"ok": True, "confident": False, "answer": f"ایجنت قاعده‌محور خطا خورد: {str(e)[:180]}", "source": "—"}
+
+
+@app.get("/api/dow/institutional-layers")
+def dow_institutional_layers(interval: str = Query("1h")):
+    """Five-layer institutional terminal without forcing the very heavy old agent."""
+    return {
+        "ok": True,
+        "title": "دید تریدر نهادی — پنج لایه",
+        "layers": {
+            "layer1_intermarket_veto": dowres.context(with_mtf=True).get("intermarket"),
+            "layer2_liquidity_orderflow": dowres.orderflow(interval),
+            "layer3_macro_news_window": {"macro": dowres.macro(False), "econ": dowres.econ("critical"), "extras": dowres.extras()},
+            "layer4_sentiment_options": {"sentiment": dowres.sentiment(), "volatility": dowres.volatility()},
+            "layer5_time_seasonality": {"hours": dowres.hours(), "window": dowres.window()},
+        },
+        "feature_vector_note": "بردار ویژگی نهادی در agent/institutional موجود است؛ برای محاسبه کامل از /api/dow/agent استفاده کنید.",
+    }
 
 
 @app.get("/api/dow/hours")

@@ -98,6 +98,7 @@ DATA_PROVIDER=alphavantage# نیازمند DATA_API_KEY
 | `/api/dow/broker` | پروفایل ترِندو، اسپرد و محاسبه مارجین ۰.۰۱ لات |
 | `/api/dow/guard` | گارد اجرایی: market hours، quality gate، مارجین، ریسک و اسپرد |
 | `/api/dow/data-health` | مقایسه زنده ^DJI/DIA/YM=F، basis و تازگی داده |
+| `/api/snapshot` | GET/POST انبار محاسبه از پیش‌ساخته برای GitHub Actions و Render رایگان |
 | `/api/dow/cash` | قیمت نقدی داو با ^DJI/YM=F/DIA و basis زنده |
 | `/api/dow/hours` | وضعیت NYSE، Killzone تهران و تعطیلات |
 | `/api/dow/window` | کیفیت ساعت معامله بر اساس هزینه/نوسان |
@@ -152,7 +153,7 @@ DATA_PROVIDER=alphavantage# نیازمند DATA_API_KEY
 - `regime_ai.py` → Hurst/Kalman/ADX/WaveTrend/divergence/SuperTrend/Chandelier/anomaly.
 - `volatility.py` و `real_data.py` → options، PCR، Max Pain، IV/skew، VIX percentile، Treasury، FOMC/FRED.
 - `signal_filter.py` و `backtest_results.json` → آستانه‌های بک‌تست‌شده US30: `minimum=32`, `strong=40`, `best_r=2.5`.
-- `tradeplan.py` و `agent.py` → پلن کامل و ایجنت قبلی داو به‌صورت endpointهای کش‌شده.
+- `engine_backtest.py`, `validated.py`, `tradeplan.py` و `agent.py` → سیگنال اعتبارسنجی‌شده، بک‌تست، پلن کامل و ایجنت قبلی داو به‌صورت endpointهای کش‌شده.
 
 ## هشدار
 

@@ -30,7 +30,7 @@
 | ساعت طلایی tick-data | ثبت شد | `us30_reference_config.py` |
 | ناپایداری سالانه ORB | ثبت شد | `us30_reference_config.py` |
 | تله‌های ۱ تا ۱۶ | بخش‌های عملی مهم اعمال شد؛ فهرست ثبت شد | `us30_reference_config.py`, `US30_DATA_SOURCES_FULL_REFERENCE.md` |
-| Render/GitHub Actions/cron/snapshot infra | ثبت شد؛ معماری فعلی FastAPI با uvicorn حفظ شد | `us30_reference_config.py`, `render.yaml` |
+| Render/GitHub Actions/cron/snapshot infra | ثبت و عملیاتی شد؛ `/api/snapshot` در FastAPI اضافه شد و workflowهای snapshot/keepalive به ریشه پروژه آمدند | `us30_reference_config.py`, `render.yaml`, `snapshot.py`, `build_snapshot.py`, `.github/workflows/` |
 | اگر از صفر می‌ساختم | ثبت شد و بخش‌های مهم اعمال شد | `us30_reference_config.py` |
 
 ## مواردی که نمی‌توانستم از workspace استخراج کنم
@@ -59,6 +59,7 @@
 
 - برای تایم‌فریم‌های intraday، گارد مستقیم block می‌کند و آن‌ها را فقط timing می‌داند.
 - برای daily، گارد تلاش می‌کند score را از `validated.py` بگیرد.
+- `engine_backtest.py` نیز به ریشه پروژه منتقل شد تا `validated.py` واقعاً اجرا شود، نه فقط گزارش مرجع بماند.
 - اگر `validated.py` در دسترس نباشد، ورود واقعی را تأیید نمی‌کند و پیام scale mismatch می‌دهد.
 
 ## نتیجه نهایی ممیزی
