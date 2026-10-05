@@ -23,6 +23,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 
 import market_data as md
 import us30_engine as engine
+import aseman_resources as aseman
 
 APP_DIR = Path(__file__).resolve().parent
 
@@ -113,9 +114,10 @@ def analyze(
     coalition: Optional[bool] = Query(None, description="Enable heavy bank-coalition layer"),
     equity: float = Query(10000, gt=0, description="For educational position sizing"),
     risk_pct: float = Query(1.0, gt=0, le=10, description="Risk percent for educational position sizing"),
+    include_aseman: bool = Query(True, description="Attach ASEMAN extracted institutional suite"),
 ):
     try:
-        return engine.build_analysis(
+        data = engine.build_analysis(
             interval=interval,
             bars=bars,
             force=fresh,
@@ -123,6 +125,12 @@ def analyze(
             equity=equity,
             risk_pct=risk_pct,
         )
+        if include_aseman:
+            try:
+                data["aseman_suite"] = aseman.build_aseman_suite(data)
+            except Exception as pack_error:
+                data["aseman_suite"] = {"success": False, "error": str(pack_error)}
+        return data
     except Exception as e:
         return JSONResponse(status_code=502, content={"ok": False, "error": str(e)})
 
@@ -148,6 +156,70 @@ def plan(
         }
     except Exception as e:
         return JSONResponse(status_code=502, content={"ok": False, "error": str(e)})
+
+
+@app.get("/api/aseman/macro")
+def aseman_macro():
+    return aseman.AsemanMacroShieldUS30.get_macro_shield_status()
+
+
+@app.get("/api/aseman/news")
+def aseman_news():
+    return aseman.AsemanNewsCircuitBreakerUS30.fetch_live_news()
+
+
+@app.get("/api/aseman/options")
+def aseman_options(symbol: str = Query("DIA", description="DIA or SPY recommended")):
+    return aseman.AsemanOptionsUS30.get_options_analytics(symbol)
+
+
+@app.get("/api/aseman/alpha")
+def aseman_alpha():
+    return aseman.AsemanAlphaMatrixUS30.get_matrix()
+
+
+@app.get("/api/aseman/journal")
+def aseman_journal():
+    return aseman.AsemanMacroJournalUS30.get_journal()
+
+
+@app.get("/api/aseman/kelly")
+def aseman_kelly(
+    balance: float = Query(10000, gt=0),
+    risk_pct: float = Query(1.0, gt=0, le=20),
+    entry: float = Query(50000, gt=0),
+    stop: float = Query(49500, gt=0),
+    tp: float = Query(51000, gt=0),
+    win_rate: float = Query(55, ge=5, le=95),
+    direction: str = Query("LONG"),
+):
+    return aseman.AsemanKellyRiskUS30.calculate(balance, risk_pct, entry, stop, tp, win_rate, direction)
+
+
+@app.get("/api/aseman/golden")
+def aseman_golden(
+    interval: str = Query("1h"),
+    bars: int = Query(180, ge=80, le=600),
+    direction: str = Query("AUTO", description="AUTO, LONG, SHORT"),
+):
+    data = engine.build_analysis(interval=interval, bars=bars, force=False)
+    d = direction.upper()
+    if d == "AUTO":
+        sig = data.get("signal", {})
+        d = "LONG" if int(sig.get("direction", 0) or 0) >= 0 else "SHORT"
+    return aseman.AsemanGoldenFiltersUS30.evaluate(data, d)
+
+
+@app.get("/api/aseman/suite")
+def aseman_suite(
+    interval: str = Query("1h"),
+    bars: int = Query(180, ge=80, le=600),
+    fresh: bool = Query(False),
+    equity: float = Query(10000, gt=0),
+    risk_pct: float = Query(1.0, gt=0, le=10),
+):
+    data = engine.build_analysis(interval=interval, bars=bars, force=fresh, equity=equity, risk_pct=risk_pct)
+    return aseman.build_aseman_suite(data)
 
 
 def get_dashboard_html() -> str:

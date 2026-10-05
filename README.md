@@ -9,6 +9,8 @@
 - `market_data.py` لایه Provider داده با env vars برای Render
 - `smart_money.py` موتور Smart Money / ICT پروژه قبلی داو
 - `us30_engine.py` تبدیل خروجی موتور به JSON مناسب داشبورد
+- `aseman_resources.py` منابع استخراج‌شده از ASEMAN برای US30: Macro Shield، News Circuit، Options، Kelly، Alpha Matrix و Golden Filters
+- `fastfetch.py` fetcher موازی/کش کوتاه استخراج‌شده از ASEMAN
 - `render.yaml` و `Dockerfile` آماده Deploy
 
 ## اجرا روی Render
@@ -72,8 +74,16 @@ DATA_PROVIDER=alphavantage# نیازمند DATA_API_KEY
 | `/api/providers` | وضعیت provider و env |
 | `/api/ticker?interval=1h` | قیمت آخر US30 |
 | `/api/candles?interval=1h&bars=180` | کندل‌ها |
-| `/api/analyze?interval=1h&bars=180` | تحلیل کامل Smart Money |
+| `/api/analyze?interval=1h&bars=180&include_aseman=true` | تحلیل کامل Smart Money + پکیج استخراج‌شده از ASEMAN |
 | `/api/plan?interval=1h` | پلن معامله و سایزینگ آموزشی |
+| `/api/aseman/macro` | Macro Shield، تقویم CPI/NFP/FOMC و شاخص‌های DXY/US10Y/VIX/Gold/Oil |
+| `/api/aseman/news` | فیوز خبری US30 با Yahoo Finance RSS |
+| `/api/aseman/options?symbol=DIA` | Put/Call Ratio، Max Pain و دیوارهای آپشن |
+| `/api/aseman/kelly` | ماشین‌حساب Kelly/EV/Position Size |
+| `/api/aseman/golden` | شش فیلتر طلایی نهادی مخصوص US30 |
+| `/api/aseman/alpha` | Alpha Matrix بازار آمریکا |
+| `/api/aseman/journal` | ژورنال رویدادهای کلان US30 |
+| `/api/aseman/suite` | همه منابع استخراج‌شده در یک خروجی |
 
 ## لایه‌های تحلیلی
 
@@ -86,6 +96,20 @@ DATA_PROVIDER=alphavantage# نیازمند DATA_API_KEY
 - Fake Trend Detector
 - پلن معامله: Entry / SL / TP1 / TP2 / TP3
 - سایزینگ آموزشی بر اساس Equity و Risk %
+
+## منابع استخراج‌شده از ASEMAN برای داوجونز
+
+گزارش کامل در فایل `ASEMAN_US30_EXTRACTION_REPORT.md` قرار دارد. خلاصه موارد ادغام‌شده:
+
+- `EconomicCalendarEngine` → `AsemanMacroShieldUS30` برای CPI/NFP/GDP/PCE/FOMC و واکنش مخصوص US30.
+- `fetch_live_leading_indicators` → شاخص‌های پیشرو US30: DXY، US10Y، VIX، Gold، Oil، SPX، NDX، DIA.
+- `NewsCircuitBreaker` → فیوز خبری بازار سهام با Yahoo Finance RSS.
+- `KellyRiskEngine` → محاسبه EV، Half-Kelly، سایز پوزیشن و لوریج امن.
+- ایده `OptionsEngine` → تحلیل آپشن DIA/SPY، PCR و Max Pain.
+- ایده Alpha/Correlation → ماتریس آلفا برای DIA در برابر SPY/QQQ/IWM و سکتورها.
+- ایده Golden Filters → شش فیلتر نهادی مخصوص US30.
+
+بخش‌های کریپتو-خاص مثل on-chain، DEX، funding، BTC dominance و token unlock مستقیماً منتقل نشده‌اند چون برای داوجونز کاربرد مستقیم ندارند.
 
 ## هشدار
 

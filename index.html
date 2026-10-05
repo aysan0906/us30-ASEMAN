@@ -266,6 +266,50 @@
       </div>
 
       <div class="card pad col-12">
+        <div class="card-head">
+          <div>
+            <h2 class="title">پکیج استخراج‌شده از ASEMAN برای داوجونز</h2>
+            <p class="subtitle">Macro Shield / Calendar / News Circuit / Options / Kelly / Alpha Matrix / Golden Filters</p>
+          </div>
+          <span id="asemanBadge" class="tag warn">ASEMAN</span>
+        </div>
+        <div id="asemanSummary" class="list"></div>
+      </div>
+
+      <div class="card pad col-6">
+        <div class="card-head"><div><h2 class="title">Macro Shield و شاخص‌های پیشرو</h2><p class="subtitle">CPI/NFP/FOMC + DXY/US10Y/VIX/Gold/Oil</p></div></div>
+        <div id="macroBox" class="list"></div>
+      </div>
+
+      <div class="card pad col-6">
+        <div class="card-head"><div><h2 class="title">شش فیلتر طلایی آسمان</h2><p class="subtitle">فیلتر نهادی مخصوص US30</p></div></div>
+        <div id="goldenBox" class="list"></div>
+      </div>
+
+      <div class="card pad col-4">
+        <div class="card-head"><div><h2 class="title">فیوز خبری US30</h2><p class="subtitle">Yahoo Finance RSS + کلیدواژه‌های ریسک</p></div></div>
+        <div id="newsBox" class="list"></div>
+      </div>
+
+      <div class="card pad col-4">
+        <div class="card-head"><div><h2 class="title">آپشن و Max Pain</h2><p class="subtitle">DIA/SPY Options از Yahoo Finance</p></div></div>
+        <div id="optionsBox" class="list"></div>
+      </div>
+
+      <div class="card pad col-4">
+        <div class="card-head"><div><h2 class="title">Kelly Risk</h2><p class="subtitle">سایز پوزیشن برگرفته از ASEMAN</p></div></div>
+        <div id="kellyBox" class="list"></div>
+      </div>
+
+      <div class="card pad col-12">
+        <div class="card-head"><div><h2 class="title">Alpha Matrix بازار آمریکا</h2><p class="subtitle">DIA نسبت به SPY/QQQ/IWM و سکتورها</p></div></div>
+        <table>
+          <thead><tr><th>نماد</th><th>نام</th><th class="mono">1D</th><th class="mono">5D</th><th class="mono">Alpha vs DIA</th><th>وضعیت</th></tr></thead>
+          <tbody id="alphaTable"></tbody>
+        </table>
+      </div>
+
+      <div class="card pad col-12">
         <div class="card-head"><div><h2 class="title">تشخیص و وضعیت پروژه</h2><p class="subtitle">Render env / provider / cache</p></div></div>
         <pre id="debug" style="white-space:pre-wrap;direction:ltr;text-align:left;background:rgba(255,255,255,.035);border:1px solid var(--border-soft);border-radius:14px;padding:14px;color:#b9c6d8;overflow:auto"></pre>
       </div>
@@ -360,7 +404,8 @@
       renderZones(data);
       renderFlow(data.flow || {});
       renderRisk(data);
-      $('debug').textContent = JSON.stringify({meta:data.meta, providerStatus:'GET /api/providers', market:data.market, coalition:data.coalition}, null, 2);
+      renderAseman(data.aseman_suite || {});
+      $('debug').textContent = JSON.stringify({meta:data.meta, providerStatus:'GET /api/providers', market:data.market, coalition:data.coalition, aseman:data.aseman_suite?.extracted_modules}, null, 2);
     }
 
     function renderPlan(sig, sizing) {
@@ -417,6 +462,56 @@
       ];
       (fake.reasons || []).slice(0,3).forEach(r => rows.push(`<div class="item"><div class="detail">${escapeHtml(r)}</div></div>`));
       $('riskBox').innerHTML = rows.join('');
+    }
+
+    function tagClassByBadge(x) {
+      x = String(x || '').toUpperCase();
+      if (x.includes('GREEN') || x.includes('PASS') || x.includes('BULL')) return 'buy';
+      if (x.includes('RED') || x.includes('FAIL') || x.includes('BEAR') || x.includes('RISK')) return 'sell';
+      return 'warn';
+    }
+
+    function renderAseman(s) {
+      if (!s || !s.success) {
+        ['asemanSummary','macroBox','goldenBox','newsBox','optionsBox','kellyBox'].forEach(id => { if ($(id)) $(id).innerHTML = `<div class="small-note">پکیج ASEMAN هنوز بارگذاری نشده است.</div>`; });
+        if ($('alphaTable')) $('alphaTable').innerHTML = `<tr><td colspan="6" class="small-note">—</td></tr>`;
+        return;
+      }
+      const macro = s.macro_shield || {}, lead = macro.leading_indicators || {}, inds = lead.indicators || {};
+      const news = s.news_circuit || {}, opt = s.options || {}, golden = s.golden_filters || {}, kelly = s.kelly_risk || {}, alpha = s.alpha_matrix || {};
+      const badgeCls = tagClassByBadge(golden.badge_color || macro.shield_color);
+      $('asemanBadge').className = `tag ${badgeCls}`;
+      $('asemanBadge').textContent = golden.verdict ? `${golden.pass_count || 0}/${golden.total || 6}` : 'ASEMAN';
+
+      $('asemanSummary').innerHTML = `
+        <div class="item"><div class="top"><span class="name">منابع استخراج‌شده</span><span class="tag buy">${(s.extracted_modules || []).length}</span></div><div class="detail">${(s.extracted_modules || []).map(escapeHtml).join(' • ')}</div></div>
+        <div class="item"><div class="top"><span class="name">خلاصه نهادی</span><span class="tag ${badgeCls}">${escapeHtml(golden.verdict || '—')}</span></div><div class="detail">Macro: ${escapeHtml(macro.shield_state || '—')} | News: ${escapeHtml(news.circuit_title || '—')} | Options PCR: ${fmt(opt.pcr_ratio,2)} | Alpha لیدر: ${escapeHtml(alpha.top_alpha?.symbol || '—')}</div></div>`;
+
+      const indRows = [
+        ['US30', inds.us30_cash], ['DIA', inds.dow_etf], ['SPX', inds.spx], ['NDX', inds.ndx], ['VIX', inds.vix], ['DXY', inds.dxy], ['US10Y', inds.us10y], ['Gold', inds.gold], ['Oil', inds.oil]
+      ].map(([k,v]) => `<tr><td>${k}</td><td class="mono">${fmt(v?.price, k==='US10Y'?3:2)}</td><td class="mono ${clsByChange(v?.chg)}">${v?.chg >= 0 ? '+' : ''}${pct(v?.chg)}</td></tr>`).join('');
+      $('macroBox').innerHTML = `
+        <div class="item"><div class="top"><span class="name">${escapeHtml(macro.shield_state || 'Macro Shield')}</span><span class="tag ${tagClassByBadge(macro.shield_color)}">${escapeHtml(macro.event_code || '—')}</span></div><div class="detail">${escapeHtml(macro.shield_action || '')}<br>رویداد بعدی: ${escapeHtml(macro.next_event || '—')} | زمان: ${escapeHtml(macro.countdown_fmt || '—')} | پیش‌بینی: ${escapeHtml(macro.forecast || '—')} / قبلی: ${escapeHtml(macro.previous || '—')}</div></div>
+        <div class="item"><div class="top"><span class="name">رژیم کلان</span><span class="tag ${tagClassByBadge(lead.regime === 'RISK_ON' ? 'GREEN' : lead.regime === 'RISK_OFF' ? 'RED' : 'YELLOW')}">${escapeHtml(lead.regime_fa || '—')}</span></div><div class="detail">Score: ${fmt(lead.macro_score,1)} | FedWatch Proxy: ${escapeHtml(lead.fedwatch_proxy?.summary || '—')}<br>${(lead.notes || []).map(escapeHtml).join(' / ')}</div></div>
+        <div class="item"><table><tbody>${indRows}</tbody></table></div>`;
+
+      $('goldenBox').innerHTML = (golden.filters || []).map(f => `<div class="item"><div class="top"><span class="name">${escapeHtml(f.name_fa || f.name)}</span><span class="tag ${f.passed ? 'buy':'sell'}">${escapeHtml(f.status || '')}</span></div><div class="detail">${escapeHtml(f.value_display || '')}<br>${escapeHtml(f.description || '')}</div></div>`).join('') || '<div class="small-note">فیلترها هنوز آماده نیستند.</div>';
+
+      $('newsBox').innerHTML = `
+        <div class="item"><div class="top"><span class="name">${escapeHtml(news.circuit_title || 'News')}</span><span class="tag ${tagClassByBadge(news.badge)}">${escapeHtml(news.circuit_status || '—')}</span></div><div class="detail">${escapeHtml(news.circuit_advice || '')}<br>تیترها: ${fmt(news.news_count,0)} | منفی: ${fmt(news.panic_count,0)} | مثبت: ${fmt(news.bull_count,0)}</div></div>
+        ${(news.news_items || []).slice(0,4).map(n => `<div class="item"><div class="top"><span class="name">${escapeHtml(n.sentiment || 'NEUTRAL')}</span><span class="tag warn">${fmt(n.panic_score,0)}</span></div><div class="detail">${escapeHtml(n.title || '')}</div></div>`).join('')}`;
+
+      $('optionsBox').innerHTML = opt.success ? `
+        <div class="item"><div class="top"><span class="name">${escapeHtml(opt.symbol || 'DIA')} Options</span><span class="tag ${tagClassByBadge(opt.pcr_bias)}">PCR ${fmt(opt.pcr_ratio,2)}</span></div><div class="detail">${escapeHtml(opt.pcr_sentiment || '')}<br>Expiry: ${escapeHtml(opt.expiry || '—')} | Max Pain proxy: ${fmt(opt.max_pain_us30_proxy,0)}</div></div>
+        <div class="item"><div class="detail">Call walls: ${(opt.top_call_walls || []).slice(0,3).map(x => fmt(x.strike,0)).join(' / ')}<br>Put walls: ${(opt.top_put_walls || []).slice(0,3).map(x => fmt(x.strike,0)).join(' / ')}</div></div>` :
+        `<div class="small-note">آپشن در دسترس نیست: ${escapeHtml(opt.error || 'No data')}</div>`;
+
+      $('kellyBox').innerHTML = kelly && kelly.success ? `
+        <div class="item"><div class="top"><span class="name">${escapeHtml(kelly.status || 'Kelly')}</span><span class="tag ${tagClassByBadge(kelly.badge_color)}">${escapeHtml(kelly.rr_fmt || '—')}</span></div><div class="detail">${escapeHtml(kelly.advice || '')}</div></div>
+        <div class="item"><div class="detail">Units: ${fmt(kelly.contracts_or_units,4)} | Risk: $${fmt(kelly.dollar_risk,2)} | EV: $${fmt(kelly.expected_value_usd,2)} | Half-Kelly: ${fmt(kelly.kelly_half_pct,1)}%</div></div>` :
+        `<div class="small-note">برای Kelly باید پلن Entry/Stop/TP فعال باشد.</div>`;
+
+      $('alphaTable').innerHTML = (alpha.leaders || []).slice(0,12).map(x => `<tr><td class="mono">${escapeHtml(x.symbol)}</td><td>${escapeHtml(x.name)}</td><td class="mono ${clsByChange(x.change_1d)}">${x.change_1d >= 0 ? '+' : ''}${pct(x.change_1d)}</td><td class="mono ${clsByChange(x.change_5d)}">${x.change_5d >= 0 ? '+' : ''}${pct(x.change_5d)}</td><td class="mono ${clsByChange(x.alpha_vs_dia)}">${x.alpha_vs_dia >= 0 ? '+' : ''}${pct(x.alpha_vs_dia)}</td><td>${escapeHtml(x.status || '')}</td></tr>`).join('') || `<tr><td colspan="6" class="small-note">Alpha Matrix در دسترس نیست.</td></tr>`;
     }
 
     function drawChart(candles, vp, plan) {
