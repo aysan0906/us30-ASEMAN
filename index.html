@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>داشبورد اختصاصی US30 | ASEMAN Smart Money</title>
+  <style>
+    :root {
+      --bg-main: #070b13;
+      --bg-soft: #0d1320;
+      --bg-card: #111a2b;
+      --bg-card-2: #151f33;
+      --border: #24334e;
+      --border-soft: rgba(255,255,255,.08);
+      --text: #e9f0fb;
+      --muted: #94a4ba;
+      --dim: #64748b;
+      --blue: #00d2ff;
+      --green: #00e676;
+      --red: #ff4778;
+      --yellow: #ffd166;
+      --purple: #a855f7;
+      --cyan-bg: rgba(0,210,255,.12);
+      --green-bg: rgba(0,230,118,.12);
+      --red-bg: rgba(255,71,120,.12);
+      --yellow-bg: rgba(255,209,102,.12);
+      --radius: 16px;
+      --shadow: 0 24px 80px rgba(0,0,0,.38);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --font: Vazirmatn, Tahoma, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 18% 8%, rgba(0,210,255,.14), transparent 31%),
+        radial-gradient(circle at 82% 20%, rgba(168,85,247,.12), transparent 34%),
+        linear-gradient(180deg, #070b13 0%, #080d16 52%, #05070c 100%);
+      color: var(--text);
+      font-family: var(--font);
+      overflow-x: hidden;
+    }
+    a { color: inherit; }
+    .wrap { max-width: 1480px; margin: 0 auto; padding: 16px; }
+    header {
+      position: sticky; top: 0; z-index: 20;
+      backdrop-filter: blur(18px);
+      background: rgba(7,11,19,.78);
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .header-inner {
+      max-width: 1480px; margin: 0 auto; padding: 12px 16px;
+      display: flex; align-items: center; gap: 14px; justify-content: space-between; flex-wrap: wrap;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 290px; }
+    .logo {
+      width: 48px; height: 48px; border-radius: 15px;
+      background: linear-gradient(135deg, #00d2ff, #2563eb 55%, #7c3aed);
+      display: grid; place-items: center; font-weight: 900; color: #03111e;
+      box-shadow: 0 0 28px rgba(0,210,255,.28);
+      font-family: var(--mono);
+    }
+    .brand h1 { font-size: 1.05rem; margin: 0; font-weight: 900; letter-spacing: -.4px; }
+    .brand p { margin: 2px 0 0; color: var(--muted); font-size: .78rem; }
+    .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+    .btn, .input, .select {
+      border: 1px solid var(--border);
+      background: rgba(17,26,43,.82);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 9px 12px;
+      font-family: var(--font);
+      outline: none;
+    }
+    .input { width: 98px; direction: ltr; text-align: center; font-family: var(--mono); }
+    .btn { cursor: pointer; transition: .18s ease; font-weight: 800; }
+    .btn:hover, .btn.active { border-color: var(--blue); background: var(--cyan-bg); color: var(--blue); }
+    .btn.primary {
+      background: linear-gradient(135deg, #00d2ff, #2563eb);
+      color: #03111e; border-color: transparent;
+    }
+    .btn.danger { border-color: rgba(255,71,120,.42); color: #ffc7d4; }
+    .pill {
+      display: inline-flex; gap: 6px; align-items: center;
+      border: 1px solid var(--border); border-radius: 999px;
+      padding: 6px 10px; background: rgba(17,26,43,.8); color: var(--muted); font-size: .78rem;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); box-shadow: 0 0 12px currentColor; }
+    .dot.ok { background: var(--green); color: var(--green); }
+    .dot.bad { background: var(--red); color: var(--red); }
+    .hero {
+      margin-top: 18px;
+      display: grid; grid-template-columns: 1.35fr .65fr; gap: 16px;
+    }
+    .card {
+      background: linear-gradient(180deg, rgba(17,26,43,.94), rgba(10,15,25,.94));
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card.pad { padding: 18px; }
+    .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+    .title { margin: 0; font-size: .98rem; font-weight: 900; }
+    .subtitle { margin: 4px 0 0; color: var(--muted); font-size: .78rem; }
+    .price-row { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+    .price { font-family: var(--mono); font-size: clamp(2rem, 5vw, 4.8rem); line-height: .95; font-weight: 900; letter-spacing: -2px; }
+    .change { font-family: var(--mono); font-size: 1rem; font-weight: 800; padding: 7px 10px; border-radius: 999px; }
+    .pos { color: var(--green); background: var(--green-bg); border: 1px solid rgba(0,230,118,.25); }
+    .neg { color: var(--red); background: var(--red-bg); border: 1px solid rgba(255,71,120,.25); }
+    .neutral { color: var(--yellow); background: var(--yellow-bg); border: 1px solid rgba(255,209,102,.25); }
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 18px; }
+    .metric { background: rgba(255,255,255,.035); border: 1px solid var(--border-soft); border-radius: 14px; padding: 12px; }
+    .metric .k { color: var(--muted); font-size: .72rem; margin-bottom: 4px; }
+    .metric .v { font-family: var(--mono); font-weight: 900; font-size: 1.05rem; direction: ltr; text-align: right; }
+    canvas { width: 100%; height: 380px; display: block; }
+    .side-signal { display: grid; gap: 12px; }
+    .signal-badge { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-radius: 16px; padding: 14px; border: 1px solid var(--border-soft); background: rgba(255,255,255,.035); }
+    .signal-label { font-weight: 900; font-size: 1.15rem; }
+    .grade { font-family: var(--mono); font-size: 2rem; font-weight: 900; color: var(--blue); }
+    .progress { height: 11px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,.08); border: 1px solid var(--border-soft); }
+    .progress > div { height: 100%; width: 0%; background: linear-gradient(90deg, #ff4778, #ffd166, #00e676); transition: width .4s; }
+    .small-note { color: var(--muted); font-size: .78rem; line-height: 1.8; }
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; margin-top: 16px; }
+    .col-3 { grid-column: span 3; } .col-4 { grid-column: span 4; } .col-5 { grid-column: span 5; } .col-6 { grid-column: span 6; } .col-7 { grid-column: span 7; } .col-8 { grid-column: span 8; } .col-12 { grid-column: span 12; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid var(--border-soft); padding: 9px 6px; text-align: right; font-size: .82rem; vertical-align: top; }
+    th { color: var(--muted); font-weight: 800; }
+    td.mono, th.mono { font-family: var(--mono); direction: ltr; text-align: right; }
+    .list { display: grid; gap: 9px; }
+    .item { border: 1px solid var(--border-soft); border-radius: 12px; padding: 10px; background: rgba(255,255,255,.035); }
+    .item .top { display:flex; justify-content:space-between; gap:8px; align-items:center; margin-bottom:4px; }
+    .item .name { font-weight: 850; }
+    .item .detail { color: var(--muted); font-size: .78rem; line-height: 1.7; }
+    .tag { display:inline-flex; align-items:center; border:1px solid var(--border); border-radius:999px; padding:3px 8px; font-size:.72rem; color:var(--muted); }
+    .tag.buy { color: var(--green); border-color: rgba(0,230,118,.35); background: var(--green-bg); }
+    .tag.sell { color: var(--red); border-color: rgba(255,71,120,.35); background: var(--red-bg); }
+    .tag.warn { color: var(--yellow); border-color: rgba(255,209,102,.35); background: var(--yellow-bg); }
+    .skeleton { position: relative; overflow: hidden; min-height: 18px; background: rgba(255,255,255,.06); border-radius: 8px; }
+    .skeleton::after { content:''; position:absolute; inset:0; transform:translateX(100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent); animation: shimmer 1.2s infinite; }
+    @keyframes shimmer { 100% { transform: translateX(-100%); } }
+    .alert { margin-top: 16px; border: 1px solid rgba(255,209,102,.24); background: rgba(255,209,102,.08); color: #ffe9ac; padding: 12px 14px; border-radius: 14px; line-height: 1.9; font-size: .84rem; }
+    .footer { color: var(--dim); text-align: center; padding: 26px 10px; font-size: .78rem; }
+    @media (max-width: 1100px) { .hero { grid-template-columns: 1fr; } .col-3,.col-4,.col-5,.col-6,.col-7,.col-8 { grid-column: span 12; } .metrics { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 640px) { .wrap { padding: 10px; } .controls { justify-content: stretch; } .btn { flex: 1; } .metrics { grid-template-columns: 1fr; } canvas { height: 310px; } .brand { min-width: 100%; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <div class="logo">US30</div>
+        <div>
+          <h1>داشبورد اختصاصی داوجونز | ASEMAN Smart Money</h1>
+          <p>معماری پروژه کریپتو + موتور داو پروژه قبلی؛ آماده Deploy روی Render</p>
+        </div>
+      </div>
+      <div class="controls">
+        <span class="pill"><span id="marketDot" class="dot"></span><span id="marketText">در حال بررسی بازار...</span></span>
+        <button class="btn tf active" data-tf="1h">1H</button>
+        <button class="btn tf" data-tf="30m">30M</button>
+        <button class="btn tf" data-tf="15m">15M</button>
+        <button class="btn tf" data-tf="5m">5M</button>
+        <button class="btn tf" data-tf="1d">1D</button>
+        <input id="equity" class="input" value="10000" title="Equity" />
+        <input id="risk" class="input" value="1" title="Risk %" />
+        <button id="coalitionBtn" class="btn" title="لایه سنگین ائتلاف بانک‌ها">بانک‌ها خاموش</button>
+        <button id="refreshBtn" class="btn primary">بروزرسانی</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="hero">
+      <section class="card pad">
+        <div class="card-head">
+          <div>
+            <h2 class="title">نمای کلی US30 / Dow Jones</h2>
+            <p id="sourceLine" class="subtitle">Provider: ...</p>
+          </div>
+          <span id="cacheTag" class="tag">Live</span>
+        </div>
+        <div class="price-row">
+          <div id="price" class="price skeleton"></div>
+          <div id="change" class="change neutral">—</div>
+        </div>
+        <div class="metrics">
+          <div class="metric"><div class="k">RSI</div><div id="rsi" class="v">—</div></div>
+          <div class="metric"><div class="k">ATR</div><div id="atr" class="v">—</div></div>
+          <div class="metric"><div class="k">روند</div><div id="trend" class="v" style="font-family:var(--font)">—</div></div>
+          <div class="metric"><div class="k">VWAP Dev</div><div id="vwapDev" class="v">—</div></div>
+        </div>
+        <div style="margin-top:18px;border:1px solid var(--border-soft);border-radius:16px;overflow:hidden;background:#080d16">
+          <canvas id="chart" width="1200" height="420"></canvas>
+        </div>
+      </section>
+
+      <aside class="side-signal">
+        <section class="card pad">
+          <div class="card-head">
+            <div>
+              <h2 class="title">سیگنال نهایی Smart Money</h2>
+              <p class="subtitle">SMC / ICT / Liquidity / HFT / Fake Trend</p>
+            </div>
+            <div id="grade" class="grade">—</div>
+          </div>
+          <div id="signalBox" class="signal-badge">
+            <div>
+              <div id="signalLabel" class="signal-label">در حال تحلیل...</div>
+              <div id="signalVerdict" class="small-note">لطفاً چند ثانیه صبر کنید.</div>
+            </div>
+            <span id="dirTag" class="tag warn">WAIT</span>
+          </div>
+          <div style="margin-top:14px">
+            <div style="display:flex;justify-content:space-between;color:var(--muted);font-size:.78rem;margin-bottom:6px"><span>Confidence</span><span id="confText">—</span></div>
+            <div class="progress"><div id="confBar"></div></div>
+          </div>
+        </section>
+
+        <section class="card pad">
+          <div class="card-head"><div><h2 class="title">پلن معامله</h2><p class="subtitle">آموزشی؛ متناسب با بروکر بررسی شود</p></div></div>
+          <table>
+            <tbody id="planTable">
+              <tr><td>Entry</td><td class="mono">—</td></tr>
+              <tr><td>Stop</td><td class="mono">—</td></tr>
+              <tr><td>TP1 / TP2 / TP3</td><td class="mono">—</td></tr>
+              <tr><td>R:R</td><td class="mono">—</td></tr>
+            </tbody>
+          </table>
+          <div id="sizing" class="small-note" style="margin-top:10px">—</div>
+        </section>
+      </aside>
+    </div>
+
+    <div class="alert">
+      ⚠️ این داشبورد ابزار تحلیلی است، توصیه مالی یا دستور معامله نیست. برای حساب واقعی حتماً مدیریت ریسک، اسپرد، کمیسیون، مشخصات قرارداد US30 و خبرهای مهم آمریکا را بررسی کنید.
+    </div>
+
+    <section class="grid">
+      <div class="card pad col-4">
+        <div class="card-head"><div><h2 class="title">لایه‌های امتیازدهی</h2><p class="subtitle">اجزای تصمیم نهایی</p></div></div>
+        <div id="parts" class="list"></div>
+      </div>
+
+      <div class="card pad col-4">
+        <div class="card-head"><div><h2 class="title">نقدینگی و Sweep</h2><p class="subtitle">BSL / SSL / شکار نقدینگی</p></div></div>
+        <div id="liq" class="list"></div>
+      </div>
+
+      <div class="card pad col-4">
+        <div class="card-head"><div><h2 class="title">FVG و Order Block</h2><p class="subtitle">ناحیه‌های نزدیک و فعال</p></div></div>
+        <div id="zones" class="list"></div>
+      </div>
+
+      <div class="card pad col-6">
+        <div class="card-head"><div><h2 class="title">جریان پول نهادی</h2><p class="subtitle">Delta / OBV / CMF / MFI / VWAP</p></div></div>
+        <table>
+          <tbody id="flowTable"></tbody>
+        </table>
+      </div>
+
+      <div class="card pad col-6">
+        <div class="card-head"><div><h2 class="title">HFT و فیلتر روند فیک</h2><p class="subtitle">محیط الگوریتمی و ریسک شکست جعلی</p></div></div>
+        <div id="riskBox" class="list"></div>
+      </div>
+
+      <div class="card pad col-12">
+        <div class="card-head"><div><h2 class="title">تشخیص و وضعیت پروژه</h2><p class="subtitle">Render env / provider / cache</p></div></div>
+        <pre id="debug" style="white-space:pre-wrap;direction:ltr;text-align:left;background:rgba(255,255,255,.035);border:1px solid var(--border-soft);border-radius:14px;padding:14px;color:#b9c6d8;overflow:auto"></pre>
+      </div>
+    </section>
+
+    <div class="footer">US30 ASEMAN Dashboard — FastAPI + Render-ready + Smart Money Engine</div>
+  </main>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const fmt = (n, d=0) => (n === null || n === undefined || Number.isNaN(Number(n))) ? '—' : Number(n).toLocaleString('en-US', {maximumFractionDigits:d, minimumFractionDigits:d});
+    const pct = n => (n === null || n === undefined) ? '—' : `${Number(n).toFixed(2)}%`;
+    const state = { interval: '1h', coalition: false, loading: false, data: null };
+
+    document.querySelectorAll('.tf').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tf').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.interval = btn.dataset.tf;
+        load(true);
+      });
+    });
+    $('refreshBtn').onclick = () => load(true);
+    $('coalitionBtn').onclick = () => {
+      state.coalition = !state.coalition;
+      $('coalitionBtn').textContent = state.coalition ? 'بانک‌ها روشن' : 'بانک‌ها خاموش';
+      $('coalitionBtn').classList.toggle('active', state.coalition);
+      load(true);
+    };
+
+    async function api(path) {
+      const res = await fetch(path, {cache:'no-store'});
+      const j = await res.json();
+      if (!res.ok || j.ok === false) throw new Error(j.error || `HTTP ${res.status}`);
+      return j;
+    }
+
+    async function load(fresh=false) {
+      if (state.loading) return;
+      state.loading = true;
+      $('refreshBtn').textContent = 'در حال دریافت...';
+      $('refreshBtn').disabled = true;
+      try {
+        const equity = Number($('equity').value || 10000);
+        const risk = Number($('risk').value || 1);
+        const url = `/api/analyze?interval=${encodeURIComponent(state.interval)}&bars=180&fresh=${fresh ? 'true' : 'false'}&coalition=${state.coalition ? 'true':'false'}&equity=${equity}&risk_pct=${risk}`;
+        const data = await api(url);
+        state.data = data;
+        render(data);
+      } catch (err) {
+        renderError(err);
+      } finally {
+        state.loading = false;
+        $('refreshBtn').disabled = false;
+        $('refreshBtn').textContent = 'بروزرسانی';
+      }
+    }
+
+    function clsByChange(x) { return Number(x) > 0 ? 'pos' : Number(x) < 0 ? 'neg' : 'neutral'; }
+    function dirClass(d) { return d > 0 ? 'buy' : d < 0 ? 'sell' : 'warn'; }
+    function dirText(d) { return d > 0 ? 'LONG' : d < 0 ? 'SHORT' : 'WAIT'; }
+
+    function render(data) {
+      const p = data.price || {}, ind = data.indicators || {}, sig = data.signal || {}, m = data.market || {};
+      $('price').classList.remove('skeleton');
+      $('price').textContent = fmt(p.last, 0);
+      $('change').className = `change ${clsByChange(p.change_pct)}`;
+      $('change').textContent = `${p.change >= 0 ? '+' : ''}${fmt(p.change, 0)}  (${p.change_pct >= 0 ? '+' : ''}${pct(p.change_pct)})`;
+      $('sourceLine').textContent = `${data.meta?.source_note || 'Provider'} | TF ${data.meta?.interval || state.interval} | ${data.meta?.last || ''}`;
+      $('cacheTag').textContent = data.meta?.cached ? `Cache ${data.meta.age}s` : 'Live';
+      $('rsi').textContent = fmt(ind.rsi, 1);
+      $('atr').textContent = fmt(ind.atr, 0);
+      $('trend').textContent = ind.trend || '—';
+      $('vwapDev').textContent = pct(data.flow?.vwap_dev_pct);
+
+      $('marketDot').className = `dot ${m.is_open ? 'ok' : 'bad'}`;
+      $('marketText').textContent = m.status_fa || '—';
+
+      $('grade').textContent = sig.grade || '—';
+      $('signalLabel').textContent = sig.label || '—';
+      $('signalVerdict').textContent = sig.verdict_fa || '—';
+      $('dirTag').className = `tag ${dirClass(sig.direction)}`;
+      $('dirTag').textContent = dirText(sig.direction);
+      $('confText').textContent = `${fmt(sig.confidence, 1)}%`;
+      $('confBar').style.width = `${Math.max(0, Math.min(100, Number(sig.confidence || 0)))}%`;
+      $('signalBox').style.borderColor = sig.direction > 0 ? 'rgba(0,230,118,.35)' : sig.direction < 0 ? 'rgba(255,71,120,.35)' : 'rgba(255,209,102,.30)';
+
+      renderPlan(sig, data.position_sizing || {});
+      drawChart(data.candles || [], data.volume_profile || {}, sig.plan || {});
+      renderParts(sig.parts || []);
+      renderLiquidity(data);
+      renderZones(data);
+      renderFlow(data.flow || {});
+      renderRisk(data);
+      $('debug').textContent = JSON.stringify({meta:data.meta, providerStatus:'GET /api/providers', market:data.market, coalition:data.coalition}, null, 2);
+    }
+
+    function renderPlan(sig, sizing) {
+      const plan = sig.plan || {};
+      $('planTable').innerHTML = plan.entry ? `
+        <tr><td>Entry</td><td class="mono">${fmt(plan.entry,0)}</td></tr>
+        <tr><td>Stop</td><td class="mono">${fmt(plan.stop,0)}</td></tr>
+        <tr><td>TP1 / TP2 / TP3</td><td class="mono">${fmt(plan.tp1,0)} / ${fmt(plan.tp2,0)} / ${fmt(plan.tp3,0)}</td></tr>
+        <tr><td>R:R</td><td class="mono">${fmt(plan.rr1,2)} / ${fmt(plan.rr2,2)} / ${fmt(plan.rr3,2)}</td></tr>
+        <tr><td>Risk</td><td class="mono">${fmt(plan.risk,0)} (${fmt(plan.risk_pct,2)}%)</td></tr>` :
+        `<tr><td colspan="2" class="small-note">فعلاً پلن معامله فعال نیست؛ حالت بازار خنثی یا اطمینان پایین است.</td></tr>`;
+      $('sizing').textContent = sizing.ok ? `سایز آموزشی: ${fmt(sizing.units,4)} واحد | ریسک ${fmt(sizing.risk_amount,2)} دلار | Notional ${fmt(sizing.notional,2)}` : (sizing.note || '—');
+    }
+
+    function renderParts(parts) {
+      $('parts').innerHTML = parts.length ? parts.map(x => {
+        const c = Number(x.weight) > 0 ? 'buy' : Number(x.weight) < 0 ? 'sell' : 'warn';
+        return `<div class="item"><div class="top"><span class="name">${escapeHtml(x.name)}</span><span class="tag ${c}">${x.weight > 0 ? '+' : ''}${fmt(x.weight,2)}</span></div><div class="detail">${escapeHtml(x.detail || '')}</div></div>`;
+      }).join('') : '<div class="small-note">داده‌ای برای اجزای سیگنال نیست.</div>';
+    }
+
+    function renderLiquidity(data) {
+      const liq = data.liquidity || {}, sweeps = data.sweeps || [];
+      const rows = [];
+      (liq.bsl || []).slice(0,4).forEach(x => rows.push(`<div class="item"><div class="top"><span class="name">Buy-side Liquidity</span><span class="tag buy">${fmt(x.price,0)}</span></div><div class="detail">فاصله: ${pct(x.dist_pct)} | برخوردها: ${x.hits || 1}</div></div>`));
+      (liq.ssl || []).slice(0,4).forEach(x => rows.push(`<div class="item"><div class="top"><span class="name">Sell-side Liquidity</span><span class="tag sell">${fmt(x.price,0)}</span></div><div class="detail">فاصله: ${pct(x.dist_pct)} | برخوردها: ${x.hits || 1}</div></div>`));
+      sweeps.slice(-4).reverse().forEach(x => rows.push(`<div class="item"><div class="top"><span class="name">${escapeHtml(x.type || 'Sweep')}</span><span class="tag ${x.dir==='bull'?'buy':'sell'}">${fmt(x.level,0)}</span></div><div class="detail">${x.dir} | عمق ${fmt(x.depth_atr,2)} ATR | VolZ ${fmt(x.vol_z,2)}</div></div>`));
+      $('liq').innerHTML = rows.length ? rows.join('') : '<div class="small-note">نقدینگی نزدیک شناسایی نشد.</div>';
+    }
+
+    function renderZones(data) {
+      const f = data.fvgs || [], ob = data.order_blocks || [];
+      const rows = [];
+      f.slice(0,5).forEach(x => rows.push(`<div class="item"><div class="top"><span class="name">FVG ${x.dir}</span><span class="tag ${x.dir==='bull'?'buy':'sell'}">${fmt(x.bottom,0)} - ${fmt(x.top,0)}</span></div><div class="detail">فاصله: ${pct(x.dist_pct)} | ATRx ${fmt(x.atr_x,2)} | ${x.mitigated ? 'Mitigated' : 'Fresh'}</div></div>`));
+      ob.slice(0,5).forEach(x => rows.push(`<div class="item"><div class="top"><span class="name">Order Block ${x.dir}</span><span class="tag ${x.dir==='bull'?'buy':'sell'}">${fmt(x.bottom,0)} - ${fmt(x.top,0)}</span></div><div class="detail">فاصله: ${pct(x.dist_pct)} | Disp ${fmt(x.disp_atr,2)} ATR | VolZ ${fmt(x.vol_z,2)}</div></div>`));
+      $('zones').innerHTML = rows.length ? rows.join('') : '<div class="small-note">ناحیه فعال نزدیک وجود ندارد.</div>';
+    }
+
+    function renderFlow(f) {
+      const rows = [
+        ['VWAP', fmt(f.vwap,0)], ['VWAP Dev', pct(f.vwap_dev_pct)], ['CD Slope', fmt(f.cd_slope,4)],
+        ['OBV Slope', fmt(f.obv_slope,4)], ['CMF', fmt(f.cmf,4)], ['MFI', fmt(f.mfi,1)],
+        ['Divergence', f.divergence || '—'], ['SMI Trend', fmt(f.smi_trend,4)]
+      ];
+      $('flowTable').innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td class="mono">${r[1]}</td></tr>`).join('');
+    }
+
+    function renderRisk(data) {
+      const h = data.hft || {}, fake = data.fake || {}, vp = data.volume_profile || {};
+      const rows = [
+        `<div class="item"><div class="top"><span class="name">HFT Index</span><span class="tag warn">${fmt(h.hft_index,1)}</span></div><div class="detail">${escapeHtml(h.regime || '—')}</div></div>`,
+        `<div class="item"><div class="top"><span class="name">Fake Trend</span><span class="tag warn">${fmt(fake.score,1)}</span></div><div class="detail">${escapeHtml(fake.verdict || '—')}</div></div>`,
+        `<div class="item"><div class="top"><span class="name">Volume Profile</span><span class="tag">POC ${fmt(vp.poc,0)}</span></div><div class="detail">VAH ${fmt(vp.vah,0)} | VAL ${fmt(vp.val,0)} | فاصله POC ${pct(vp.poc_dist_pct)}</div></div>`
+      ];
+      (fake.reasons || []).slice(0,3).forEach(r => rows.push(`<div class="item"><div class="detail">${escapeHtml(r)}</div></div>`));
+      $('riskBox').innerHTML = rows.join('');
+    }
+
+    function drawChart(candles, vp, plan) {
+      const canvas = $('chart'), ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0,0,W,H);
+      ctx.fillStyle = '#080d16'; ctx.fillRect(0,0,W,H);
+      if (!candles.length) return;
+      const pad = {l:58, r:18, t:22, b:30};
+      const values = candles.flatMap(c => [c.h, c.l]).filter(Number.isFinite);
+      [vp.poc, vp.vah, vp.val, plan.entry, plan.stop, plan.tp1, plan.tp2, plan.tp3].forEach(x => { if (Number.isFinite(Number(x))) values.push(Number(x)); });
+      let min = Math.min(...values), max = Math.max(...values);
+      const extra = (max-min) * .08 || 100; min -= extra; max += extra;
+      const xStep = (W-pad.l-pad.r) / candles.length;
+      const y = v => pad.t + (max-Number(v))/(max-min)*(H-pad.t-pad.b);
+      const x = i => pad.l + i*xStep + xStep/2;
+
+      ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.lineWidth = 1;
+      ctx.fillStyle = '#64748b'; ctx.font = '22px monospace'; ctx.textAlign = 'right';
+      for (let i=0;i<5;i++) {
+        const yy = pad.t + i*(H-pad.t-pad.b)/4;
+        ctx.beginPath(); ctx.moveTo(pad.l, yy); ctx.lineTo(W-pad.r, yy); ctx.stroke();
+        const val = max - i*(max-min)/4; ctx.fillText(fmt(val,0), pad.l-8, yy+7);
+      }
+      candles.forEach((c,i) => {
+        const up = Number(c.c) >= Number(c.o);
+        const xx = x(i);
+        ctx.strokeStyle = up ? '#00e676' : '#ff4778';
+        ctx.fillStyle = up ? 'rgba(0,230,118,.78)' : 'rgba(255,71,120,.78)';
+        ctx.beginPath(); ctx.moveTo(xx, y(c.h)); ctx.lineTo(xx, y(c.l)); ctx.stroke();
+        const top = y(Math.max(c.o,c.c)), bot = y(Math.min(c.o,c.c));
+        const bw = Math.max(2, xStep*.56);
+        ctx.fillRect(xx-bw/2, top, bw, Math.max(2, bot-top));
+      });
+      drawLevel(ctx, W, pad, y, vp.poc, '#ffd166', 'POC');
+      drawLevel(ctx, W, pad, y, vp.vah, 'rgba(255,255,255,.28)', 'VAH');
+      drawLevel(ctx, W, pad, y, vp.val, 'rgba(255,255,255,.28)', 'VAL');
+      drawLevel(ctx, W, pad, y, plan.entry, '#00d2ff', 'ENTRY');
+      drawLevel(ctx, W, pad, y, plan.stop, '#ff4778', 'SL');
+      drawLevel(ctx, W, pad, y, plan.tp1, '#00e676', 'TP1');
+      drawLevel(ctx, W, pad, y, plan.tp2, '#00e676', 'TP2');
+      drawLevel(ctx, W, pad, y, plan.tp3, '#00e676', 'TP3');
+    }
+
+    function drawLevel(ctx, W, pad, y, val, color, label) {
+      if (!Number.isFinite(Number(val))) return;
+      const yy = y(val);
+      ctx.save();
+      ctx.strokeStyle = color; ctx.setLineDash([8,6]); ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(pad.l, yy); ctx.lineTo(W-pad.r, yy); ctx.stroke();
+      ctx.setLineDash([]); ctx.fillStyle = color; ctx.font = '20px monospace'; ctx.textAlign = 'left';
+      ctx.fillText(`${label} ${fmt(val,0)}`, pad.l+8, yy-5);
+      ctx.restore();
+    }
+
+    function renderError(err) {
+      $('price').classList.remove('skeleton');
+      $('price').textContent = 'خطا';
+      $('change').className = 'change neg';
+      $('change').textContent = err.message || String(err);
+      $('parts').innerHTML = `<div class="item"><div class="detail">${escapeHtml(err.message || String(err))}</div></div>`;
+      $('debug').textContent = String(err.stack || err);
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    }
+
+    load(false);
+    setInterval(() => load(false), 120000);
+  </script>
+</body>
+</html>

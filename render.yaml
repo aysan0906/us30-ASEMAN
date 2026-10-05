@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: us30-aseman-dashboard
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT --proxy-headers
+    healthCheckPath: /healthz
+    envVars:
+      - key: DATA_PROVIDER
+        value: yahoo
+      - key: DATA_SYMBOL
+        value: DIA
+      - key: DISPLAY_SCALE
+        value: "100"
+      - key: DATA_FALLBACK
+        value: "true"
+      - key: DEFAULT_INTERVAL
+        value: 1h
+      - key: WITH_COALITION
+        value: "false"
