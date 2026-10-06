@@ -91,11 +91,22 @@ def market_hours():
     return engine.market_state()
 
 
+_ticker_cache = {}
+
 @app.get("/api/ticker")
 def ticker(interval: str = Query("1h", description="5m, 15m, 30m, 1h, 1d")):
     try:
-        return engine.ticker(interval)
+        now_ts = time.time()
+        cached = _ticker_cache.get(interval)
+        if cached and (now_ts - cached["time"] < 3.0):
+            return cached["data"]
+        data = engine.ticker(interval)
+        _ticker_cache[interval] = {"time": now_ts, "data": data}
+        return data
     except Exception as e:
+        cached = _ticker_cache.get(interval)
+        if cached:
+            return cached["data"]
         return JSONResponse(status_code=502, content={"ok": False, "error": str(e)})
 
 

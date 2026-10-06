@@ -2101,7 +2101,7 @@
             fb.style.background = 'rgba(255, 51, 102, 0.15)';
             fb.style.color = '#ff3366';
             fb.style.border = '1px solid #ff3366';
-            fb.textContent = ;
+            fb.textContent = '❌ خطا: ' + (data.message || 'ارسال ناموفق بود.');
           }
         }
       } catch (e) {
@@ -2142,7 +2142,7 @@
             fb.style.background = 'rgba(255, 51, 102, 0.15)';
             fb.style.color = '#ff3366';
             fb.style.border = '1px solid #ff3366';
-            fb.textContent = ;
+            fb.textContent = '❌ خطا: ' + (data.message || 'ارسال ناموفق بود.');
           }
         }
       } catch (e) {
@@ -2164,6 +2164,7 @@
       fetchMacroStatus();
       fetchBankCoalition();
       fetchAlphaMatrix();
+      loadTelegramConfig();
       initTradingViewChart();
     });
   </script>
