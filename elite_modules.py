@@ -529,6 +529,171 @@ def get_vix_and_smt_data():
     return data
 
 
+_heavyweights_cache = {"time": 0, "data": None}
+
+def get_dow_top5_heavyweights() -> Dict[str, Any]:
+    """
+    Real-time price-weighted monitoring of the Top 5 highest-priced Dow constituents:
+    UNH (~$580), GS (~$515), MSFT (~$420), CAT (~$400), HD (~$390).
+    Together they dictate >37% of DJIA price movement based on the Dow Divisor.
+    """
+    now = time.time()
+    if _heavyweights_cache["data"] and (now - _heavyweights_cache["time"]) < 50.0:
+        return _heavyweights_cache["data"]
+
+    tickers = [
+        ('UNH', 'یونایتد هلث', 0.093),
+        ('GS', 'گلدمن ساکس', 0.083),
+        ('MSFT', 'مایکروسافت', 0.070),
+        ('CAT', 'کاترپیلار', 0.064),
+        ('HD', 'هوم دیپو', 0.062)
+    ]
+    divisor = DIVISOR_2026
+    members = []
+    bullish_count = 0
+    bearish_count = 0
+    net_dow_pts = 0.0
+
+    for sym, name, wt in tickers:
+        try:
+            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?interval=5m&range=1d"
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=2.5) as resp:
+                data = json.loads(resp.read().decode())
+                meta = data["chart"]["result"][0]["meta"]
+                price = float(meta.get("regularMarketPrice") or 0.0)
+                prev = float(meta.get("chartPreviousClose") or meta.get("previousClose") or price)
+                chg_usd = round(price - prev, 2)
+                chg_pct = round((chg_usd / prev) * 100.0, 2) if prev else 0.0
+                pts_impact = round(chg_usd / divisor, 1)
+                net_dow_pts += pts_impact
+                
+                is_bull = chg_usd > 0
+                is_bear = chg_usd < 0
+                if is_bull: bullish_count += 1
+                elif is_bear: bearish_count += 1
+                
+                members.append({
+                    "symbol": sym,
+                    "name": name,
+                    "weight_pct": round(wt * 100.0, 1),
+                    "price": price,
+                    "chg_usd": chg_usd,
+                    "chg_pct": chg_pct,
+                    "dow_pts_impact": pts_impact,
+                    "status": "BULLISH" if is_bull else ("BEARISH" if is_bear else "FLAT")
+                })
+        except Exception:
+            members.append({
+                "symbol": sym,
+                "name": name,
+                "weight_pct": round(wt * 100.0, 1),
+                "price": 420.0,
+                "chg_usd": 0.0,
+                "chg_pct": 0.0,
+                "dow_pts_impact": 0.0,
+                "status": "FLAT"
+            })
+
+    net_dow_pts = round(net_dow_pts, 1)
+    if bullish_count >= 4 or (bullish_count >= 3 and net_dow_pts > 35):
+        bias = "BULLISH_CONFIRMED"
+        badge = f"🟢 اجماع صعودی ۵ غول ({net_dow_pts:+} pts)"
+        status = "pass"
+        desc = f"حمایت قدرتمند {bullish_count} از ۵ غول سهام داوجونز با شارژ {net_dow_pts:+} پوینت در شاخص."
+    elif bearish_count >= 4 or (bearish_count >= 3 and net_dow_pts < -35):
+        bias = "BEARISH_CONFIRMED"
+        badge = f"🔴 اجماع نزولی ۵ غول ({net_dow_pts:+} pts)"
+        status = "pass"
+        desc = f"فشار فروش سنگین {bearish_count} از ۵ غول سهام داوجونز با افت {net_dow_pts:+} پوینت در شاخص."
+    else:
+        bias = "CONFLICTED"
+        badge = f"⚪ اختلاف نظر ۵ غول ({net_dow_pts:+} pts)"
+        status = "neutral"
+        desc = f"تشتت آرا میان غول‌های داوجونز ({bullish_count} مثبت در برابر {bearish_count} منفی)؛ برآیند {net_dow_pts:+} پوینت."
+
+    res = {
+        "ok": True,
+        "bias": bias,
+        "badge": badge,
+        "status": status,
+        "desc": desc,
+        "net_dow_pts": net_dow_pts,
+        "bullish_count": bullish_count,
+        "bearish_count": bearish_count,
+        "members": members,
+        "updated_at": time.strftime("%H:%M:%S UTC")
+    }
+    _heavyweights_cache["data"] = res
+    _heavyweights_cache["time"] = now
+    return res
+
+
+def get_session_killzone_status() -> Dict[str, Any]:
+    """
+    Evaluates current time against institutional New York Killzones:
+    NY Open & Opening Bell (17:00 - 19:30 Tehran): Peak Institutional Volume & Max Win-rate.
+    NY Afternoon & London Fix (21:00 - 23:30 Tehran): Trend Continuation.
+    Dead Zone (00:30 - 11:00 Tehran): Low Volume, high false breakout risk.
+    """
+    now_utc, tehran, ny = _get_tehran_and_ny_time()
+    t_hour = tehran.hour + tehran.minute / 60.0
+    time_str = tehran.strftime("%H:%M:%S")
+
+    if 17.0 <= t_hour < 19.5:
+        zone_key = "NY_OPEN_KILLZONE"
+        zone_name = "سشن طلایی بازگشایی نیویورک (Golden NY Killzone)"
+        badge = "🔥 سشن طلایی نیویورک (اوج نقدینگی)"
+        color = "#00e676"
+        status = "pass"
+        weight = 1.0
+        advice = "بهترین پنجره معاملاتی داوجونز؛ جریان سفارشات بانک‌های وال‌استریت و نوسان جهت‌دار در اوج قرار دارد."
+    elif 21.0 <= t_hour <= 23.5:
+        zone_key = "NY_AFTERNOON_RUN"
+        zone_name = "سشن بعدازظهر وال‌استریت و تسویه لندن (NY Afternoon & Fix)"
+        badge = "⚡ سشن ثانویه نیویورک"
+        color = "#38bdf8"
+        status = "pass"
+        weight = 0.8
+        advice = "حرکات ادامه‌دهنده روند و معاملات عدم تعادل پایانی (MOC Imbalance)."
+    elif 11.5 <= t_hour < 16.5:
+        zone_key = "LONDON_SESSION"
+        zone_name = "سشن لندن (London Session)"
+        badge = "🇬🇧 سشن لندن (نقدینگی متوسط)"
+        color = "#ffd166"
+        status = "neutral"
+        weight = 0.6
+        advice = "نقدینگی اروپا فعال است؛ آمادگی برای سشن اصلی نیویورک."
+    elif 16.5 <= t_hour < 17.0:
+        zone_key = "NY_PRE_MARKET"
+        zone_name = "پیش‌گشایش نیویورک (Pre-Market Gap)"
+        badge = "⏱️ پیش‌گشایش نیویورک"
+        color = "#ffd166"
+        status = "neutral"
+        weight = 0.5
+        advice = "تشکیل شکاف‌های قیمتی؛ از ورود شتاب‌زده قبل از زنگ ۱۷:۰۰ بپرهیزید."
+    else:
+        zone_key = "DEAD_ZONE_ASIA"
+        zone_name = "سشن کم‌حجم شبانه / آسیا (Dead Zone)"
+        badge = "⛔ سشن کم‌حجم (ریسک فیک‌اوت)"
+        color = "#ff3366"
+        status = "warning"
+        weight = 0.3
+        advice = "بازار نقدی وال‌استریت تعطیل است؛ ریسک رنج فرسایشی و اسپرد باز. ورود با اهرم کم یا توقف معاملات."
+
+    return {
+        "ok": True,
+        "zone_key": zone_key,
+        "zone_name": zone_name,
+        "badge": badge,
+        "color": color,
+        "status": status,
+        "weight": weight,
+        "advice": advice,
+        "tehran_time": time_str
+    }
+
+
 def validate_us30_signal_confluence(p_curr: float, raw_action: str, raw_score: int, interval: str) -> Dict[str, Any]:
     market_macro = get_vix_and_smt_data()
     vix_p = market_macro["vix_price"]
@@ -599,11 +764,52 @@ def validate_us30_signal_confluence(p_curr: float, raw_action: str, raw_score: i
         news_badge = "🟢 فیوز سبز (اسپرد امن)"
         news_desc = "بدون خطر جهش ناگهانی اسپرد؛ فاصله زمانی امن از اخبار بحرانی اقتصادی."
 
+    # 5. Filter 5: Top 5 Dow Heavyweights Directional Filter (UNH, GS, MSFT, CAT, HD)
+    hw = get_dow_top5_heavyweights()
+    hw_veto = False
+    if raw_action == "BUY" and hw["bias"] == "BEARISH_CONFIRMED":
+        hw_veto = True
+        hw_status = "veto"
+        hw_badge = f"🔴 وتو: ریزش ۵ غول داوجونز ({hw['net_dow_pts']} pts)"
+        hw_desc = f"سیگنال خرید با فشار فروش {hw['bearish_count']} از ۵ غول اصلی داوجونز وتو شد (تله گاوی)."
+    elif raw_action == "SELL" and hw["bias"] == "BULLISH_CONFIRMED":
+        hw_veto = True
+        hw_status = "veto"
+        hw_badge = f"🔴 وتو: تقاضای ۵ غول داوجونز ({hw['net_dow_pts']} pts)"
+        hw_desc = f"سیگنال فروش با ورود نقدینگی {hw['bullish_count']} از ۵ غول اصلی داوجونز وتو شد (تله خرسی)."
+    elif hw["status"] == "pass":
+        hw_status = "pass"
+        hw_badge = hw["badge"]
+        hw_desc = hw["desc"]
+    else:
+        hw_status = "neutral"
+        hw_badge = hw["badge"]
+        hw_desc = hw["desc"]
+
+    # 6. Filter 6: New York Killzone & Session Timing Gate
+    kz = get_session_killzone_status()
+    if kz["zone_key"] == "DEAD_ZONE_ASIA" and interval in ["5m", "15m"]:
+        kz_status = "warning"
+        kz_badge = kz["badge"]
+        kz_desc = "سشن کم‌حجم؛ ورود با حجم کمتر از استاندارد توصیه می‌شود."
+    elif kz["status"] == "pass":
+        kz_status = "pass"
+        kz_badge = kz["badge"]
+        kz_desc = kz["advice"]
+    else:
+        kz_status = "neutral"
+        kz_badge = kz["badge"]
+        kz_desc = kz["advice"]
+
     final_action = raw_action
     is_vetoed = False
     veto_reason = ""
 
-    if news_status == "locked":
+    if hw_veto:
+        final_action = "WAIT"
+        is_vetoed = True
+        veto_reason = f"وتو به دلیل حرکت متضاد ۵ غول داوجونز ({hw['net_dow_pts']} پوینت داو)"
+    elif news_status == "locked":
         final_action = "WAIT"
         is_vetoed = True
         veto_reason = "قفل فیوز نوسان اخبار اقتصادی"
@@ -617,10 +823,12 @@ def validate_us30_signal_confluence(p_curr: float, raw_action: str, raw_score: i
         veto_reason = "وتو به دلیل قرارگیری خلاف جهت خط VWAP سشن"
 
     filters_list = [
-        {"name": "۱. فیلتر معکوس نوسان VIX", "status": vix_status, "badge": vix_badge, "detail": vix_desc},
-        {"name": "۲. فیلتر میانگین وزنی سشن VWAP", "status": vwap_status, "badge": vwap_badge, "detail": vwap_desc, "level": session_vwap},
-        {"name": "۳. تاییدیه همسویی دو قلوی SMT", "status": smt_status, "badge": smt_badge, "detail": smt_desc},
-        {"name": "۴. فیوز محافظ اخبار و اسپرد", "status": news_status, "badge": news_badge, "detail": news_desc}
+        {"name": "۱. فیلتر نوسان VIX", "status": vix_status, "badge": vix_badge, "detail": vix_desc},
+        {"name": "۲. خط VWAP سشن", "status": vwap_status, "badge": vwap_badge, "detail": vwap_desc, "level": session_vwap},
+        {"name": "۳. همسویی دو قلوی SMT", "status": smt_status, "badge": smt_badge, "detail": smt_desc},
+        {"name": "۴. فیوز محافظ اخبار و اسپرد", "status": news_status, "badge": news_badge, "detail": news_desc},
+        {"name": "۵. ائتلاف ۵ غول دلاری داوجونز", "status": hw_status, "badge": hw_badge, "detail": hw_desc, "net_pts": hw["net_dow_pts"]},
+        {"name": "۶. سشن طلایی نیویورک (Killzone)", "status": kz_status, "badge": kz_badge, "detail": kz_desc, "zone": kz["zone_name"]}
     ]
 
     passed_count = sum(1 for f in filters_list if f["status"] == "pass")
@@ -632,7 +840,9 @@ def validate_us30_signal_confluence(p_curr: float, raw_action: str, raw_score: i
         "session_vwap": session_vwap,
         "vix_current": vix_p,
         "vix_change": vix_chg,
-        "filters_passed": f"{passed_count} از ۴ فیلتر نهادی تایید شد",
+        "heavyweights": hw,
+        "killzone": kz,
+        "filters_passed": f"{passed_count} از ۶ فیلتر نهادی تایید شد",
         "passed_count": passed_count,
         "filters": filters_list
     }

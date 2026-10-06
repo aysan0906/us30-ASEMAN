@@ -1142,8 +1142,13 @@ def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 
 
     rr = f"1:{tp2_pts / sl_pts:.1f}"
 
+    hw_data = validation.get("heavyweights", {})
+    kz_data = validation.get("killzone", {})
+
     checklist = [
         {"name": "ائتلاف غول‌های بانکی (Wall St Banks)", "status": mod1_stat, "detail": mod1_desc, "badge": mod1_badge},
+        {"name": "۵ غول دلاری داوجونز (UNH, GS, MSFT, CAT, HD)", "status": hw_data.get("status", "pass"), "detail": hw_data.get("desc", ""), "badge": hw_data.get("badge", "🟢 تایید ۵ غول")},
+        {"name": "سشن طلایی و نقدینگی (NY Killzone)", "status": kz_data.get("status", "pass"), "detail": kz_data.get("advice", ""), "badge": kz_data.get("badge", "🔥 سشن فعال")},
         {"name": "اردر فلو و خلأ FVG (Orderflow & Imbalance)", "status": mod2_stat, "detail": mod2_desc, "badge": mod2_badge},
         {"name": "سپر اخبار کلان (Macro Shield & Yields)", "status": mod3_stat, "detail": mod3_desc, "badge": mod3_badge},
         {"name": "ساختار پرایس اکشن (Market Structure & BOS)", "status": mod4_stat, "detail": mod4_desc, "badge": mod4_badge},
@@ -1303,6 +1308,23 @@ def dow_liquidity_judas():
     except Exception:
         p = 51570.0
     return elite.get_liquidity_and_judas(p)
+
+@app.get("/api/dow/heavyweights")
+def dow_heavyweights():
+    try:
+        import elite_modules as elite
+        return elite.get_dow_top5_heavyweights()
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+@app.get("/api/dow/killzone")
+def dow_killzone():
+    try:
+        import elite_modules as elite
+        return elite.get_session_killzone_status()
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
 
 @app.get("/api/dow/divisor-impact")
 def dow_divisor_impact():

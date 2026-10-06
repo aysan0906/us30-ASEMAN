@@ -831,14 +831,14 @@
         </div>
       </div>
 
-      <!-- 4-FILTER VALIDATION BAR -->
-      <div style="margin-top: 14px; padding: 12px 14px; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(0, 210, 255, 0.2); border-radius: 10px;">
+      <!-- 6-FILTER INSTITUTIONAL VALIDATION BAR -->
+      <div style="margin-top: 14px; padding: 12px 14px; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(0, 210, 255, 0.25); border-radius: 10px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
           <span style="font-size: 0.8rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
-            <span>🛡️</span> وضعیت ۴ فیلتر اعتبارسنجی نهادی (VIX Inversion, Session VWAP, SMT, News Spike Guard):
+            <span>🛡️</span> وضعیت ۶ فیلتر اعتبارسنجی نهادی وال‌استریت (VIX, VWAP, SMT, News, ۵ غول داوجونز، سشن طلایی نیویورک):
           </span>
           <span id="heroFiltersPassedBadge" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 3px 10px; border-radius: 6px; font-size: 0.74rem; font-family: var(--font-mono); font-weight: 800;">
-            ۴ از ۴ فیلتر تایید شد
+            ۶ از ۶ فیلتر تایید شد
           </span>
         </div>
         <div id="heroValidationFiltersGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; font-size: 0.75rem;">
@@ -855,9 +855,32 @@
             <strong style="color: #00e676;">🟢 همسویی S&P500</strong>
           </div>
           <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: #cbd5e1;">۴. فیوز محافظ اسپرد:</span>
+            <span style="color: #cbd5e1;">۴. فیوز محافظ اخبار و اسپرد:</span>
             <strong style="color: #00e676;">🟢 فیوز سبز اخبار</strong>
           </div>
+          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: #cbd5e1;">۵. ائتلاف ۵ غول داوجونز:</span>
+            <strong style="color: #00e676;">🟢 تایید ۵ غول</strong>
+          </div>
+          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: #cbd5e1;">۶. سشن طلایی نیویورک:</span>
+            <strong style="color: #00e676;">🔥 سشن فعال</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOW TOP 5 HEAVYWEIGHTS LIVE TICKER STRIP -->
+      <div id="dowHeavyweightsStrip" style="margin-top: 10px; padding: 10px 14px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(0, 210, 255, 0.25); border-radius: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 0.8rem; font-weight: 800; color: #00d2ff; display: flex; align-items: center; gap: 5px;">
+            <span>🏛️</span> نبض ۵ غول تعیین‌کننده داوجونز (۳۷٪ کل شاخص):
+          </span>
+          <span id="hwConsensusBadge" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 800;">
+            در حال پایش زنده...
+          </span>
+        </div>
+        <div id="hwTickersRow" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-family: var(--font-mono); font-size: 0.76rem;">
+          <span style="color: #94a3b8;">در حال استعلام نرخ لحظه‌ای و اثر پوینتی UNH, GS, MSFT, CAT, HD...</span>
         </div>
       </div>
 
@@ -2082,6 +2105,33 @@
               <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
                 <span style="color: #cbd5e1;">${f.name}:</span>
                 <strong style="color: ${col}; font-family: var(--font-mono); font-size: 0.72rem;">${f.badge}</strong>
+              </div>
+              `;
+            }).join('');
+          }
+        }
+
+        // Update Live Dow Heavyweights Strip
+        if (data.validation && data.validation.heavyweights) {
+          const hw = data.validation.heavyweights;
+          const hwBadge = document.getElementById('hwConsensusBadge');
+          if (hwBadge) {
+            hwBadge.textContent = hw.badge || `${hw.net_dow_pts > 0 ? '+' : ''}${hw.net_dow_pts} pts داو`;
+            hwBadge.style.color = hw.status === 'pass' ? (hw.net_dow_pts >= 0 ? '#00e676' : '#ff3366') : '#ffd166';
+            hwBadge.style.borderColor = hwBadge.style.color;
+          }
+          const rowEl = document.getElementById('hwTickersRow');
+          if (rowEl && hw.members && hw.members.length) {
+            rowEl.innerHTML = hw.members.map(m => {
+              const isPos = (m.chg_usd >= 0);
+              const col = isPos ? '#00e676' : '#ff3366';
+              const bg = isPos ? 'rgba(0, 230, 118, 0.1)' : 'rgba(255, 51, 102, 0.1)';
+              const sign = isPos ? '+' : '';
+              return `
+              <div style="background: ${bg}; border: 1px solid ${col}44; border-radius: 6px; padding: 4px 8px; display: inline-flex; align-items: center; gap: 5px;">
+                <strong style="color: #fff;">${m.symbol}</strong>
+                <span style="color: #94a3b8; font-size: 0.7rem;">$${m.price.toFixed(1)}</span>
+                <span style="color: ${col}; font-weight: 800;">${sign}${m.dow_pts_impact.toFixed(1)} pts</span>
               </div>
               `;
             }).join('');
