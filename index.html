@@ -1443,24 +1443,59 @@
     <!-- ==================== TAB 13: TELEGRAM SENTINEL ==================== -->
     <div id="sentinelTab" class="tab-pane">
       <div class="content-card">
-        <h3 class="card-title">✈️ دیده‌بان هوشمند تلگرام داو جونز (Telegram Bot Config)</h3>
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">
-          ارسال خودکار سگنال‌های GRADE A+ همراه با سطوح ورود و حد ضرر به کانال یا گروه تلگرامی شما:
-        </p>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-bottom: 18px;">
+        <div class="card-header-flex">
           <div>
-            <label style="font-size: 0.78rem; color: #94a3b8; display: block; margin-bottom: 4px;">توکن ربات تلگرام (Bot Token):</label>
-            <input type="text" id="tgBotToken" placeholder="7123456789:AAH..." class="chat-input" style="width: 100%;">
+            <h3 class="card-title">✈️ دیده‌بان هوشمند تلگرام داو جونز (Telegram Bot Config & Sentinel)</h3>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">
+              ارسال خودکار و آنی سگنال‌های GRADE A+ همراه با سطوح ورود، حد ضرر و تارگت‌های سه‌گانه به کانال تلگرام شما
+            </div>
           </div>
+          <span id="tgConfigStatusBadge" style="background: rgba(255, 193, 7, 0.15); color: #ffd166; padding: 4px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">
+            ⏳ در حال بررسی اتصال تلگرام...
+          </span>
+        </div>
+
+        <!-- Render Environment Variable Guide Box -->
+        <div style="background: rgba(0, 210, 255, 0.06); border: 1px solid rgba(0, 210, 255, 0.25); border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; font-size: 0.8rem; line-height: 1.8; color: #bae6fd;">
+          💡 <strong>ذخیره دائمی و امن در سرور رندر (Render Environment Variables):</strong><br>
+          برای اینکه بعد از هر بار خاموش یا ریستارت شدن سرور رندر، توکن و نام کانال شما پاک نشوند، می‌توانید آنها را مستقیماً در پنل رندر در تب <strong>Environment</strong> ذخیره کنید:<br>
+          ۱. متغیر <code>TELEGRAM_BOT_TOKEN</code>: توکن دریافتی از BotFather@<br>
+          ۲. متغیر <code>TELEGRAM_CHAT_ID</code>: آیدی کانال شما به صورت عدد منفی (مثلاً <code>-1002345678901</code>) یا یوزرنیم کانال (مثلاً <code>@MyDowSignals</code>)<br>
+          <em>(همچنین می‌توانید از کادرهای زیر استفاده کنید تا مستقیماً روی سرور ذخیره شوند).</em>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px;">
           <div>
-            <label style="font-size: 0.78rem; color: #94a3b8; display: block; margin-bottom: 4px;">شناسه کانال یا چت (Chat ID):</label>
-            <input type="text" id="tgChatId" placeholder="-1001234567890" class="chat-input" style="width: 100%;">
+            <label style="font-size: 0.8rem; color: #fff; display: block; margin-bottom: 6px; font-weight: 700;">
+              🤖 توکن ربات تلگرام (Bot Token):
+            </label>
+            <input type="text" id="tgBotToken" dir="ltr" placeholder="7123456789:AAHq_xyz..." class="chat-input" style="width: 100%; direction: ltr !important; text-align: left !important; font-family: var(--font-mono) !important; font-size: 0.88rem;">
+            <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">کد اختصاصی ربات تلگرام دریافتی از BotFather@ (کادر چپ‌چین و بدون برعکس‌شدن است)</div>
+          </div>
+
+          <div>
+            <label style="font-size: 0.8rem; color: #fff; display: block; margin-bottom: 6px; font-weight: 700;">
+              📢 شناسه کانال یا چت (Chat ID):
+            </label>
+            <input type="text" id="tgChatId" dir="ltr" placeholder="-1001234567890 یا @MyChannel" class="chat-input" style="width: 100%; direction: ltr !important; text-align: left !important; font-family: var(--font-mono) !important; font-size: 0.88rem;">
+            <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">آیدی عددی یا آیدی عمومی کانال تلگرام (ربات را حتماً <strong>Admin</strong> کانال کنید)</div>
           </div>
         </div>
-        <div style="display: flex; gap: 10px;">
-          <button onclick="saveTelegramConfig()" class="chat-send-btn">ذخیره تنظیمات تلگرام</button>
-          <button onclick="sendTestTelegramMessage()" class="chat-prompt-pill" style="padding: 10px 18px; font-size: 0.85rem;">ارسال پیام آزمایشی 📲</button>
+
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+          <button onclick="saveTelegramConfig()" class="chat-send-btn" style="padding: 10px 24px; font-size: 0.88rem;">
+            💾 ذخیره تنظیمات روی سرور
+          </button>
+          <button onclick="sendTestTelegramMessage()" class="chat-prompt-pill" style="padding: 10px 20px; font-size: 0.85rem; background: rgba(0, 230, 118, 0.15); color: #00e676; border-color: rgba(0, 230, 118, 0.4);">
+            📲 ارسال پیام تست به کانال
+          </button>
+          <button onclick="sendInstantSignalToTelegram()" class="chat-prompt-pill" style="padding: 10px 20px; font-size: 0.85rem; background: rgba(255, 209, 102, 0.15); color: #ffd166; border-color: rgba(255, 209, 102, 0.4);">
+            🚀 مخابره دستی سیگنال لحظه‌ای
+          </button>
         </div>
+
+        <!-- Feedback Box -->
+        <div id="tgStatusFeedback" style="margin-top: 14px; font-size: 0.8rem; display: none; padding: 10px 14px; border-radius: 6px;"></div>
       </div>
     </div>
 
@@ -1973,6 +2008,151 @@
         حداکثر مبلغ ریسک: <strong style="color: #ffd166;">${riskDollars.toFixed(0)} دلار</strong> (${riskPct}٪ از سرمایه) |
         ارزش هر پوینت داو جونز: <strong>$${(lot * 10).toFixed(1)}</strong>
       `;
+    }
+
+    // 14.5. TELEGRAM SENTINEL FUNCTIONS
+    async function loadTelegramConfig() {
+      try {
+        const res = await fetch('/api/telegram/config');
+        if (!res.ok) return;
+        const data = await res.json();
+        const badge = document.getElementById('tgConfigStatusBadge');
+        if (data.is_configured) {
+          if (badge) {
+            badge.textContent = '🟢 متصل به تلگرام و فعال';
+            badge.style.color = '#00e676';
+            badge.style.background = 'rgba(0, 230, 118, 0.15)';
+          }
+          if (data.chat_id) {
+            document.getElementById('tgChatId').value = data.chat_id;
+          }
+          if (data.masked_token) {
+            document.getElementById('tgBotToken').placeholder = data.masked_token;
+          }
+        } else {
+          if (badge) {
+            badge.textContent = '⚪ نیازمند تنظیم توکن و چت‌آیدی';
+            badge.style.color = '#ffd166';
+            badge.style.background = 'rgba(255, 209, 102, 0.15)';
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function saveTelegramConfig() {
+      const token = document.getElementById('tgBotToken').value.trim();
+      const chat = document.getElementById('tgChatId').value.trim();
+      const fb = document.getElementById('tgStatusFeedback');
+      if (!chat && !token) {
+        alert('لطفاً حداقل شناسه چت یا توکن ربات را وارد نمایید.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/telegram/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bot_token: token, chat_id: chat })
+        });
+        const data = await res.json();
+        if (fb) {
+          fb.style.display = 'block';
+          fb.style.background = 'rgba(0, 230, 118, 0.15)';
+          fb.style.color = '#00e676';
+          fb.style.border = '1px solid #00e676';
+          fb.textContent = '✅ تنظیمات تلگرام با موفقیت روی سرور ذخیره شد.';
+        }
+        loadTelegramConfig();
+      } catch (e) {
+        if (fb) {
+          fb.style.display = 'block';
+          fb.style.background = 'rgba(255, 51, 102, 0.15)';
+          fb.style.color = '#ff3366';
+          fb.style.border = '1px solid #ff3366';
+          fb.textContent = '❌ خطا در ذخیره تنظیمات تلگرام.';
+        }
+      }
+    }
+
+    async function sendTestTelegramMessage() {
+      const token = document.getElementById('tgBotToken').value.trim();
+      const chat = document.getElementById('tgChatId').value.trim();
+      const fb = document.getElementById('tgStatusFeedback');
+      if (fb) {
+        fb.style.display = 'block';
+        fb.style.background = 'rgba(0, 210, 255, 0.15)';
+        fb.style.color = '#00d2ff';
+        fb.style.border = '1px solid #00d2ff';
+        fb.textContent = '⏳ در حال ارسال پیام تست به تلگرام...';
+      }
+      try {
+        const res = await fetch('/api/telegram/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bot_token: token, chat_id: chat })
+        });
+        const data = await res.json();
+        if (fb) {
+          if (res.ok && data.success) {
+            fb.style.background = 'rgba(0, 230, 118, 0.15)';
+            fb.style.color = '#00e676';
+            fb.style.border = '1px solid #00e676';
+            fb.textContent = '✅ پیام تست با موفقیت به کانال تلگرام مخابره شد!';
+          } else {
+            fb.style.background = 'rgba(255, 51, 102, 0.15)';
+            fb.style.color = '#ff3366';
+            fb.style.border = '1px solid #ff3366';
+            fb.textContent = ;
+          }
+        }
+      } catch (e) {
+        if (fb) {
+          fb.style.background = 'rgba(255, 51, 102, 0.15)';
+          fb.style.color = '#ff3366';
+          fb.style.border = '1px solid #ff3366';
+          fb.textContent = '❌ خطا در برقراری ارتباط با سرور.';
+        }
+      }
+    }
+
+    async function sendInstantSignalToTelegram() {
+      const token = document.getElementById('tgBotToken').value.trim();
+      const chat = document.getElementById('tgChatId').value.trim();
+      const fb = document.getElementById('tgStatusFeedback');
+      if (fb) {
+        fb.style.display = 'block';
+        fb.style.background = 'rgba(0, 210, 255, 0.15)';
+        fb.style.color = '#00d2ff';
+        fb.style.border = '1px solid #00d2ff';
+        fb.textContent = '⏳ در حال آنالیز و ارسال سیگنال ۵ ماژول به تلگرام...';
+      }
+      try {
+        const res = await fetch('/api/telegram/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bot_token: token, chat_id: chat, interval: _activeInterval })
+        });
+        const data = await res.json();
+        if (fb) {
+          if (res.ok && data.success) {
+            fb.style.background = 'rgba(0, 230, 118, 0.15)';
+            fb.style.color = '#00e676';
+            fb.style.border = '1px solid #00e676';
+            fb.textContent = '🚀 سیگنال تجمیعی ۵ ماژول با موفقیت به کانال تلگرام ارسال شد!';
+          } else {
+            fb.style.background = 'rgba(255, 51, 102, 0.15)';
+            fb.style.color = '#ff3366';
+            fb.style.border = '1px solid #ff3366';
+            fb.textContent = ;
+          }
+        }
+      } catch (e) {
+        if (fb) {
+          fb.style.background = 'rgba(255, 51, 102, 0.15)';
+          fb.style.color = '#ff3366';
+          fb.style.border = '1px solid #ff3366';
+          fb.textContent = '❌ خطا در ارسال سیگنال به تلگرام.';
+        }
+      }
     }
 
     // 15. INITIALIZATION ON LOAD

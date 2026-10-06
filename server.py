@@ -611,6 +611,60 @@ def get_us30_telegram_config() -> Dict[str, Any]:
         "sentinel_stats": _us30_sentinel_stats
     }
 
+def format_us30_composite_telegram(data: Dict[str, Any]) -> str:
+    now_utc = datetime.now(timezone.utc)
+    tehran_time = now_utc + timedelta(hours=3, minutes=30)
+    tehran_str = tehran_time.strftime("%H:%M:%S (%Y/%m/%d)")
+    valid_until = (tehran_time + timedelta(minutes=45)).strftime("%H:%M")
+
+    last_price = float(data.get("price") or 51642.4)
+    action = data.get("action", "BUY")
+    action_fa = "🚀 خرید قدرتمند نهادی (STRONG BUY)" if action == "BUY" else ("🔻 فروش قدرتمند نهادی (STRONG SELL)" if action == "SELL" else "⚪ خنثی / بدون پوزیشن")
+    grade = data.get("grade", "A+")
+    score = data.get("score", 90)
+    interval = data.get("interval", "1h")
+    setup_name = data.get("setup_name", "ستاپ دی‌ترید ۱ ساعته نهادی")
+
+    entry_zone = data.get("entry_zone", f"${last_price:,.1f}")
+    sl = float(data.get("stop_loss") or (last_price - 135))
+    sl_pts = data.get("stop_loss_pts", 135)
+    tp1 = float(data.get("tp1") or (last_price + 189))
+    tp1_pts = data.get("tp1_pts", 189)
+    tp2 = float(data.get("tp2") or (last_price + 351))
+    tp2_pts = data.get("tp2_pts", 351)
+    tp3 = float(data.get("tp3") or (last_price + 608))
+    tp3_pts = data.get("tp3_pts", 608)
+    rr = data.get("risk_reward", "1:2.6")
+
+    checklist = data.get("checklist", [])
+    chk_lines = ""
+    for c in checklist:
+        chk_lines += f"\n✅ {c.get('name')}: <code>{c.get('badge')}</code>"
+
+    msg = f"""
+👑 <b>سیگنال تجمیعی ۵ ماژول داو جونز | US30 Smart Money</b>
+━━━━━━━━━━━━━━━━━━━━
+💰 <b>قیمت لحظه‌ای شاخص داوجونز:</b> <code>${last_price:,.1f}</code>
+🧭 <b>سیگنال سیستم:</b> {action_fa}
+⭐ <b>درجه کیفی و اطمینان:</b> <code>Grade {grade}</code> (امتیاز: {score}/100)
+🏛️ <b>تایم‌فریم معاملاتی:</b> <code>{interval} ({setup_name})</code>
+
+⚡ <b>سطوح معاملاتی دقیق (Execution Levels):</b>
+⏰ <b>زمان صدور به وقت ایران 🇮🇷:</b> <code>ساعت {tehran_str}</code>
+⏳ <b>افق اعتبار ستاپ:</b> <code>تا ساعت {valid_until} به وقت ایران</code>
+🔹 <b>محدوده بهینه ورود:</b> <code>{entry_zone}</code>
+🛑 <b>حد ضرر ساختاری (SL):</b> <code>${sl:,.1f} (-{sl_pts} پوینت)</code>
+🎯 <b>تارگت اول (TP1):</b> <code>${tp1:,.1f} (+{tp1_pts} پوینت)</code> <i>[سیو ۵۰٪ سود + ریسک‌فری]</i>
+🎯 <b>تارگت دوم (TP2):</b> <code>${tp2:,.1f} (+{tp2_pts} پوینت)</code> <i>[تارگت ساختاری]</i>
+🎯 <b>تارگت سوم (TP3):</b> <code>${tp3:,.1f} (+{tp3_pts} پوینت)</code> <i>[استخر نقدینگی نهایی]</i>
+⚖️ <b>ریسک به ریوارد:</b> <code>{rr}</code>
+
+🔍 <b>تاییدیه ۵ ماژول متصل به سیگنال:</b>{chk_lines}
+━━━━━━━━━━━━━━━━━━━━
+<i>⚠️ مدیریت سرمایه الزامی است (حداکثر ۱.۵٪ ریسک بر مبنای فرمول کِلی)</i>
+"""
+    return msg.strip()
+
 def format_us30_telegram_signal(data: Dict[str, Any]) -> str:
     now_utc = datetime.now(timezone.utc)
     tehran_time = now_utc + timedelta(hours=3, minutes=30)
@@ -735,8 +789,9 @@ def telegram_send(req: US30TelegramSendRequest):
         if not tok or not chat:
             return JSONResponse(status_code=400, content={"ok": False, "message": "توکن ربات یا شناسه چت تنظیم نشده است."})
 
-        data = engine.build_analysis(interval=req.interval or "1h", bars=180, force=True)
-        msg = format_us30_telegram_signal(data)
+        # Use composite signal with 5 modules
+        sig_data = dow_composite_signal(interval=req.interval or "1h")
+        msg = format_us30_composite_telegram(sig_data)
         res = dispatch_to_telegram_raw(tok, chat, msg)
         _us30_sentinel_stats["signals_sent_total"] += 1
         _us30_sentinel_stats["last_signal_time"] = time.strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -1013,6 +1068,46 @@ def get_dashboard_html() -> str:
 def index():
     return HTMLResponse(get_dashboard_html(), status_code=200)
 
+
+
+def us30_sentinel_auto_loop():
+    time.sleep(30)
+    while True:
+        try:
+            cfg = get_us30_telegram_config()
+            real_tok = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+            real_chat = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+            if not real_tok or not real_chat:
+                if TG_CONFIG_FILE.exists():
+                    try:
+                        with open(TG_CONFIG_FILE, "r", encoding="utf-8") as f:
+                            saved = json.load(f)
+                            real_tok = real_tok or saved.get("bot_token", "")
+                            real_chat = real_chat or saved.get("chat_id", "")
+                    except Exception:
+                        pass
+
+            if real_tok and real_chat and cfg.get("auto_pilot", True):
+                sig_data = dow_composite_signal("1h")
+                score = sig_data.get("score", 0)
+                action = sig_data.get("action", "WAIT")
+                min_score = cfg.get("min_score", 70)
+                if action in ["BUY", "SELL"] and score >= min_score:
+                    now_ts = time.time()
+                    last_sent = _us30_sentinel_stats.get("last_sent_epoch", 0)
+                    interval_secs = cfg.get("interval_minutes", 20) * 60
+                    if now_ts - last_sent > interval_secs:
+                        msg = format_us30_composite_telegram(sig_data)
+                        dispatch_to_telegram_raw(real_tok, real_chat, msg)
+                        _us30_sentinel_stats["signals_sent_total"] += 1
+                        _us30_sentinel_stats["last_sent_epoch"] = now_ts
+                        _us30_sentinel_stats["last_signal_time"] = time.strftime("%Y-%m-%d %H:%M:%S UTC")
+        except Exception as e:
+            _us30_sentinel_stats["last_error"] = str(e)
+        time.sleep(60)
+
+# Start Sentinel auto-pilot thread on server boot
+threading.Thread(target=us30_sentinel_auto_loop, daemon=True).start()
 
 if __name__ == "__main__":
     import uvicorn
