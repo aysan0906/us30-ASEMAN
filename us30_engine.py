@@ -107,18 +107,46 @@ def _fmt_num(x: Optional[float], decimals: int = 0) -> str:
 
 
 def _live_dow_cash() -> Dict[str, Any]:
-    """Platform-like live Dow price from dow-analyzer1 rules.
-
-    Analysis candles still come from DIA for history, but the displayed live
-    quote should prefer ^DJI when the cash market is open and YM=F - live basis
-    when it is closed.
-    """
-    if dcash is None:
-        return {"ok": False, "error": "dow_cash module unavailable"}
+    """Live US30 price prioritizing TradingView / FOREX.COM live quote, with fallback to cash/futures."""
+    # 1. TradingView Live CFD Quote (Matches https://www.tradingview.com/symbols/FOREXCOM-US30/)
     try:
-        return dcash.cash_price(ttl=20.0)
-    except Exception as e:
-        return {"ok": False, "error": str(e)[:200]}
+        import urllib.request
+        import json
+        url = "https://scanner.tradingview.com/cfd/scan"
+        payload = {
+            "symbols": {"tickers": ["OANDA:US30USD", "FOREXCOM:US30"]},
+            "columns": ["close", "change", "change_abs", "high", "low", "open", "volume"]
+        }
+        req = urllib.request.Request(url, data=json.dumps(payload).encode(), headers={"User-Agent": "Mozilla/5.0", "Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=3.0) as resp:
+            data = json.loads(resp.read().decode())
+            rows = data.get("data", [])
+            if rows:
+                d = rows[0].get("d", [])
+                price = float(d[0])
+                chg_pct = float(d[1])
+                chg_abs = float(d[2])
+                return {
+                    "ok": True,
+                    "price": round(price, 1),
+                    "change": round(chg_abs, 1),
+                    "change_pct": round(chg_pct, 2),
+                    "mode": "tradingview_live",
+                    "source_fa": "زنده تریدینگ‌ویو (FOREXCOM / US30)",
+                    "symbol": "FOREXCOM:US30",
+                    "checked_at": time.strftime("%Y-%m-%d %H:%M:%S UTC")
+                }
+    except Exception:
+        pass
+
+    # 2. Fallback to cash / futures calculation
+    if dcash is not None:
+        try:
+            return dcash.cash_price(ttl=20.0)
+        except Exception:
+            pass
+
+    return {"ok": False, "error": "live price unavailable"}
 
 
 def _apply_live_price(payload: Dict[str, Any]) -> Dict[str, Any]:

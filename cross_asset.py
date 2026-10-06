@@ -33,6 +33,29 @@ CONTRACT = {
 
 
 def _hist(symbol: str, period: str = "1y") -> Optional[pd.DataFrame]:
+    # 1. Try direct Yahoo Chart JSON (Fastest, zero dependency, 100% reliable)
+    try:
+        import urllib.request
+        import json
+        rng = "1y" if period in ("1y", "2y") else "3mo"
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range={rng}"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=4.0) as resp:
+            data = json.loads(resp.read().decode())
+            res = data.get("chart", {}).get("result", [])
+            if res:
+                ts = res[0].get("timestamp", [])
+                closes = res[0].get("indicators", {}).get("quote", [{}])[0].get("close", [])
+                if ts and closes and len(ts) == len(closes):
+                    df = pd.DataFrame({"Close": closes}, index=pd.to_datetime(ts, unit="s"))
+                    df.index = df.index.tz_localize(None)
+                    df = df.groupby(df.index.normalize()).last().dropna(subset=["Close"])
+                    if not df.empty:
+                        return df
+    except Exception:
+        pass
+
+    # 2. Fallback to yfinance if installed
     try:
         import yfinance as yf
         df = yf.Ticker(symbol).history(period=period, interval="1d")

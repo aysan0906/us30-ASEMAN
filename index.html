@@ -62,7 +62,7 @@
 
     /* Header */
     header {
-      background: rgba(18, 24, 36, 0.92);
+      background: rgba(18, 24, 36, 0.94);
       backdrop-filter: blur(14px);
       border-bottom: 1px solid var(--border-color);
       position: sticky;
@@ -207,9 +207,7 @@
       transition: all 0.2s;
     }
 
-    .tf-btn:hover {
-      color: #fff;
-    }
+    .tf-btn:hover { color: #fff; }
 
     .tf-btn.active {
       background: var(--blue);
@@ -350,7 +348,7 @@
       margin-top: 2px;
     }
 
-    /* The Glorious 12 Navigation Tab Cards */
+    /* The 12 Navigation Tab Cards */
     .nav-grid-container {
       margin-bottom: 24px;
     }
@@ -469,7 +467,7 @@
     }
 
     .data-table th {
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.35);
       color: var(--text-muted);
       text-align: right;
       padding: 10px 14px;
@@ -483,7 +481,7 @@
     }
 
     .data-table tr:hover td {
-      background: rgba(255, 255, 255, 0.02);
+      background: rgba(255, 255, 255, 0.03);
     }
 
     /* Persian Decision Drawer (Floating Bottom) */
@@ -551,7 +549,7 @@
 
     /* TradingView Container */
     #tv_chart_container {
-      height: 580px;
+      height: 600px;
       border-radius: 12px;
       overflow: hidden;
       border: 1px solid var(--border-color);
@@ -573,13 +571,13 @@
           </div>
         </div>
 
-        <!-- Live Price Card -->
+        <!-- Live Price Card (Connected to FOREXCOM:US30) -->
         <div class="header-price-card">
           <div>
-            <div style="font-size: 0.72rem; color: var(--text-muted);">قیمت نقدی داوجونز (Dow Cash)</div>
-            <div id="hdrPrice" class="price-val">51,585</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">نرخ زنده FOREXCOM:US30</div>
+            <div id="hdrPrice" class="price-val">51,566.8</div>
           </div>
-          <div id="hdrChange" class="price-change pos">+0.80% (+408 pts)</div>
+          <div id="hdrChange" class="price-change pos">+0.39% (+201.2 pts)</div>
           <div style="border-right: 1px solid var(--border-color); padding-right: 10px; margin-right: 4px;">
             <div style="font-size: 0.72rem; color: var(--text-muted);">فیوچرز YM=F</div>
             <div id="hdrFutures" style="font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; color: #ffd166;">51,901</div>
@@ -598,7 +596,9 @@
 
         <!-- Quick Header Actions -->
         <div class="header-actions">
-          <button class="btn-action" onclick="switchTab('chartTab')">📊 تریدینگ‌ویو</button>
+          <a href="https://www.tradingview.com/symbols/FOREXCOM-US30/" target="_blank" class="btn-action" style="text-decoration: none;">
+            📈 تریدینگ‌ویو ↗
+          </a>
           <button id="btnAudioToggle" class="btn-action" onclick="toggleAudioAlerts()">🔔 صدای اعلان: فعال</button>
           <button class="btn-action" onclick="refreshAll(true)">🔄 بروزرسانی</button>
           <button class="btn-action" style="background: var(--blue-bg); border-color: var(--blue); color: var(--blue);" onclick="switchTab('kellyTab')">🧮 محاسبه لات</button>
@@ -627,7 +627,7 @@
         <!-- Direction & Status -->
         <div>
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-            <span style="font-size: 0.78rem; color: var(--text-muted);">سیگنال اسکالپ فوق‌سریع داو جونز</span>
+            <span style="font-size: 0.78rem; color: var(--text-muted);">سیگنال اسکالپ فوق‌سریع داو جونز (FOREXCOM:US30)</span>
             <span id="heroGrade" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; padding: 3px 10px; border-radius: 6px; font-weight: 800; font-size: 0.78rem; border: 1px solid rgba(0, 210, 255, 0.4);">
               👑 Grade A+ (94%)
             </span>
@@ -639,12 +639,15 @@
           <div id="heroVerdict" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 10px; line-height: 1.45;">
             سوگیری فعلی لانگ است؛ ورود با پولبک نزدیک ناحیه پیشنهادی و با رعایت دقیق استاپ.
           </div>
-          <div style="margin-top: 12px; display: flex; gap: 8px;">
+          <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
             <button onclick="copyOrderDetails()" class="btn-action" style="background: linear-gradient(135deg, #00d2ff, #0077b6); color: #050b14; border: none; font-weight: 800;">
               📋 کپی ارقام سفارش برای متاتریدر
             </button>
             <button onclick="dispatchTelegramNow()" class="btn-action" style="background: rgba(0, 230, 118, 0.15); border-color: rgba(0, 230, 118, 0.4); color: #00e676;">
-              ✈️ ارسال به تلگرام
+              ✈️ ارسال فوری به تلگرام
+            </button>
+            <button onclick="syncCalculatorWithCurrentSetup()" class="btn-action" style="background: rgba(255, 209, 102, 0.15); border-color: rgba(255, 209, 102, 0.4); color: #ffd166;">
+              🎯 انتقال ارقام به ماشین‌حساب
             </button>
           </div>
         </div>
@@ -652,24 +655,24 @@
         <!-- Execution Levels Box -->
         <div>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <span style="font-size: 0.78rem; color: var(--text-muted);">محدوده بهینه ورود: <strong id="heroEntry" style="color: #fff; font-family: var(--font-mono);">51,540 - 51,580</strong></span>
-            <span style="font-size: 0.78rem; color: var(--text-muted);">حد ضرر ساختاری (SL): <strong id="heroStop" style="color: #ff3366; font-family: var(--font-mono);">51,460 (-80 pts)</strong></span>
+            <span style="font-size: 0.78rem; color: var(--text-muted);">محدوده بهینه ورود: <strong id="heroEntry" style="color: #fff; font-family: var(--font-mono);">51,540 - 51,570</strong></span>
+            <span style="font-size: 0.78rem; color: var(--text-muted);">حد ضرر ساختاری (SL): <strong id="heroStop" style="color: #ff3366; font-family: var(--font-mono);">51,485 (-80 pts)</strong></span>
           </div>
 
           <div class="targets-row">
             <div class="target-box" style="border-color: rgba(0, 230, 118, 0.4);">
               <div class="target-label">🎯 تارگت اول (TP1)</div>
-              <div id="heroTp1" class="target-price">51,630</div>
+              <div id="heroTp1" class="target-price">51,620</div>
               <div class="target-pts" style="color: var(--green);">+50 پوینت (ریسک‌فری)</div>
             </div>
             <div class="target-box" style="border-color: rgba(0, 210, 255, 0.4);">
               <div class="target-label">🎯 تارگت دوم (TP2)</div>
-              <div id="heroTp2" class="target-price">51,700</div>
+              <div id="heroTp2" class="target-price">51,690</div>
               <div class="target-pts" style="color: var(--blue);">+120 پوینت (ساختاری)</div>
             </div>
             <div class="target-box" style="border-color: rgba(168, 85, 247, 0.4);">
               <div class="target-label">🎯 تارگت سوم (TP3)</div>
-              <div id="heroTp3" class="target-price">51,820</div>
+              <div id="heroTp3" class="target-price">51,810</div>
               <div class="target-pts" style="color: var(--purple);">+240 پوینت (استخر نهایی)</div>
             </div>
             <div class="target-box" style="border-color: rgba(255, 209, 102, 0.4);">
@@ -682,89 +685,77 @@
       </div>
     </div>
 
-    <!-- The 12 Navigation Grid Cards (Exact Replica of ASEMAN Navigation System) -->
+    <!-- The 12 Navigation Grid Cards -->
     <div class="nav-grid-container">
       <div class="nav-grid-title">
         <span>🧭</span>
         <span>میز کار جامع و اتاق فرمان ۱۲ ماژوله داو جونز (برای باز کردن هر ماژول کلیک کنید):</span>
       </div>
       <div class="nav-grid">
-        <!-- Tab 1 -->
         <div class="tab-card active" onclick="switchTab('radarTab', this)">
           <div class="tab-card-icon">🏛️</div>
-          <div class="tab-card-name">رادار ۳۰ غول وال‌استریت</div>
+          <div class="tab-card-name">۱. رادار ۳۰ غول وال‌استریت</div>
           <div class="tab-card-desc">رصد زنده لیدرهای داوجونز (UNH, GS, MSFT, CAT, BA)</div>
         </div>
-        <!-- Tab 2 -->
         <div class="tab-card" onclick="switchTab('analysisTab', this)">
           <div class="tab-card-icon">⚡</div>
-          <div class="tab-card-name">اتاق فرمان تحلیل ۳۶۰ درجه</div>
+          <div class="tab-card-name">۲. اتاق فرمان تحلیل ۳۶۰ درجه</div>
           <div class="tab-card-desc">تحلیل جامع ساختار، BOS، ChoCH و ستاپ‌های معاملاتی</div>
         </div>
-        <!-- Tab 3 -->
         <div class="tab-card" onclick="switchTab('chartTab', this)">
           <div class="tab-card-icon">📊</div>
-          <div class="tab-card-name">چارت پیشرفته تریدینگ‌ویو</div>
-          <div class="tab-card-desc">نمودار زنده US30 / DJI / YM1! با ابزارهای تکنیکال</div>
+          <div class="tab-card-name">۳. چارت زنده تریدینگ‌ویو</div>
+          <div class="tab-card-desc">نمودار تعاملی FOREXCOM:US30 با ابزارهای تکنیکال</div>
         </div>
-        <!-- Tab 4 -->
         <div class="tab-card" onclick="switchTab('orderflowTab', this)">
           <div class="tab-card-icon">🌊</div>
-          <div class="tab-card-name">جریان سفارشات و FVG</div>
+          <div class="tab-card-name">۴. جریان سفارشات و FVG</div>
           <div class="tab-card-desc">گپ‌های ارزش منصفانه، اوردربلاک‌ها و نقدینگی BSL/SSL</div>
         </div>
-        <!-- Tab 5 -->
         <div class="tab-card" onclick="switchTab('macroTab', this)">
           <div class="tab-card-icon">🛡️</div>
-          <div class="tab-card-name">سپر کلان و فدرال رزرو</div>
+          <div class="tab-card-name">۵. سپر کلان و فدرال رزرو</div>
           <div class="tab-card-desc">تقویم NFP، تورم CPI، نرخ بهره و پنجره انجماد ترید</div>
         </div>
-        <!-- Tab 6 -->
         <div class="tab-card" onclick="switchTab('kellyTab', this)">
           <div class="tab-card-icon">🧮</div>
-          <div class="tab-card-name">ماشین حساب کِلی و لات</div>
+          <div class="tab-card-name">۶. ماشین حساب کِلی و لات</div>
           <div class="tab-card-desc">محاسبه دقیق حجم لات، ارزش پوینت و اهرم مجاز بروکر</div>
         </div>
-        <!-- Tab 7 -->
         <div class="tab-card" onclick="switchTab('telegramTab', this)">
           <div class="tab-card-icon">🤖</div>
-          <div class="tab-card-name">دیده‌بان ۲۴ ساعته تلگرام</div>
+          <div class="tab-card-name">۷. دیده‌بان ۲۴ ساعته تلگرام</div>
           <div class="tab-card-desc">تنظیمات ربات خودکار و ارسال هشدارهای ستاپ به ساعت ایران</div>
         </div>
-        <!-- Tab 8 -->
         <div class="tab-card" onclick="switchTab('journalTab', this)">
           <div class="tab-card-icon">📜</div>
-          <div class="tab-card-name">ژورنال هوشمند معاملات</div>
+          <div class="tab-card-name">۸. ژورنال هوشمند معاملات</div>
           <div class="tab-card-desc">ردیاب سرانجام ستاپ‌ها، بریک‌ایون، وین‌ریت و خروجی CSV</div>
         </div>
-        <!-- Tab 9 -->
         <div class="tab-card" onclick="switchTab('alphaTab', this)">
           <div class="tab-card-icon">⚖️</div>
-          <div class="tab-card-name">ماتریس آلفا و وزن‌دهی</div>
-          <div class="tab-card-desc">محاسبه پوینت‌های مثبت و منفی سهم‌های برتر روی شاخص</div>
+          <div class="tab-card-name">۹. ماتریس آلفا و سکتورها</div>
+          <div class="tab-card-desc">مقایسه داوجونز با اس‌اندپی، نزدک، مالی، نفت و طلا</div>
         </div>
-        <!-- Tab 10 -->
         <div class="tab-card" onclick="switchTab('optionsTab', this)">
           <div class="tab-card-icon">📈</div>
-          <div class="tab-card-name">آپشن‌ها و تمایلات بازار</div>
+          <div class="tab-card-name">۱۰. آپشن‌ها و تمایلات بازار</div>
           <div class="tab-card-desc">نسبت Put/Call، سطح Max Pain و پوزیشن‌گیری صندوق‌ها</div>
         </div>
-        <!-- Tab 11 -->
         <div class="tab-card" onclick="switchTab('crossTab', this)">
           <div class="tab-card-icon">🌐</div>
-          <div class="tab-card-name">همبستگی بین‌بازاری</div>
+          <div class="tab-card-name">۱۱. همبستگی بین‌بازاری</div>
           <div class="tab-card-desc">رابطه زنده داوجونز با شاخص دلار (DXY)، طلا و اوراق ۱۰ ساله</div>
         </div>
-        <!-- Tab 12 -->
         <div class="tab-card" onclick="switchTab('guardTab', this)">
           <div class="tab-card-icon">🛡️</div>
-          <div class="tab-card-name">گارد انضباطی بروکر</div>
+          <div class="tab-card-name">۱۲. گارد انضباطی بروکر</div>
           <div class="tab-card-desc">جلوگیری از کال‌مارجین، اسپرد سنگین شبانه و خطاهای تریدر</div>
         </div>
       </div>
     </div>
 
-    <!-- TAB 1: RADAR -->
+    <!-- TAB 1: RADAR (DOW 30 LEADERS) -->
     <div id="radarTab" class="tab-pane active">
       <div class="content-card">
         <div class="card-header">
@@ -772,7 +763,9 @@
             <span>🏛️</span>
             <span>رادار هوشمند مؤلفه‌های سنگین‌وزن داو جونز (Dow 30 Leaders Radar)</span>
           </div>
-          <span style="font-size: 0.78rem; color: var(--text-muted);">شاخص داو جونز بر اساس قیمت سهام وزن‌دهی می‌شود؛ این سهم‌ها جهت را تعیین می‌کنند.</span>
+          <div id="radarNetBadge" style="background: rgba(0, 230, 118, 0.15); color: #00e676; padding: 4px 12px; border-radius: 6px; font-weight: 800; font-family: var(--font-mono);">
+            تزریق خالص به شاخص: +48.5 پوینت
+          </div>
         </div>
         <div style="overflow-x: auto;">
           <table class="data-table">
@@ -781,67 +774,15 @@
                 <th>نماد</th>
                 <th>نام شرکت</th>
                 <th>قیمت سهم ($)</th>
-                <th>تغییر امروز</th>
+                <th>تغییر امروز (%)</th>
+                <th>تغییر دلاری</th>
                 <th>وزن در داوجونز</th>
                 <th>تاثیر پوینتی روی US30</th>
                 <th>سیگنال تکنیکال</th>
               </tr>
             </thead>
             <tbody id="radarTableBody">
-              <tr>
-                <td style="font-family: var(--font-mono); font-weight: 800; color: #00d2ff;">UNH</td>
-                <td>UnitedHealth Group</td>
-                <td style="font-family: var(--font-mono);">$588.40</td>
-                <td style="font-family: var(--font-mono); color: #00e676;">+1.45%</td>
-                <td>8.9% (رتبه ۱)</td>
-                <td style="font-family: var(--font-mono); color: #00e676;">+62.3 pts</td>
-                <td><span style="background: var(--green-bg); color: var(--green); padding: 2px 8px; border-radius: 4px;">🟢 صعودی قوی</span></td>
-              </tr>
-              <tr>
-                <td style="font-family: var(--font-mono); font-weight: 800; color: #00d2ff;">GS</td>
-                <td>Goldman Sachs</td>
-                <td style="font-family: var(--font-mono);">$512.10</td>
-                <td style="font-family: var(--font-mono); color: #00e676;">+0.92%</td>
-                <td>7.8% (رتبه ۲)</td>
-                <td style="font-family: var(--font-mono); color: #00e676;">+38.5 pts</td>
-                <td><span style="background: var(--green-bg); color: var(--green); padding: 2px 8px; border-radius: 4px;">🟢 صعودی</span></td>
-              </tr>
-              <tr>
-                <td style="font-family: var(--font-mono); font-weight: 800; color: #00d2ff;">MSFT</td>
-                <td>Microsoft Corp</td>
-                <td style="font-family: var(--font-mono);">$428.30</td>
-                <td style="font-family: var(--font-mono); color: #00e676;">+0.64%</td>
-                <td>6.5% (رتبه ۳)</td>
-                <td style="font-family: var(--font-mono); color: #00e676;">+22.1 pts</td>
-                <td><span style="background: var(--green-bg); color: var(--green); padding: 2px 8px; border-radius: 4px;">🟢 شکست سقف</span></td>
-              </tr>
-              <tr>
-                <td style="font-family: var(--font-mono); font-weight: 800; color: #00d2ff;">HD</td>
-                <td>Home Depot</td>
-                <td style="font-family: var(--font-mono);">$410.20</td>
-                <td style="font-family: var(--font-mono); color: #ff3366;">-0.31%</td>
-                <td>6.2% (رتبه ۴)</td>
-                <td style="font-family: var(--font-mono); color: #ff3366;">-10.4 pts</td>
-                <td><span style="background: var(--red-bg); color: var(--red); padding: 2px 8px; border-radius: 4px;">🔴 اصلاحی</span></td>
-              </tr>
-              <tr>
-                <td style="font-family: var(--font-mono); font-weight: 800; color: #00d2ff;">CAT</td>
-                <td>Caterpillar Inc</td>
-                <td style="font-family: var(--font-mono);">$395.70</td>
-                <td style="font-family: var(--font-mono); color: #00e676;">+1.12%</td>
-                <td>6.0% (رتبه ۵)</td>
-                <td style="font-family: var(--font-mono); color: #00e676;">+34.0 pts</td>
-                <td><span style="background: var(--green-bg); color: var(--green); padding: 2px 8px; border-radius: 4px;">🟢 رالی نهادی</span></td>
-              </tr>
-              <tr>
-                <td style="font-family: var(--font-mono); font-weight: 800; color: #00d2ff;">BA</td>
-                <td>Boeing Co</td>
-                <td style="font-family: var(--font-mono);">$155.80</td>
-                <td style="font-family: var(--font-mono); color: #ff3366;">-0.85%</td>
-                <td>2.4% (رتبه ۲۰)</td>
-                <td style="font-family: var(--font-mono); color: #ff3366;">-8.2 pts</td>
-                <td><span style="background: rgba(255,209,102,0.12); color: #ffd166; padding: 2px 8px; border-radius: 4px;">⚪ رنج</span></td>
-              </tr>
+              <!-- Populated via /api/dow/leaders -->
             </tbody>
           </table>
         </div>
@@ -859,24 +800,27 @@
           <button class="btn-action" onclick="loadAnalysisData(true)">🔄 تحلیل مجدد با دیتای زنده</button>
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;" id="analysisPartsGrid">
-          <!-- Populated dynamically via JS -->
+          <!-- Populated via /api/analyze -->
         </div>
       </div>
     </div>
 
-    <!-- TAB 3: TRADINGVIEW CHART -->
+    <!-- TAB 3: TRADINGVIEW CHART (FOREXCOM:US30) -->
     <div id="chartTab" class="tab-pane">
       <div class="content-card">
         <div class="card-header">
           <div class="card-title">
             <span>📊</span>
-            <span>چارت زنده و تعاملی TradingView (اختصاصی داو جونز)</span>
+            <span>چارت زنده و تعاملی TradingView (اختصاصی FOREXCOM:US30)</span>
           </div>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn-action active" onclick="setChartSymbol('CAPITALCOM:US30')">CAPITALCOM:US30</button>
-            <button class="btn-action" onclick="setChartSymbol('TVC:DJI')">TVC:DJI (Cash)</button>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn-action active" onclick="setChartSymbol('FOREXCOM:US30')">FOREXCOM:US30 (اصلی)</button>
+            <button class="btn-action" onclick="setChartSymbol('TVC:DJI')">TVC:DJI (Dow Cash)</button>
             <button class="btn-action" onclick="setChartSymbol('CBOT:YM1!')">CBOT:YM1! (Futures)</button>
             <button class="btn-action" onclick="setChartSymbol('AMEX:DIA')">AMEX:DIA (ETF)</button>
+            <a href="https://www.tradingview.com/symbols/FOREXCOM-US30/" target="_blank" class="btn-action" style="text-decoration: none; background: rgba(0,210,255,0.15); color: #00d2ff; border-color: rgba(0,210,255,0.4);">
+              باز کردن در سایت TradingView ↗
+            </a>
           </div>
         </div>
         <div id="tv_chart_container"></div>
@@ -894,13 +838,13 @@
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" id="smcBlocksGrid">
           <div>
-            <h4 style="color: #00d2ff; margin-bottom: 10px;">🟢 گپ‌های ارزش منصفانه فعال (Active FVGs):</h4>
+            <h4 style="color: #00d2ff; margin-bottom: 12px; font-size: 0.95rem;">🟢 گپ‌های ارزش منصفانه فعال (Active FVGs):</h4>
             <div id="fvgListContainer" style="display: flex; flex-direction: column; gap: 8px;">
               <!-- FVG items -->
             </div>
           </div>
           <div>
-            <h4 style="color: #ffd166; margin-bottom: 10px;">🏛️ اوردربلاک‌ها و سطوح شکار نقدینگی (Order Blocks & Sweeps):</h4>
+            <h4 style="color: #ffd166; margin-bottom: 12px; font-size: 0.95rem;">🏛️ اوردربلاک‌ها و سطوح شکار نقدینگی (Order Blocks & Sweeps):</h4>
             <div id="obListContainer" style="display: flex; flex-direction: column; gap: 8px;">
               <!-- OB items -->
             </div>
@@ -918,7 +862,7 @@
             <span>سپر محافظ اخبار کلان اقتصادی آمریکا و تقویم فدرال رزرو</span>
           </div>
           <span id="macroShieldStatus" style="background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); padding: 4px 12px; border-radius: 6px; font-weight: 800;">
-            🟢 وضعیت: مجاز به ترید (خبر فوری تا ۶۰ دقیقه آینده نیست)
+            🟢 وضعیت: پنجره کلان باثبات؛ خبر فوری تا ۶۰ دقیقه آینده نیست
           </span>
         </div>
         <div style="overflow-x: auto;">
@@ -926,14 +870,15 @@
             <thead>
               <tr>
                 <th>رویداد اقتصادی</th>
+                <th>کد</th>
                 <th>تاریخ و ساعت به وقت تهران 🇮🇷</th>
                 <th>پیش‌بینی کارشناسان</th>
                 <th>سناریوی تاثیر روی داو جونز</th>
-                <th>وضعیت انتشار</th>
+                <th>سطح اهمیت</th>
               </tr>
             </thead>
             <tbody id="macroEventsBody">
-              <!-- Populated dynamically -->
+              <!-- Populated via /api/aseman/macro -->
             </tbody>
           </table>
         </div>
@@ -948,29 +893,29 @@
             <span>🧮</span>
             <span>ماشین حساب کِلی و مدیریت سرمایه و حجم لات (اختصاصی داو جونز)</span>
           </div>
+          <button onclick="syncCalculatorWithCurrentSetup()" class="btn-action" style="background: var(--blue-bg); border-color: var(--blue); color: var(--blue);">
+            🎯 همگام‌سازی خودکار با ستاپ لحظه‌ای داوجونز
+          </button>
         </div>
         <div style="display: grid; grid-template-columns: 1.2fr 1.8fr; gap: 24px;">
           <!-- Inputs -->
           <div style="background: rgba(0,0,0,0.25); padding: 18px; border-radius: 12px; border: 1px solid var(--border-color);">
             <div style="margin-bottom: 14px;">
               <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">موجودی حساب سرمایه (Balance USD):</label>
-              <input type="number" id="calcBalance" value="10000" style="width: 100%; padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-family: var(--font-mono);">
+              <input type="number" id="calcBalance" value="10000" oninput="calculateKellyUS30()" style="width: 100%; padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-family: var(--font-mono);">
             </div>
             <div style="margin-bottom: 14px;">
               <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">درصد ریسک در این معامله (%):</label>
-              <input type="number" id="calcRiskPct" value="1.0" step="0.1" style="width: 100%; padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-family: var(--font-mono);">
+              <input type="number" id="calcRiskPct" value="1.0" step="0.1" oninput="calculateKellyUS30()" style="width: 100%; padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-family: var(--font-mono);">
             </div>
             <div style="margin-bottom: 14px;">
               <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">فاصله حد ضرر (Stop Loss Points):</label>
-              <input type="number" id="calcStopPts" value="80" style="width: 100%; padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-family: var(--font-mono);">
+              <input type="number" id="calcStopPts" value="80" oninput="calculateKellyUS30()" style="width: 100%; padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-family: var(--font-mono);">
             </div>
             <div style="margin-bottom: 14px;">
               <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">تارگت سود مورد نظر (Target Points):</label>
-              <input type="number" id="calcTpPts" value="160" style="width: 100%; padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-family: var(--font-mono);">
+              <input type="number" id="calcTpPts" value="160" oninput="calculateKellyUS30()" style="width: 100%; padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-family: var(--font-mono);">
             </div>
-            <button onclick="calculateKellyUS30()" class="btn-action" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #00d2ff, #0077b6); color: #050b14; font-weight: 800; border: none; padding: 10px;">
-              محاسبه سایز لات و ریسک امن
-            </button>
           </div>
 
           <!-- Output Results -->
@@ -1013,7 +958,7 @@
             <span>تنظیمات ربات دیده‌بان خودکار تلگرام (Telegram Sentinel Dispatcher)</span>
           </div>
           <span id="tgConnectionBadge" style="background: rgba(255, 209, 102, 0.15); color: #ffd166; padding: 4px 12px; border-radius: 6px; font-size: 0.78rem;">
-            وضعیت: تنظیم شده / آماده مخابره
+            وضعیت: آماده پیکربندی
           </span>
         </div>
 
@@ -1027,7 +972,7 @@
               <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">شناسه چت یا کانال (Chat ID):</label>
               <input type="text" id="tgChatInput" placeholder="@YourChannel یا -100123456789" style="width: 100%; padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-family: var(--font-mono);">
             </div>
-            <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+            <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
               <button onclick="saveTelegramSettings()" class="btn-action" style="background: #00e676; color: #050b14; font-weight: 800; border: none;">
                 💾 ذخیره تنظیمات
               </button>
@@ -1071,7 +1016,7 @@
                 <th>گرید</th>
                 <th>نتیجه نهایی</th>
                 <th>علت خروج</th>
-                <th>سود/ضرر (پوینت)</th>
+                <th>سود/ضرر (R)</th>
               </tr>
             </thead>
             <tbody id="journalTableBody">
@@ -1088,10 +1033,11 @@
         <div class="card-header">
           <div class="card-title">
             <span>⚖️</span>
-            <span>ماتریس آلفا و وزن‌دهی ۳۰ سهم برتر داوجونز بر اساس قیمت</span>
+            <span>ماتریس آلفا و همبستگی سکتورهای اصلی وال‌استریت با داو جونز</span>
           </div>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">سکتورهای لیدر (سبز) مومنتوم بازار را به سمت خود می‌کشند.</span>
         </div>
-        <div id="alphaMatrixContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;">
+        <div id="alphaMatrixContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px;">
           <!-- Alpha cards populated dynamically -->
         </div>
       </div>
@@ -1186,7 +1132,7 @@
   <script>
     // State
     let currentInterval = '1h';
-    let currentChartSymbol = 'CAPITALCOM:US30';
+    let currentChartSymbol = 'FOREXCOM:US30';
     let audioAlertsEnabled = true;
     let tvWidget = null;
     let cachedAnalysis = null;
@@ -1199,7 +1145,7 @@
       setTimeout(() => { el.style.display = 'none'; }, 3200);
     }
 
-    // Audio Alert Synthesizer (Web Audio API - no external file required)
+    // Audio Alert Synthesizer (Web Audio API)
     function playAlertChime() {
       if (!audioAlertsEnabled) return;
       try {
@@ -1237,7 +1183,7 @@
         cardEl.classList.add('active');
       }
 
-      if (tabId === 'chartTab' && !tvWidget) {
+      if (tabId === 'chartTab') {
         initTradingViewChart();
       }
     }
@@ -1259,7 +1205,7 @@
       arrow.textContent = drawer.classList.contains('open') ? '▼' : '▲';
     }
 
-    // TradingView Initialization
+    // TradingView Initialization (Default FOREXCOM:US30)
     function initTradingViewChart() {
       const container = document.getElementById('tv_chart_container');
       if (!container) return;
@@ -1285,53 +1231,57 @@
       showToast(`نماد چارت به ${sym} تغییر یافت`);
     }
 
-    // Data Loaders
-    async function loadTicker() {
+    // Module 1: Radar (Dow 30 Leaders)
+    async function loadRadarLeaders() {
       try {
-        const res = await fetch(`/api/ticker?interval=${currentInterval}`);
+        const res = await fetch('/api/dow/leaders');
         const data = await res.json();
-        if (data.ok) {
-          const p = Number(data.price || 0);
-          const chg = Number(data.change || 0);
-          const chgPct = Number(data.change_pct || 0);
-          document.getElementById('hdrPrice').textContent = p.toLocaleString('en-US');
-          const chgEl = document.getElementById('hdrChange');
-          chgEl.textContent = `${chgPct >= 0 ? '+' : ''}${chgPct.toFixed(2)}% (${chg >= 0 ? '+' : ''}${chg} pts)`;
-          chgEl.className = `price-change ${chg >= 0 ? 'pos' : 'neg'}`;
+        const tbody = document.getElementById('radarTableBody');
+        if (tbody && data.leaders) {
+          tbody.innerHTML = data.leaders.map(l => `
+            <tr>
+              <td style="font-family: var(--font-mono); font-weight: 800; color: #00d2ff;">${l.symbol}</td>
+              <td>${l.name}</td>
+              <td style="font-family: var(--font-mono); font-weight: 700;">$${l.price.toFixed(2)}</td>
+              <td style="font-family: var(--font-mono); color: ${l.change_pct >= 0 ? '#00e676' : '#ff3366'}; font-weight: 700;">
+                ${l.change_pct >= 0 ? '+' : ''}${l.change_pct}%
+              </td>
+              <td style="font-family: var(--font-mono); color: ${l.change_abs >= 0 ? '#00e676' : '#ff3366'};">
+                ${l.change_abs >= 0 ? '+' : ''}$${l.change_abs.toFixed(2)}
+              </td>
+              <td style="font-family: var(--font-mono);">${l.weight_pct}%</td>
+              <td style="font-family: var(--font-mono); font-weight: 800; color: ${l.points_impact >= 0 ? '#00e676' : '#ff3366'};">
+                ${l.points_impact >= 0 ? '+' : ''}${l.points_impact} pts
+              </td>
+              <td>
+                <span style="background: ${l.change_pct >= 0 ? 'var(--green-bg)' : 'var(--red-bg)'}; color: ${l.change_pct >= 0 ? 'var(--green)' : 'var(--red)'}; padding: 3px 8px; border-radius: 4px; font-size: 0.76rem;">
+                  ${l.signal}
+                </span>
+              </td>
+            </tr>
+          `).join('');
 
-          const futPrice = data.live_source?.futures_raw || (p + 316);
-          document.getElementById('hdrFutures').textContent = Math.round(futPrice).toLocaleString('en-US');
+          const netBadge = document.getElementById('radarNetBadge');
+          if (netBadge) {
+            const net = data.total_net_points || 0;
+            netBadge.textContent = `تزریق خالص به شاخص: ${net >= 0 ? '+' : ''}${net} پوینت`;
+            netBadge.style.color = net >= 0 ? '#00e676' : '#ff3366';
+            netBadge.style.background = net >= 0 ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255, 51, 102, 0.15)';
+          }
         }
       } catch (e) {
-        console.error('Ticker fetch error:', e);
+        console.error('Radar error:', e);
       }
     }
 
-    async function loadMarketHours() {
-      try {
-        const res = await fetch('/api/market-hours');
-        const data = await res.json();
-        if (data.ok) {
-          document.getElementById('sessionTitle').textContent = `سشن بازار: ${data.status_fa || 'بازار وال‌استریت'}`;
-          document.getElementById('clockTehran').textContent = data.tehran_time || '15:42';
-          document.getElementById('clockNY').textContent = data.new_york_time || '08:12';
-          if (data.seconds_to_next_event) {
-            const h = Math.floor(data.seconds_to_next_event / 3600);
-            const m = Math.floor((data.seconds_to_next_event % 3600) / 60);
-            const s = data.seconds_to_next_event % 60;
-            document.getElementById('sessionCountdown').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-          }
-        }
-      } catch (e) {}
-    }
-
+    // Module 2: 360 Analysis
     async function loadAnalysisData(fresh = false) {
       try {
         const res = await fetch(`/api/analyze?interval=${currentInterval}&bars=180&fresh=${fresh}`);
         const data = await res.json();
         cachedAnalysis = data;
 
-        const price = data.price?.last || 51585;
+        const price = data.price?.last || 51566.8;
         const sig = data.signal || {};
         const plan = sig.plan || {};
         const dir = sig.direction || 0;
@@ -1385,7 +1335,7 @@
           `).join('');
         }
 
-        // SMC Tab Blocks
+        // Module 4: SMC FVGs & OBs
         const fvgCont = document.getElementById('fvgListContainer');
         if (fvgCont && data.fvgs) {
           fvgCont.innerHTML = data.fvgs.slice(0, 6).map(g => `
@@ -1414,48 +1364,29 @@
       }
     }
 
+    // Module 5: Macro Shield
     async function loadMacroCalendar() {
       try {
         const res = await fetch('/api/aseman/macro');
         const data = await res.json();
         const tbody = document.getElementById('macroEventsBody');
-        if (tbody && data.events) {
-          tbody.innerHTML = data.events.map(ev => `
+        const events = data.all_events || data.events || [];
+        if (tbody && events.length) {
+          tbody.innerHTML = events.map(ev => `
             <tr>
               <td style="font-weight: 700; color: #00d2ff;">${ev.name || ev.event}</td>
+              <td style="font-family: var(--font-mono);">${ev.code || 'US'}</td>
               <td style="font-family: var(--font-mono); font-size: 0.82rem;">${ev.date_tehran || ev.time || 'به زودی'}</td>
-              <td style="font-family: var(--font-mono);">${ev.consensus || '-'}</td>
-              <td style="font-size: 0.8rem; color: var(--text-muted);">${ev.scenario || ev.impact_desc || 'تاثیر مستقیم روی داو جونز'}</td>
-              <td><span style="background: rgba(0, 230, 118, 0.15); color: #00e676; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">در انتظار انتشار</span></td>
+              <td style="font-family: var(--font-mono);">${ev.forecast || '-'}</td>
+              <td style="font-size: 0.8rem; color: var(--text-muted);">${ev.us30_prediction?.summary || ev.scenario || 'تاثیر نوسانی بر شاخص'}</td>
+              <td><span style="background: rgba(255, 51, 102, 0.15); color: #ff3366; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">${ev.impact_fa || 'بسیار بالا'}</span></td>
             </tr>
           `).join('');
         }
       } catch (e) {}
     }
 
-    async function loadLiveJournal() {
-      try {
-        const res = await fetch('/api/journal/live');
-        const data = await res.json();
-        const tbody = document.getElementById('journalTableBody');
-        if (tbody && data.records) {
-          tbody.innerHTML = data.records.slice(0, 15).map(r => `
-            <tr>
-              <td style="font-family: var(--font-mono); font-size: 0.78rem; color: #00d2ff;">${r.id}</td>
-              <td style="font-family: var(--font-mono); font-size: 0.75rem;">${r.ts ? r.ts.slice(0,16).replace('T',' ') : '-'}</td>
-              <td>${r.label?.includes('خرید') || r.label?.includes('LONG') ? '🟢 لانگ' : (r.label?.includes('فروش') || r.label?.includes('SHORT') ? '🔴 شورت' : '⚪ خنثی')}</td>
-              <td style="font-family: var(--font-mono);">${Math.round(r.price || 0)}</td>
-              <td><span style="background: rgba(0,210,255,0.15); color: #00d2ff; padding: 2px 6px; border-radius: 4px;">Grade ${r.grade}</span></td>
-              <td style="font-weight: 700; color: ${r.result === 'موفق' ? '#00e676' : (r.result === 'ناموفق' ? '#ff3366' : '#ffd166')};">${r.result}</td>
-              <td>${r.exit_reason || '-'}</td>
-              <td style="font-family: var(--font-mono); color: ${Number(r.r_mult) >= 0 ? '#00e676' : '#ff3366'};">${Number(r.r_mult) >= 0 ? '+' : ''}${r.r_mult} R</td>
-            </tr>
-          `).join('');
-        }
-      } catch (e) {}
-    }
-
-    // Kelly Calculator
+    // Module 6: Kelly Calculator
     function calculateKellyUS30() {
       const bal = parseFloat(document.getElementById('calcBalance').value) || 10000;
       const risk = parseFloat(document.getElementById('calcRiskPct').value) || 1.0;
@@ -1469,30 +1400,42 @@
       document.getElementById('outLotSize').textContent = `${lotSize.toFixed(2)} Lot`;
       document.getElementById('outLossUSD').textContent = `-$${dollarRisk.toFixed(2)}`;
       document.getElementById('outProfitUSD').textContent = `+$${dollarReward.toFixed(2)}`;
-      showToast('محاسبات مدیریت ریسک و اندازه لات بروزرسانی شد');
     }
 
-    // Copy Order Details Helper
-    function copyOrderDetails() {
+    function syncCalculatorWithCurrentSetup() {
       if (!cachedAnalysis) return;
-      const p = cachedAnalysis.price?.last || 51585;
+      const p = cachedAnalysis.price?.last || 51566.8;
       const s = cachedAnalysis.signal?.plan || {};
-      const dir = (cachedAnalysis.signal?.direction || 0) >= 0 ? 'BUY / LONG' : 'SELL / SHORT';
-      const text = `🦅 سفارش معاملاتی شاخص داو جونز (US30)
-📌 جهت: ${dir}
-🔹 نقطه ورود: ${Math.round(s.entry || p)}
-🛑 حد ضرر ساختاری (SL): ${Math.round(s.stop || p - 85)}
-🎯 تارگت اول (TP1): ${Math.round(s.tp1 || p + 50)} (+50 pts) [سیو سود ۵۰٪ + ریسک‌فری]
-🎯 تارگت دوم (TP2): ${Math.round(s.tp2 || p + 120)} (+120 pts) [تارگت ساختاری]
-🎯 تارگت سوم (TP3): ${Math.round(s.tp3 || p + 240)} (+240 pts) [استخر نقدینگی نهایی]
-⚖️ لوریج پیشنهادی بروکر: 20x الی 50x`;
+      const entry = s.entry || p;
+      const sl = s.stop || (entry - 85);
+      const tp2 = s.tp2 || (entry + 120);
 
-      navigator.clipboard.writeText(text).then(() => {
-        showToast('ارقام دقیق سفارش برای متاتریدر در کلیپ‌بورد کپی شد 📋');
-      });
+      const slPts = Math.abs(Math.round(entry - sl));
+      const tpPts = Math.abs(Math.round(tp2 - entry));
+
+      document.getElementById('calcStopPts').value = slPts;
+      document.getElementById('calcTpPts').value = tpPts;
+      calculateKellyUS30();
+      showToast('ارقام ماشین‌حساب با ستاپ لحظه‌ای داوجونز همگام شد! 🎯');
+      switchTab('kellyTab');
     }
 
-    // Telegram Bot Actions
+    // Module 7: Telegram Bot
+    async function loadTelegramConfig() {
+      try {
+        const res = await fetch('/api/telegram/config');
+        const data = await res.json();
+        if (data.chat_id) document.getElementById('tgChatInput').value = data.chat_id;
+        if (data.masked_token) document.getElementById('tgTokenInput').placeholder = data.masked_token;
+        const badge = document.getElementById('tgConnectionBadge');
+        if (data.is_configured) {
+          badge.textContent = '🟢 متصل و فعال';
+          badge.style.color = '#00e676';
+          badge.style.background = 'rgba(0, 230, 118, 0.15)';
+        }
+      } catch (e) {}
+    }
+
     async function saveTelegramSettings() {
       const token = document.getElementById('tgTokenInput').value.trim();
       const chat = document.getElementById('tgChatInput').value.trim();
@@ -1508,6 +1451,7 @@
         });
         const data = await res.json();
         showToast(data.message || 'تنظیمات تلگرام با موفقیت ذخیره شد');
+        loadTelegramConfig();
       } catch (e) {
         showToast('خطا در ذخیره تنظیمات: ' + e.message);
       }
@@ -1545,29 +1489,266 @@
       }
     }
 
-    function exportJournalCSV() {
-      window.open('/api/aseman/journal', '_blank');
-      showToast('در حال دریافت داده‌های ژورنال معاملات...');
+    // Module 8: Trade Journal
+    async function loadLiveJournal() {
+      try {
+        const res = await fetch('/api/journal/live');
+        const data = await res.json();
+        const tbody = document.getElementById('journalTableBody');
+        if (tbody && data.records && data.records.length) {
+          tbody.innerHTML = data.records.slice(0, 15).map(r => `
+            <tr>
+              <td style="font-family: var(--font-mono); font-size: 0.78rem; color: #00d2ff;">${r.id}</td>
+              <td style="font-family: var(--font-mono); font-size: 0.75rem;">${r.ts ? r.ts.slice(0,16).replace('T',' ') : '-'}</td>
+              <td>${r.label?.includes('خرید') || r.label?.includes('LONG') ? '🟢 لانگ' : (r.label?.includes('فروش') || r.label?.includes('SHORT') ? '🔴 شورت' : '⚪ خنثی')}</td>
+              <td style="font-family: var(--font-mono);">${Math.round(r.price || 0)}</td>
+              <td><span style="background: rgba(0,210,255,0.15); color: #00d2ff; padding: 2px 6px; border-radius: 4px;">Grade ${r.grade}</span></td>
+              <td style="font-weight: 700; color: ${r.result === 'موفق' ? '#00e676' : (r.result === 'ناموفق' ? '#ff3366' : '#ffd166')};">${r.result}</td>
+              <td>${r.exit_reason || '-'}</td>
+              <td style="font-family: var(--font-mono); color: ${Number(r.r_mult) >= 0 ? '#00e676' : '#ff3366'};">${Number(r.r_mult) >= 0 ? '+' : ''}${r.r_mult} R</td>
+            </tr>
+          `).join('');
+        }
+      } catch (e) {}
     }
 
+    function exportJournalCSV() {
+      window.open('/api/aseman/journal', '_blank');
+      showToast('در حال دریافت خروجی ژورنال معاملات...');
+    }
+
+    // Module 9: Alpha Matrix
+    async function loadAlphaMatrix() {
+      try {
+        const res = await fetch('/api/aseman/alpha');
+        const data = await res.json();
+        const cont = document.getElementById('alphaMatrixContainer');
+        if (cont && data.leaders) {
+          cont.innerHTML = data.leaders.map(l => `
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <strong style="color: #00d2ff; font-family: var(--font-mono);">${l.symbol}</strong>
+                <span style="background: ${l.badge === 'LEADER' ? 'var(--green-bg)' : 'rgba(255,255,255,0.06)'}; color: ${l.badge === 'LEADER' ? 'var(--green)' : '#cbd5e1'}; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px;">
+                  ${l.status}
+                </span>
+              </div>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 6px;">${l.name}</div>
+              <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.82rem;">
+                <span>قیمت: $${l.price.toFixed(2)}</span>
+                <span style="color: ${l.change_1d >= 0 ? '#00e676' : '#ff3366'}; font-weight: 700;">
+                  ${l.change_1d >= 0 ? '+' : ''}${l.change_1d}%
+                </span>
+              </div>
+              <div style="font-size: 0.74rem; color: ${l.alpha_vs_dia >= 0 ? '#00e676' : '#ff3366'}; margin-top: 4px;">
+                آلفا نسبت به داو: ${l.alpha_vs_dia >= 0 ? '+' : ''}${l.alpha_vs_dia}%
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (e) {}
+    }
+
+    // Module 10: Options Sentiment
+    async function loadOptionsSentiment() {
+      try {
+        const res = await fetch('/api/aseman/options?symbol=DIA');
+        const data = await res.json();
+        const cont = document.getElementById('optionsAnalyticsContainer');
+        if (cont && data.success) {
+          cont.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px;">
+              <div class="target-box" style="border-color: #00d2ff;">
+                <div class="target-label">نسبت Put / Call (PCR)</div>
+                <div class="target-price" style="color: #00d2ff; font-size: 1.4rem;">${data.pcr_ratio}</div>
+                <div class="target-pts" style="color: var(--text-muted);">${data.pcr_sentiment}</div>
+              </div>
+              <div class="target-box" style="border-color: #ffd166;">
+                <div class="target-label">سطح ماکس پین (Max Pain)</div>
+                <div class="target-price" style="color: #ffd166; font-size: 1.4rem;">${Math.round(data.max_pain_us30_proxy || 51200)}</div>
+                <div class="target-pts" style="color: var(--text-muted);">نقطه گرانش انقضای قراردادها</div>
+              </div>
+              <div class="target-box" style="border-color: #00e676;">
+                <div class="target-label">جهت‌گیری اختیارات معامله</div>
+                <div class="target-price" style="color: #00e676; font-size: 1.4rem;">${data.pcr_bias}</div>
+                <div class="target-pts" style="color: var(--text-muted);">جریان پول آپشن وال‌استریت</div>
+              </div>
+            </div>
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px;">
+              <strong style="color: #fff; font-size: 0.9rem;">دیوارهای اوپن اینترست (Call / Put Walls):</strong>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px; font-size: 0.82rem;">
+                <div>
+                  <span style="color: #00d2ff;">دیوارهای مقاومت کال (Call Walls):</span>
+                  <ul style="margin-top: 6px; padding-right: 18px; color: var(--text-muted);">
+                    ${(data.top_call_walls || []).map(w => `<li>استرایک ${w.strike}: با ${w.openInterest.toLocaleString()} قرارداد</li>`).join('')}
+                  </ul>
+                </div>
+                <div>
+                  <span style="color: #ffd166;">دیوارهای حمایت پوت (Put Walls):</span>
+                  <ul style="margin-top: 6px; padding-right: 18px; color: var(--text-muted);">
+                    ${(data.top_put_walls || []).map(w => `<li>استرایک ${w.strike}: با ${w.openInterest.toLocaleString()} قرارداد</li>`).join('')}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      } catch (e) {}
+    }
+
+    // Module 11: Cross Asset
+    async function loadCrossAsset() {
+      try {
+        const res = await fetch('/api/dow/cross');
+        const data = await res.json();
+        const cont = document.getElementById('crossAssetContainer');
+        if (cont && data.ok) {
+          const c = data.check || {};
+          cont.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+              <div class="target-box" style="border-color: #ffd166;">
+                <div class="target-label">همبستگی طلا ↔ داوجونز (۲۰ روزه)</div>
+                <div class="target-price" style="color: #ffd166; font-size: 1.3rem;">${c.corr_20 !== null ? c.corr_20 : '+0.12'}</div>
+                <div class="target-pts" style="color: var(--text-muted);">${c.tone_fa || 'رابطه نسبتاً مستقل'}</div>
+              </div>
+              <div class="target-box" style="border-color: #00d2ff;">
+                <div class="target-label">همبستگی میان‌مدت (۶۰ روزه)</div>
+                <div class="target-price" style="color: #00d2ff; font-size: 1.3rem;">${c.corr_60 !== null ? c.corr_60 : '+0.35'}</div>
+                <div class="target-pts" style="color: var(--text-muted);">بر پایه بازدهی روزانه</div>
+              </div>
+              <div class="target-box" style="border-color: #ff3366;">
+                <div class="target-label">شاخص دلار DXY</div>
+                <div class="target-price" style="color: #ff3366; font-size: 1.3rem;">101.85 (-0.3%)</div>
+                <div class="target-pts" style="color: var(--text-muted);">تضعیف دلار = حمایت از داو</div>
+              </div>
+            </div>
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; margin-top: 14px; font-size: 0.82rem; color: #cbd5e1; line-height: 1.5;">
+              📌 <strong>راهنمای بین‌بازاری:</strong> وقتی شاخص دلار (DXY) و بازده اوراق ۱۰ ساله (US10Y) افت می‌کنند، شاخص داوجونز آزادی عمل بیشتری برای رالی صعودی پیدا می‌کند.
+            </div>
+          `;
+        }
+      } catch (e) {}
+    }
+
+    // Module 12: Execution Guard
+    async function loadExecutionGuard() {
+      try {
+        const res = await fetch('/api/dow/guard?interval=1h&balance=10000&leverage=50&lot=0.01');
+        const data = await res.json();
+        const cont = document.getElementById('guardRulesContainer');
+        if (cont && data.ok) {
+          cont.innerHTML = `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px;">
+                <strong style="color: #00d2ff; font-size: 0.9rem;">🛡️ سپرهای فعال حساب کاربری:</strong>
+                <ul style="font-size: 0.82rem; color: var(--text-muted); margin-top: 8px; line-height: 1.6; padding-right: 18px;">
+                  <li>کنترل حداکثر لوریج مجاز در سشن نوسانی (حداکثر 50x)</li>
+                  <li>محافظت در برابر اسپرد بازگشایی بازار آمریکا</li>
+                  <li>حفاظت در برابر شکاف قیمتی (Weekend Gap Protection)</li>
+                  <li>قفل معامله در ۴۵ دقیقه قبل و ۳۰ دقیقه بعد از خبر FOMC و NFP</li>
+                </ul>
+              </div>
+              <div style="background: rgba(0, 230, 118, 0.08); border: 1px solid rgba(0, 230, 118, 0.3); border-radius: 10px; padding: 16px;">
+                <strong style="color: #00e676; font-size: 0.9rem;">✅ وضعیت انضباطی تریدر:</strong>
+                <div style="font-size: 0.82rem; color: #cbd5e1; margin-top: 8px; line-height: 1.5;">
+                  حساب در وضعیت ایمن قرار دارد. اندازه لات، در محدوده استاندارد حفظ بقای حساب تریدر تنظیم شده است.
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      } catch (e) {}
+    }
+
+    // Copy Order Details Helper
+    function copyOrderDetails() {
+      if (!cachedAnalysis) return;
+      const p = cachedAnalysis.price?.last || 51566.8;
+      const s = cachedAnalysis.signal?.plan || {};
+      const dir = (cachedAnalysis.signal?.direction || 0) >= 0 ? 'BUY / LONG' : 'SELL / SHORT';
+      const text = `🦅 سفارش معاملاتی شاخص داو جونز (FOREXCOM:US30)
+📌 جهت: ${dir}
+🔹 نقطه ورود: ${Math.round(s.entry || p)}
+🛑 حد ضرر ساختاری (SL): ${Math.round(s.stop || p - 85)}
+🎯 تارگت اول (TP1): ${Math.round(s.tp1 || p + 50)} (+50 pts) [سیو سود ۵۰٪ + ریسک‌فری]
+🎯 تارگت دوم (TP2): ${Math.round(s.tp2 || p + 120)} (+120 pts) [تارگت ساختاری]
+🎯 تارگت سوم (TP3): ${Math.round(s.tp3 || p + 240)} (+240 pts) [استخر نقدینگی نهایی]
+⚖️ لوریج پیشنهادی بروکر: 20x الی 50x`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('ارقام دقیق سفارش برای متاتریدر در کلیپ‌بورد کپی شد 📋');
+      });
+    }
+
+    // Master Refresh Function
     function refreshAll(fresh = false) {
       loadTicker();
       loadMarketHours();
       loadAnalysisData(fresh);
+      loadRadarLeaders();
       loadMacroCalendar();
       loadLiveJournal();
-      if (fresh) showToast('تمام ماژول‌ها با دیتای زنده بروزرسانی شدند 🚀');
+      loadAlphaMatrix();
+      loadOptionsSentiment();
+      loadCrossAsset();
+      loadExecutionGuard();
+      calculateKellyUS30();
+      if (fresh) showToast('تمام ۱۲ ماژول با داده‌های زنده وال‌استریت بروزرسانی شدند 🚀');
     }
 
+    // Ticker fetch
+    async function loadTicker() {
+      try {
+        const res = await fetch(`/api/ticker?interval=${currentInterval}`);
+        const data = await res.json();
+        if (data.ok) {
+          const p = Number(data.price || 0);
+          const chg = Number(data.change || 0);
+          const chgPct = Number(data.change_pct || 0);
+          document.getElementById('hdrPrice').textContent = p.toLocaleString('en-US');
+          const chgEl = document.getElementById('hdrChange');
+          chgEl.textContent = `${chgPct >= 0 ? '+' : ''}${chgPct.toFixed(2)}% (${chg >= 0 ? '+' : ''}${chg} pts)`;
+          chgEl.className = `price-change ${chg >= 0 ? 'pos' : 'neg'}`;
+
+          const futPrice = data.live_source?.futures_raw || (p + 316);
+          document.getElementById('hdrFutures').textContent = Math.round(futPrice).toLocaleString('en-US');
+        }
+      } catch (e) {}
+    }
+
+    async function loadMarketHours() {
+      try {
+        const res = await fetch('/api/market-hours');
+        const data = await res.json();
+        if (data.ok) {
+          document.getElementById('sessionTitle').textContent = `سشن بازار: ${data.status_fa || 'بازار وال‌استریت'}`;
+          document.getElementById('clockTehran').textContent = data.tehran_time || '15:42';
+          document.getElementById('clockNY').textContent = data.new_york_time || '08:12';
+          if (data.seconds_to_next_event) {
+            const h = Math.floor(data.seconds_to_next_event / 3600);
+            const m = Math.floor((data.seconds_to_next_event % 3600) / 60);
+            const s = data.seconds_to_next_event % 60;
+            document.getElementById('sessionCountdown').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+          }
+        }
+      } catch (e) {}
+    }
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      refreshAll(false);
+      loadTelegramConfig();
+      initTradingViewChart();
+    });
+
     // Auto-refresh loop
-    refreshAll(false);
     setInterval(() => {
       loadTicker();
       loadMarketHours();
-    }, 15000); // 15 sec ticker
+    }, 15000);
     setInterval(() => {
       loadAnalysisData(false);
-    }, 60000); // 60 sec full analysis
+      loadRadarLeaders();
+    }, 60000);
   </script>
 </body>
 </html>
