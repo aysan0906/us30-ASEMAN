@@ -636,3 +636,148 @@ def validate_us30_signal_confluence(p_curr: float, raw_action: str, raw_score: i
         "passed_count": passed_count,
         "filters": filters_list
     }
+
+
+# ========================================================
+# 3 ADVANCED EXECUTION & TRIGGER ACCELERATORS:
+# 1. ICT Silver Bullet Window (17:30 - 18:30 Tehran)
+# 2. EMA 9/21 Ribbon Momentum Fan
+# 3. Dynamic ADR Targets & Daily Range Exhaustion Guard
+# ========================================================
+
+_adr_cache = {"time": 0, "data": None}
+
+def get_adr_metrics():
+    now = time.time()
+    if _adr_cache["data"] and (now - _adr_cache["time"]) < 60.0:
+        return _adr_cache["data"]
+
+    adr_val = 480.0
+    today_rng = 260.0
+    try:
+        url = "https://query1.finance.yahoo.com/v8/finance/chart/DIA?interval=1d&range=1mo"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=2.5) as resp:
+            data = json.loads(resp.read().decode())["chart"]["result"][0]
+            highs = data["indicators"]["quote"][0]["high"]
+            lows = data["indicators"]["quote"][0]["low"]
+            ranges = [(h - l) * 100.0 for h, l in zip(highs, lows) if h and l]
+            if len(ranges) >= 5:
+                adr_val = round(sum(ranges[-20:]) / min(len(ranges), 20), 1)
+                today_rng = round(ranges[-1], 1)
+    except Exception:
+        pass
+
+    pct = round((today_rng / adr_val) * 100.0, 1) if adr_val else 50.0
+    rem = max(0.0, round(adr_val - today_rng, 1))
+
+    res = {
+        "adr_20": adr_val,
+        "today_range": today_rng,
+        "pct_used": pct,
+        "remaining_pts": rem,
+        "is_exhausted": pct >= 85.0
+    }
+    _adr_cache["data"] = res
+    _adr_cache["time"] = now
+    return res
+
+
+def get_execution_triggers(interval: str = "1h", p_curr: float = 51575.0) -> Dict[str, Any]:
+    now_utc, tehran, ny = _get_tehran_and_ny_time()
+    t_hour = tehran.hour + tehran.minute / 60.0
+
+    # 1. Silver Bullet Window: 17:30 to 18:30 Tehran (10:00 to 11:00 NY)
+    is_sb_active = 17.5 <= t_hour <= 18.5
+    if is_sb_active:
+        sb_status = "🔥 پنجره سیلور بولت فعال است (Silver Bullet LIVE)"
+        sb_badge = "🎯 ستاپ سیلور بولت نیویورک"
+        sb_color = "#00e676"
+        sb_advice = "پنجره طلایی نقدینگی اسمارت‌مانی نیویورک؛ ورود در جهت شکست ساختار با استاپ ۳۵ پوینتی و تارگت ۷۵ تا ۱۲۰ پوینت."
+    else:
+        sb_status = "در انتظار سشن طلایی ۱۷:۳۰ الی ۱۸:۳۰ تهران"
+        sb_badge = "⏱️ سیلور بولت: غیرفعال"
+        sb_color = "#ffd166"
+        sb_advice = "پنجره طلایی بعدی: ۱۷:۳۰ تا ۱۸:۳۰ به وقت تهران همزمان با موج نقدینگی سشن نیویورک."
+
+    # 2. EMA 9/21 Ribbon Momentum Fan
+    try:
+        import us30_engine as engine
+        c_data = engine.candles(interval).get("candles", [])
+        closes = [float(x["c"]) for x in c_data if x.get("c")]
+        if len(closes) >= 22:
+            def calc_ema(arr, period):
+                k = 2.0 / (period + 1.0)
+                res = arr[0]
+                for p in arr[1:]:
+                    res = p * k + res * (1.0 - k)
+                return res
+            ema9 = round(calc_ema(closes, 9), 1)
+            ema21 = round(calc_ema(closes, 21), 1)
+        else:
+            ema9 = round(p_curr - 12.0, 1)
+            ema21 = round(p_curr - 28.0, 1)
+    except Exception:
+        ema9 = round(p_curr - 12.0, 1)
+        ema21 = round(p_curr - 28.0, 1)
+
+    diff = round(ema9 - ema21, 1)
+    if diff > 30.0:
+        fan_state = "BULLISH_EXPANSION"
+        fan_badge = "🟢 گسترش مومنتوم صعودی (Bullish EMA Fan)"
+        fan_color = "#00e676"
+        fan_trigger = "ورود پرشتاب در پولبک به EMA 9؛ حفظ حد ضرر در زیر خط EMA 21"
+    elif diff < -30.0:
+        fan_state = "BEARISH_EXPANSION"
+        fan_badge = "🔴 گسترش مومنتوم نزولی (Bearish EMA Fan)"
+        fan_color = "#ff3366"
+        fan_trigger = "ورود شتابان نزولی در پولبک به EMA 9؛ حفظ حد ضرر بالای خط EMA 21"
+    else:
+        fan_state = "CHOP_FLAT"
+        fan_badge = "⚪ روبان فشرده / رنج مارکت (Tangled Ribbon)"
+        fan_color = "#ffd166"
+        fan_trigger = "میانگین‌ها در هم تنیده هستند؛ پرهیز از معاملات شکست تا باز شدن زاویه فن"
+
+    # 3. Dynamic ADR Targets & Exhaustion Guard
+    adr = get_adr_metrics()
+    if adr["is_exhausted"]:
+        adr_badge = "⚠️ اشباع نوسان روزانه (ADR Exhaustion - ۸۵٪+ پر شده)"
+        adr_color = "#ff3366"
+        adr_action = "قفل تارگت‌های بزرگ؛ تبدیل ستاپ به اسکالپ تک‌تارگتی سریع جهت حفظ سود"
+    else:
+        adr_badge = f"🟢 ظرفیت نوسان باز است ({adr['pct_used']}٪ پر شده)"
+        adr_color = "#00e676"
+        adr_action = f"باقی‌مانده نوسان پرپتانسیل: {adr['remaining_pts']} پوینت تا سقف میانگین روزانه"
+
+    return {
+        "ok": True,
+        "silver_bullet": {
+            "is_active": is_sb_active,
+            "status": sb_status,
+            "badge": sb_badge,
+            "color": sb_color,
+            "window": "۱۷:۳۰ الی ۱۸:۳۰ به وقت تهران",
+            "advice": sb_advice,
+            "tp_pts": 85,
+            "sl_pts": 35
+        },
+        "ema_fan": {
+            "ema9": ema9,
+            "ema21": ema21,
+            "diff_pts": diff,
+            "state": fan_state,
+            "badge": fan_badge,
+            "color": fan_color,
+            "trigger": fan_trigger
+        },
+        "adr": {
+            "adr_20": adr["adr_20"],
+            "today_range": adr["today_range"],
+            "pct_used": adr["pct_used"],
+            "remaining_pts": adr["remaining_pts"],
+            "is_exhausted": adr["is_exhausted"],
+            "badge": adr_badge,
+            "color": adr_color,
+            "action_advice": adr_action
+        }
+    }

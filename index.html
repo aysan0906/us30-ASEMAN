@@ -860,6 +860,22 @@
           </div>
         </div>
       </div>
+
+      <!-- 3 EXECUTION TRIGGERS ROW -->
+      <div style="margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px;">
+        <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.76rem; color: #94a3b8;">🎯 پنجره سیلور بولت:</span>
+          <strong id="heroSbBadge" style="font-size: 0.74rem; color: #ffd166; font-family: var(--font-mono);">⏱️ در انتظار ۱۷:۳۰</strong>
+        </div>
+        <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.76rem; color: #94a3b8;">📈 روبان مومنتوم EMA:</span>
+          <strong id="heroEmaBadge" style="font-size: 0.74rem; color: #00e676; font-family: var(--font-mono);">🟢 گسترش مومنتوم صعودی</strong>
+        </div>
+        <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.76rem; color: #94a3b8;">📊 ظرفیت نوسان ADR:</span>
+          <strong id="heroAdrBadge" style="font-size: 0.74rem; color: #00e676; font-family: var(--font-mono);">🟢 باز (۵۶٪ پر شده)</strong>
+        </div>
+      </div>
     </div>
 
     
@@ -2033,6 +2049,26 @@
               </div>
               `;
             }).join('');
+          }
+        }
+
+        // Update 3 Execution Triggers
+        if (data.triggers) {
+          const t = data.triggers;
+          const sbEl = document.getElementById('heroSbBadge');
+          if (sbEl && t.silver_bullet) {
+            sbEl.textContent = t.silver_bullet.badge;
+            sbEl.style.color = t.silver_bullet.color || '#ffd166';
+          }
+          const emaEl = document.getElementById('heroEmaBadge');
+          if (emaEl && t.ema_fan) {
+            emaEl.textContent = t.ema_fan.badge;
+            emaEl.style.color = t.ema_fan.color || '#00e676';
+          }
+          const adrEl = document.getElementById('heroAdrBadge');
+          if (adrEl && t.adr) {
+            adrEl.textContent = t.adr.badge;
+            adrEl.style.color = t.adr.color || '#00e676';
           }
         }
 

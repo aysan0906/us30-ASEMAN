@@ -658,6 +658,19 @@ def format_us30_composite_telegram(data: Dict[str, Any]) -> str:
     for f in f_list:
         val_lines += f"\n🛡️ {f.get('name')}: <code>{f.get('badge')}</code>"
 
+    trig = data.get("triggers", {})
+    sb_badge = trig.get("silver_bullet", {}).get("badge", "⏱️ سیلور بولت: در انتظار")
+    ema_badge = trig.get("ema_fan", {}).get("badge", "⚪ روبان میانگین‌ها: نرمال")
+    adr_badge = trig.get("adr", {}).get("badge", "🟢 نوسان روزانه: مجاز")
+    adr_rem = trig.get("adr", {}).get("remaining_pts", 180)
+
+    trig_lines = f"""
+🎯 <b>ماشه‌های تکنیکال و نوسان روزانه (Execution Triggers):</b>
+⏱️ <b>پنجره سیلور بولت:</b> <code>{sb_badge}</code>
+📈 <b>روبان مومنتوم EMA:</b> <code>{ema_badge}</code>
+📊 <b>ظرفیت نوسان روزانه ADR:</b> <code>{adr_badge}</code> (باقی‌مانده: {adr_rem} پوینت)
+"""
+
     msg = f"""
 👑 <b>سیگنال تجمیعی ۵ ماژول داو جونز | US30 Smart Money</b>
 ━━━━━━━━━━━━━━━━━━━━
@@ -679,7 +692,7 @@ def format_us30_composite_telegram(data: Dict[str, Any]) -> str:
 🔍 <b>تاییدیه ۵ ماژول متصل به سیگنال:</b>{chk_lines}
 
 🛡️ <b>تاییدیه ۴ فیلتر اعتبارسنجی نهایی:</b>{val_lines}
-━━━━━━━━━━━━━━━━━━━━
+{trig_lines}━━━━━━━━━━━━━━━━━━━━
 <i>⚠️ مدیریت سرمایه الزامی است (حداکثر ۱.۵٪ ریسک بر مبنای فرمول کِلی)</i>
 """
     return msg.strip()
@@ -1049,7 +1062,28 @@ def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 
         elif validation.get("passed_count", 0) == 4 and action in ["BUY", "SELL"]:
             score = min(99, score + 4)
             grade = "A+"
+
+        # 7. Apply 3 Execution & Trigger Accelerators (Silver Bullet, EMA Fan, ADR)
+        triggers = elite.get_execution_triggers(interval, p_curr)
+        sb = triggers.get("silver_bullet", {})
+        if sb.get("is_active") and action in ["BUY", "SELL"]:
+            setup_title = "🎯 ستاپ سیلور بولت نیویورک (ICT Silver Bullet) + " + setup_title
+            score = min(99, score + 3)
+
+        adr_info = triggers.get("adr", {})
+        if adr_info.get("is_exhausted"):
+            # Dynamic ADR clipping to prevent target overshoot
+            rem_cap = adr_info.get("remaining_pts", 50.0)
+            tp2_pts = min(tp2_pts, round(rem_cap * 0.9))
+            tp3_pts = min(tp3_pts, round(rem_cap * 1.2))
+            if action == "BUY":
+                tp2_price = round(p_curr + tp2_pts, 1)
+                tp3_price = round(p_curr + tp3_pts, 1)
+            elif action == "SELL":
+                tp2_price = round(p_curr - tp2_pts, 1)
+                tp3_price = round(p_curr - tp3_pts, 1)
     except Exception:
+        triggers = {}
         validation = {
             "filters_passed": "۴ از ۴ فیلتر نهادی تایید شد",
             "passed_count": 4,
@@ -1129,6 +1163,7 @@ def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 
         "validation": validation,
         "session_vwap": validation.get("session_vwap", round(p_curr - 15, 1)),
         "filters_passed": validation.get("filters_passed", "تایید ۴ فیلتر اعتبارسنجی"),
+        "triggers": triggers,
         "updated_at": time.strftime("%Y-%m-%d %H:%M:%S UTC")
     }
 
@@ -1206,6 +1241,16 @@ def dow_elite_suite():
         p = 51570.0
         chg = 210.0
     return elite.get_all_elite_modules(p, chg)
+
+@app.get("/api/dow/triggers")
+def dow_triggers(interval: str = Query("1h")):
+    try:
+        t_data = engine.ticker(interval)
+        p = float(t_data.get("price", 51570.0) or 51570.0)
+    except Exception:
+        p = 51570.0
+    return elite.get_execution_triggers(interval, p)
+
 
 @app.get("/api/dow/killzones-orb")
 def dow_killzones_orb():
