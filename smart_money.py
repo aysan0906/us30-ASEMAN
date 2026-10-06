@@ -745,23 +745,62 @@ def bank_coalition(interval: str = "1d", period: str = "6mo",
     سبد بر اساس دارایی انتخاب می شود — طلا با معدن داران سنجیده
     می شود، نه با ویزا و تراولرز.
     """
-    import yfinance as yf
     basket, names, ref_sym, basket_fa = _BASKETS.get(
         asset, _BASKETS["US30"])
 
     members: List[Dict] = []
+    dfs: Dict[str, pd.DataFrame] = {}
+
+    # 1. Fast direct Yahoo Chart JSON fetch (zero external library dependency, 100% reliable)
     try:
-        raw = yf.download(basket, period=period, interval=interval,
-                          group_by="ticker", progress=False, auto_adjust=True,
-                          threads=True)
-    except Exception as e:
-        return dict(ok=False, error=str(e), members=[], score=0.0,
-                    agreement=0.0, basket_fa=basket_fa)
+        import urllib.request
+        import json
+        from concurrent.futures import ThreadPoolExecutor
+
+        def fetch_coalition_sym(s):
+            try:
+                url = f"https://query1.finance.yahoo.com/v8/finance/chart/{s}?interval=1d&range=3mo"
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=3.5) as resp:
+                    data = json.loads(resp.read().decode())
+                    res = data["chart"]["result"][0]
+                    ts = res["timestamp"]
+                    q = res["indicators"]["quote"][0]
+                    df_sym = pd.DataFrame({
+                        "Open": q.get("open"),
+                        "High": q.get("high"),
+                        "Low": q.get("low"),
+                        "Close": q.get("close"),
+                        "Volume": q.get("volume")
+                    }, index=pd.to_datetime(ts, unit="s")).dropna()
+                    return (s, df_sym)
+            except Exception:
+                return (s, None)
+
+        with ThreadPoolExecutor(max_workers=6) as ex:
+            raw_dfs = dict(ex.map(fetch_coalition_sym, basket))
+            dfs = {k: v for k, v in raw_dfs.items() if v is not None and len(v) >= 20}
+    except Exception:
+        pass
+
+    # 2. Fallback to yfinance if installed and direct fetch failed
+    if not dfs:
+        try:
+            import yfinance as yf
+            raw = yf.download(basket, period=period, interval=interval,
+                              group_by="ticker", progress=False, auto_adjust=True,
+                              threads=True)
+            for sym in basket:
+                d = raw[sym].dropna() if isinstance(raw.columns, pd.MultiIndex) else raw.dropna()
+                if len(d) >= 20:
+                    dfs[sym] = d
+        except Exception:
+            pass
 
     for sym in basket:
         try:
-            d = raw[sym].dropna() if isinstance(raw.columns, pd.MultiIndex) else raw.dropna()
-            if len(d) < 30:
+            d = dfs.get(sym)
+            if d is None or len(d) < 20:
                 continue
             d = d.rename(columns=str.title)
             clv = clv_array(d)

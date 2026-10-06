@@ -555,7 +555,7 @@ def build_analysis(
     interval = interval if interval in md.VALID_INTERVALS else _env("DEFAULT_INTERVAL", "1h")
     bars = max(80, min(int(bars or 180), 600))
     if with_coalition is None:
-        with_coalition = _bool_env("WITH_COALITION", False)
+        with_coalition = _bool_env("WITH_COALITION", True)
 
     key = f"{interval}:{bars}:{int(with_coalition)}:{md.selected_provider()}:{md.selected_symbol()}:{md.display_scale_for()}"
     now = time.time()
