@@ -830,6 +830,36 @@
           <strong id="chkMod4" style="color: #00e676;">🟢 شکست ساختار CHoCH</strong>
         </div>
       </div>
+
+      <!-- 4-FILTER VALIDATION BAR -->
+      <div style="margin-top: 14px; padding: 12px 14px; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(0, 210, 255, 0.2); border-radius: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+          <span style="font-size: 0.8rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+            <span>🛡️</span> وضعیت ۴ فیلتر اعتبارسنجی نهادی (VIX Inversion, Session VWAP, SMT, News Spike Guard):
+          </span>
+          <span id="heroFiltersPassedBadge" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 3px 10px; border-radius: 6px; font-size: 0.74rem; font-family: var(--font-mono); font-weight: 800;">
+            ۴ از ۴ فیلتر تایید شد
+          </span>
+        </div>
+        <div id="heroValidationFiltersGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; font-size: 0.75rem;">
+          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: #cbd5e1;">۱. فیلتر نوسان VIX:</span>
+            <strong style="color: #00e676;">🟢 تایید تعادل نوسان</strong>
+          </div>
+          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: #cbd5e1;">۲. خط VWAP سشن:</span>
+            <strong style="color: #00e676;">🟢 انطباق با VWAP</strong>
+          </div>
+          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: #cbd5e1;">۳. همسویی دو قلوی SMT:</span>
+            <strong style="color: #00e676;">🟢 همسویی S&P500</strong>
+          </div>
+          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: #cbd5e1;">۴. فیوز محافظ اسپرد:</span>
+            <strong style="color: #00e676;">🟢 فیوز سبز اخبار</strong>
+          </div>
+        </div>
+      </div>
     </div>
 
     
@@ -1981,6 +2011,29 @@
             `;
           }).join('');
           document.getElementById('heroConfluenceChecklist').innerHTML = chkHtml;
+        }
+
+        // Update 4 Validation Filters
+        if (data.validation) {
+          const v = data.validation;
+          const passedBadge = document.getElementById('heroFiltersPassedBadge');
+          if (passedBadge) {
+            passedBadge.textContent = v.filters_passed || '۴ از ۴ فیلتر تایید شد';
+            passedBadge.style.color = v.is_vetoed ? '#ff3366' : '#00e676';
+            passedBadge.style.borderColor = v.is_vetoed ? '#ff3366' : '#00e676';
+          }
+          const fGrid = document.getElementById('heroValidationFiltersGrid');
+          if (fGrid && v.filters) {
+            fGrid.innerHTML = v.filters.map(f => {
+              const col = f.status === 'pass' ? '#00e676' : (f.status === 'veto' || f.status === 'locked' ? '#ff3366' : '#ffd166');
+              return `
+              <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #cbd5e1;">${f.name}:</span>
+                <strong style="color: ${col}; font-family: var(--font-mono); font-size: 0.72rem;">${f.badge}</strong>
+              </div>
+              `;
+            }).join('');
+          }
         }
 
         // Live price comparison flash
