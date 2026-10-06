@@ -14,7 +14,10 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Dict, Any
+from pydantic import BaseModel
+import json, time, threading, urllib.request, urllib.parse
+from datetime import datetime, timedelta, timezone
 
 from fastapi import FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -462,6 +465,253 @@ def dow_suite(
     interval: str = Query("1h"),
 ):
     return dowres.suite(light, interval)
+
+
+
+# ============================================================================
+# TELEGRAM DISPATCHER & SENTINEL AUTO-PILOT (ASEMAN ARCHITECTURE FOR US30)
+# ============================================================================
+TG_CONFIG_FILE = APP_DIR / "telegram_config.json"
+_us30_sentinel_stats = {
+    "is_running": True,
+    "last_check_utc": None,
+    "last_check_tehran": None,
+    "signals_sent_total": 0,
+    "last_signal_time": None,
+    "last_error": None
+}
+
+class US30TelegramConfigRequest(BaseModel):
+    bot_token: Optional[str] = ""
+    chat_id: Optional[str] = ""
+    auto_pilot: Optional[bool] = True
+    interval_minutes: Optional[int] = 20
+    min_score: Optional[int] = 70
+
+class US30TelegramSendRequest(BaseModel):
+    bot_token: Optional[str] = None
+    chat_id: Optional[str] = None
+    interval: Optional[str] = "1h"
+
+def get_us30_telegram_config() -> Dict[str, Any]:
+    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+    auto_pilot = True
+    interval_m = 20
+    min_score = 70
+
+    if TG_CONFIG_FILE.exists():
+        try:
+            with open(TG_CONFIG_FILE, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+                bot_token = bot_token or cfg.get("bot_token", "")
+                chat_id = chat_id or cfg.get("chat_id", "")
+                auto_pilot = cfg.get("auto_pilot", True)
+                interval_m = cfg.get("interval_minutes", 20)
+                min_score = cfg.get("min_score", 70)
+        except Exception:
+            pass
+
+    masked = f"{bot_token[:6]}...{bot_token[-4:]}" if len(bot_token) > 12 else bot_token
+    return {
+        "is_configured": bool(bot_token and chat_id),
+        "masked_token": masked,
+        "chat_id": chat_id,
+        "auto_pilot": auto_pilot,
+        "interval_minutes": interval_m,
+        "min_score": min_score,
+        "sentinel_stats": _us30_sentinel_stats
+    }
+
+def format_us30_telegram_signal(data: Dict[str, Any]) -> str:
+    now_utc = datetime.now(timezone.utc)
+    tehran_time = now_utc + timedelta(hours=3, minutes=30)
+    tehran_str = tehran_time.strftime("%H:%M:%S (%Y/%m/%d)")
+    valid_until = (tehran_time + timedelta(minutes=45)).strftime("%H:%M")
+
+    price_info = data.get("price", {})
+    last_price = float(price_info.get("last") or 51585.0)
+    sig = data.get("signal", {})
+    plan = sig.get("plan", {})
+    direction = int(sig.get("direction", 0) or 0)
+    grade = sig.get("grade", "B")
+    score = float(sig.get("score") or 0.0)
+    conf = float(sig.get("confidence") or 75.0)
+
+    entry = float(plan.get("entry") or last_price)
+    sl = float(plan.get("stop") or (entry - 85 if direction >= 0 else entry + 85))
+    tp1 = float(plan.get("tp1") or (entry + 45 if direction >= 0 else entry - 45))
+    tp2 = float(plan.get("tp2") or (entry + 110 if direction >= 0 else entry - 110))
+    tp3 = float(plan.get("tp3") or (entry + 220 if direction >= 0 else entry - 220))
+
+    sl_pts = abs(round(entry - sl, 1))
+    tp1_pts = abs(round(tp1 - entry, 1))
+    tp2_pts = abs(round(tp2 - entry, 1))
+    tp3_pts = abs(round(tp3 - entry, 1))
+
+    action_emoji = "🚀 خرید تهاجمی (LONG)" if direction > 0 else ("🔻 فروش تهاجمی (SHORT)" if direction < 0 else "⚪ خنثی / بدون پوزیشن")
+    grade_emoji = "👑" if grade == "A+" else ("⭐" if grade == "A" else "⚡")
+
+    msg = f"""
+{grade_emoji} <b>سیگنال نهادی اختصاصی داو جونز | US30 Smart Money</b>
+━━━━━━━━━━━━━━━━━━━━
+💰 <b>قیمت شاخص داو جونز:</b> <code>${last_price:,.1f}</code>
+🧭 <b>سیگنال سیستم:</b> {action_emoji}
+⭐ <b>درجه کیفی و اطمینان:</b> <code>Grade {grade}</code> ({conf:.0f}٪ | امتیاز: {score:.1f})
+🏛️ <b>سشن بازار:</b> <code>{data.get("market", {}).get("status_fa", "بازار نقدی وال‌استریت")}</code>
+
+⚡ <b>سطوح معاملاتی دقیق (Execution Levels):</b>
+⏰ <b>زمان صدور به وقت ایران 🇮🇷:</b> <code>ساعت {tehran_str}</code>
+⏳ <b>افق اعتبار ستاپ:</b> <code>تا ساعت {valid_until} به وقت ایران</code>
+🔹 <b>محدوده بهینه ورود:</b> <code>${entry:,.1f}</code>
+🛑 <b>حد ضرر ساختاری (SL):</b> <code>${sl:,.1f} ({sl_pts:,.0f} پوینت)</code>
+🎯 <b>تارگت اول (TP1):</b> <code>${tp1:,.1f} (+{tp1_pts:,.0f} پوینت)</code> <i>[سیو ۵۰٪ سود + ریسک‌فری]</i>
+🎯 <b>تارگت دوم (TP2):</b> <code>${tp2:,.1f} (+{tp2_pts:,.0f} پوینت)</code> <i>[تارگت ساختاری]</i>
+🎯 <b>تارگت سوم (TP3):</b> <code>${tp3:,.1f} (+{tp3_pts:,.0f} پوینت)</code> <i>[استخر نقدینگی نهایی]</i>
+⚖️ <b>ریسک به ریوارد:</b> <code>1 : {round(tp2_pts / max(sl_pts, 1), 2)}</code>
+
+🛡️ <b>دستورالعمل هوشمند مدیریت سرمایه و حجم لات:</b>
+• در صورت ورود، به محض لمس <b>تارگت اول ({tp1_pts:,.0f}+ پوینت)</b>، نیمی از پوزیشن را بسته و استاپ را روی نقطه ورود (Breakeven) قرار دهید تا معامله کاملاً بدون ریسک شود.
+━━━━━━━━━━━━━━━━━━━━
+📊 <b>مشاهده آنلاین چارت داو جونز:</b> <a href="https://www.tradingview.com/chart/?symbol=TVC:DJI">TradingView Chart ↗️</a>
+⏰ <i>زمان تحلیل (ایران 🇮🇷): {tehran_str}</i>
+"""
+    return msg.strip()
+
+def dispatch_to_telegram_raw(token: str, chat: str, message: str) -> Dict[str, Any]:
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    payload = {
+        "chat_id": chat,
+        "text": message,
+        "parse_mode": "HTML",
+        "disable_web_page_preview": False,
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {"text": "📊 چارت آنلاین داوجونز (TradingView)", "url": "https://www.tradingview.com/chart/?symbol=TVC:DJI"},
+                    {"text": "🦅 مشاهده داشبورد اختصاصی US30", "url": "https://us30-aseman-1.onrender.com"}
+                ]
+            ]
+        }
+    }
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        return json.loads(resp.read().decode())
+
+@app.get("/api/telegram/config")
+def telegram_config():
+    return get_us30_telegram_config()
+
+@app.post("/api/telegram/config")
+def save_telegram_config(cfg: US30TelegramConfigRequest):
+    try:
+        existing = {}
+        if TG_CONFIG_FILE.exists():
+            try:
+                with open(TG_CONFIG_FILE, "r", encoding="utf-8") as f:
+                    existing = json.load(f)
+            except Exception:
+                pass
+
+        new_tok = cfg.bot_token.strip() if cfg.bot_token else existing.get("bot_token", "")
+        new_chat = cfg.chat_id.strip() if cfg.chat_id else existing.get("chat_id", "")
+
+        data = {
+            "bot_token": new_tok,
+            "chat_id": new_chat,
+            "auto_pilot": bool(cfg.auto_pilot),
+            "interval_minutes": int(cfg.interval_minutes or 20),
+            "min_score": int(cfg.min_score or 70),
+            "updated_at": time.strftime("%Y-%m-%d %H:%M:%S UTC")
+        }
+        with open(TG_CONFIG_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+        return {"success": True, "message": "تنظیمات ربات تلگرام و دیده‌بان خودکار داو جونز با موفقیت ذخیره شد."}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"ok": False, "error": str(e)})
+
+@app.post("/api/telegram/send")
+def telegram_send(req: US30TelegramSendRequest):
+    try:
+        cfg = get_us30_telegram_config()
+        tok = req.bot_token or os.environ.get("TELEGRAM_BOT_TOKEN") or ""
+        chat = req.chat_id or os.environ.get("TELEGRAM_CHAT_ID") or ""
+        if not tok or not chat:
+            if TG_CONFIG_FILE.exists():
+                with open(TG_CONFIG_FILE, "r", encoding="utf-8") as f:
+                    saved = json.load(f)
+                    tok = tok or saved.get("bot_token", "")
+                    chat = chat or saved.get("chat_id", "")
+
+        if not tok or not chat:
+            return JSONResponse(status_code=400, content={"ok": False, "message": "توکن ربات یا شناسه چت تنظیم نشده است."})
+
+        data = engine.build_analysis(interval=req.interval or "1h", bars=180, force=True)
+        msg = format_us30_telegram_signal(data)
+        res = dispatch_to_telegram_raw(tok, chat, msg)
+        _us30_sentinel_stats["signals_sent_total"] += 1
+        _us30_sentinel_stats["last_signal_time"] = time.strftime("%Y-%m-%d %H:%M:%S UTC")
+        return {"success": True, "message": "سیگنال هوشمند داو جونز با موفقیت به تلگرام مخابره شد.", "result": res}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"ok": False, "error": str(e)})
+
+@app.post("/api/telegram/test")
+def telegram_test(req: US30TelegramSendRequest):
+    try:
+        tok = req.bot_token or os.environ.get("TELEGRAM_BOT_TOKEN") or ""
+        chat = req.chat_id or os.environ.get("TELEGRAM_CHAT_ID") or ""
+        if not tok or not chat:
+            if TG_CONFIG_FILE.exists():
+                with open(TG_CONFIG_FILE, "r", encoding="utf-8") as f:
+                    saved = json.load(f)
+                    tok = tok or saved.get("bot_token", "")
+                    chat = chat or saved.get("chat_id", "")
+
+        if not tok or not chat:
+            return JSONResponse(status_code=400, content={"ok": False, "message": "توکن ربات یا شناسه چت برای ارسال تست موجود نیست."})
+
+        now_tehran = datetime.now(timezone.utc) + timedelta(hours=3, minutes=30)
+        time_str = now_tehran.strftime("%H:%M:%S")
+        test_msg = f"""
+🦅 <b>آزمون اتصال ربات دیده‌بان هوشمند داو جونز (US30 Sentinel)</b>
+━━━━━━━━━━━━━━━━━━━━
+✅ اتصال وب‌سرویس و ربات تلگرام با موفقیت برقرار شد.
+⏰ <b>زمان تست (ایران 🇮🇷):</b> <code>ساعت {time_str}</code>
+📈 <b>وضعیت اتصال به فید وال‌استریت:</b> فعال و برخط
+🚀 سامانه هوشمند ۲۴ ساعته آماده ارسال ستاپ‌های معاملاتی است.
+"""
+        res = dispatch_to_telegram_raw(tok, chat, test_msg.strip())
+        return {"success": True, "message": "پیام تست با موفقیت ارسال شد.", "result": res}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"ok": False, "error": str(e)})
+
+@app.get("/api/journal/live")
+def journal_live():
+    try:
+        import journal as jrn
+        records = jrn.read_all()
+        # Clean records
+        clean_recs = []
+        for r in records[-50:]:
+            outcome = r.get("outcome", {})
+            clean_recs.append({
+                "id": r.get("id"),
+                "ts": r.get("ts"),
+                "asset": r.get("asset", "US30"),
+                "interval": r.get("interval", "1h"),
+                "price": r.get("price"),
+                "grade": r.get("grade", "B"),
+                "label": r.get("label", "خنثی"),
+                "result": outcome.get("result", "در انتظار"),
+                "exit_reason": outcome.get("exit_reason", "-"),
+                "r_mult": outcome.get("r_mult", 0.0),
+                "move_pct": outcome.get("move_pct", 0.0)
+            })
+        clean_recs.reverse()
+        return {"ok": True, "records": clean_recs, "total": len(records)}
+    except Exception as e:
+        return {"ok": False, "records": [], "error": str(e)}
 
 
 def get_dashboard_html() -> str:

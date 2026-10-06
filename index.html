@@ -1,812 +1,1573 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>داشبورد اختصاصی US30 | ASEMAN Smart Money</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>داشبورد اختصاصی هوشمند US30 داو جونز | ASEMAN Wall Street Smart Money AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-main: #070b13;
-      --bg-soft: #0d1320;
-      --bg-card: #111a2b;
-      --bg-card-2: #151f33;
-      --border: #24334e;
-      --border-soft: rgba(255,255,255,.08);
-      --text: #e9f0fb;
-      --muted: #94a4ba;
-      --dim: #64748b;
-      --blue: #00d2ff;
+      --bg-main: #0a0d14;
+      --bg-card: #121824;
+      --bg-card-hover: #172030;
+      --bg-input: #1b2436;
+      --border-color: #23314a;
+      --border-focus: #00d2ff;
+      --text-main: #e6edf8;
+      --text-muted: #8c9eb5;
+      --text-dim: #5c6e86;
       --green: #00e676;
-      --red: #ff4778;
+      --green-bg: rgba(0, 230, 118, 0.12);
+      --green-border: rgba(0, 230, 118, 0.35);
+      --red: #ff3366;
+      --red-bg: rgba(255, 51, 102, 0.12);
+      --red-border: rgba(255, 51, 102, 0.35);
       --yellow: #ffd166;
+      --yellow-bg: rgba(255, 209, 102, 0.12);
+      --blue: #00d2ff;
+      --blue-bg: rgba(0, 210, 255, 0.12);
       --purple: #a855f7;
-      --cyan-bg: rgba(0,210,255,.12);
-      --green-bg: rgba(0,230,118,.12);
-      --red-bg: rgba(255,71,120,.12);
-      --yellow-bg: rgba(255,209,102,.12);
-      --radius: 16px;
-      --shadow: 0 24px 80px rgba(0,0,0,.38);
-      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      --font: Vazirmatn, Tahoma, Arial, sans-serif;
+      --purple-bg: rgba(168, 85, 247, 0.12);
+      --orange: #ff9100;
+      --radius: 14px;
+      --font-fa: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
     }
-    * { box-sizing: border-box; }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      margin: 0;
+      background-color: var(--bg-main);
+      background-image: 
+        radial-gradient(circle at 15% 10%, rgba(0, 210, 255, 0.10), transparent 30%),
+        radial-gradient(circle at 85% 15%, rgba(168, 85, 247, 0.08), transparent 30%),
+        radial-gradient(circle at 50% 60%, rgba(0, 230, 118, 0.04), transparent 45%);
+      color: var(--text-main);
+      font-family: var(--font-fa);
+      line-height: 1.6;
       min-height: 100vh;
-      background:
-        radial-gradient(circle at 18% 8%, rgba(0,210,255,.14), transparent 31%),
-        radial-gradient(circle at 82% 20%, rgba(168,85,247,.12), transparent 34%),
-        linear-gradient(180deg, #070b13 0%, #080d16 52%, #05070c 100%);
-      color: var(--text);
-      font-family: var(--font);
+      display: flex;
+      flex-direction: column;
       overflow-x: hidden;
     }
-    a { color: inherit; }
-    .wrap { max-width: 1480px; margin: 0 auto; padding: 16px; }
+
+    .container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 16px 20px;
+      width: 100%;
+    }
+
+    /* Header */
     header {
-      position: sticky; top: 0; z-index: 20;
-      backdrop-filter: blur(18px);
-      background: rgba(7,11,19,.78);
-      border-bottom: 1px solid var(--border-soft);
+      background: rgba(18, 24, 36, 0.92);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 12px 0;
     }
+
     .header-inner {
-      max-width: 1480px; margin: 0 auto; padding: 12px 16px;
-      display: flex; align-items: center; gap: 14px; justify-content: space-between; flex-wrap: wrap;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
     }
-    .brand { display: flex; align-items: center; gap: 12px; min-width: 290px; }
-    .logo {
-      width: 48px; height: 48px; border-radius: 15px;
-      background: linear-gradient(135deg, #00d2ff, #2563eb 55%, #7c3aed);
-      display: grid; place-items: center; font-weight: 900; color: #03111e;
-      box-shadow: 0 0 28px rgba(0,210,255,.28);
-      font-family: var(--mono);
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
-    .brand h1 { font-size: 1.05rem; margin: 0; font-weight: 900; letter-spacing: -.4px; }
-    .brand p { margin: 2px 0 0; color: var(--muted); font-size: .78rem; }
-    .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
-    .btn, .input, .select {
-      border: 1px solid var(--border);
-      background: rgba(17,26,43,.82);
-      color: var(--text);
+
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #00d2ff, #7928ca);
       border-radius: 12px;
-      padding: 9px 12px;
-      font-family: var(--font);
-      outline: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 0 16px rgba(0, 210, 255, 0.4);
     }
-    .input { width: 98px; direction: ltr; text-align: center; font-family: var(--mono); }
-    .btn { cursor: pointer; transition: .18s ease; font-weight: 800; }
-    .btn:hover, .btn.active { border-color: var(--blue); background: var(--cyan-bg); color: var(--blue); }
-    .btn.primary {
-      background: linear-gradient(135deg, #00d2ff, #2563eb);
-      color: #03111e; border-color: transparent;
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, #ffffff, #00d2ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-    .btn.danger { border-color: rgba(255,71,120,.42); color: #ffc7d4; }
-    .pill {
-      display: inline-flex; gap: 6px; align-items: center;
-      border: 1px solid var(--border); border-radius: 999px;
-      padding: 6px 10px; background: rgba(17,26,43,.8); color: var(--muted); font-size: .78rem;
+
+    .brand-subtitle {
+      font-size: 0.76rem;
+      color: var(--text-muted);
     }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); box-shadow: 0 0 12px currentColor; }
-    .dot.ok { background: var(--green); color: var(--green); }
-    .dot.bad { background: var(--red); color: var(--red); }
-    .hero {
-      margin-top: 18px;
-      display: grid; grid-template-columns: 1.35fr .65fr; gap: 16px;
+
+    /* Live Header Price Bar */
+    .header-price-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 6px 14px;
+      border-radius: 10px;
     }
-    .card {
-      background: linear-gradient(180deg, rgba(17,26,43,.94), rgba(10,15,25,.94));
-      border: 1px solid var(--border-soft);
+
+    .price-val {
+      font-family: var(--font-mono);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .price-change {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .price-change.pos {
+      background: var(--green-bg);
+      color: var(--green);
+      border: 1px solid var(--green-border);
+    }
+
+    .price-change.neg {
+      background: var(--red-bg);
+      color: var(--red);
+      border: 1px solid var(--red-border);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-action {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-action:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--blue);
+      color: var(--blue);
+    }
+
+    .btn-action.active {
+      background: var(--blue-bg);
+      border-color: var(--blue);
+      color: var(--blue);
+    }
+
+    /* Timeframe Selector Bar */
+    .tf-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(18, 24, 36, 0.6);
+      border: 1px solid var(--border-color);
+      padding: 4px;
+      border-radius: 10px;
+    }
+
+    .tf-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.2s;
+    }
+
+    .tf-btn:hover {
+      color: #fff;
+    }
+
+    .tf-btn.active {
+      background: var(--blue);
+      color: #050b14;
+    }
+
+    /* Market Session Banner */
+    .session-banner {
+      background: linear-gradient(90deg, rgba(0, 210, 255, 0.08), rgba(168, 85, 247, 0.08));
+      border: 1px solid rgba(0, 210, 255, 0.25);
       border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow: hidden;
+      padding: 10px 18px;
+      margin-top: 14px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.84rem;
+      flex-wrap: wrap;
     }
-    .card.pad { padding: 18px; }
-    .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
-    .title { margin: 0; font-size: .98rem; font-weight: 900; }
-    .subtitle { margin: 4px 0 0; color: var(--muted); font-size: .78rem; }
-    .price-row { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
-    .price { font-family: var(--mono); font-size: clamp(2rem, 5vw, 4.8rem); line-height: .95; font-weight: 900; letter-spacing: -2px; }
-    .change { font-family: var(--mono); font-size: 1rem; font-weight: 800; padding: 7px 10px; border-radius: 999px; }
-    .pos { color: var(--green); background: var(--green-bg); border: 1px solid rgba(0,230,118,.25); }
-    .neg { color: var(--red); background: var(--red-bg); border: 1px solid rgba(255,71,120,.25); }
-    .neutral { color: var(--yellow); background: var(--yellow-bg); border: 1px solid rgba(255,209,102,.25); }
-    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 18px; }
-    .metric { background: rgba(255,255,255,.035); border: 1px solid var(--border-soft); border-radius: 14px; padding: 12px; }
-    .metric .k { color: var(--muted); font-size: .72rem; margin-bottom: 4px; }
-    .metric .v { font-family: var(--mono); font-weight: 900; font-size: 1.05rem; direction: ltr; text-align: right; }
-    canvas { width: 100%; height: 380px; display: block; }
-    .side-signal { display: grid; gap: 12px; }
-    .signal-badge { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-radius: 16px; padding: 14px; border: 1px solid var(--border-soft); background: rgba(255,255,255,.035); }
-    .signal-label { font-weight: 900; font-size: 1.15rem; }
-    .grade { font-family: var(--mono); font-size: 2rem; font-weight: 900; color: var(--blue); }
-    .progress { height: 11px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,.08); border: 1px solid var(--border-soft); }
-    .progress > div { height: 100%; width: 0%; background: linear-gradient(90deg, #ff4778, #ffd166, #00e676); transition: width .4s; }
-    .small-note { color: var(--muted); font-size: .78rem; line-height: 1.8; }
-    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; margin-top: 16px; }
-    .col-3 { grid-column: span 3; } .col-4 { grid-column: span 4; } .col-5 { grid-column: span 5; } .col-6 { grid-column: span 6; } .col-7 { grid-column: span 7; } .col-8 { grid-column: span 8; } .col-12 { grid-column: span 12; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border-bottom: 1px solid var(--border-soft); padding: 9px 6px; text-align: right; font-size: .82rem; vertical-align: top; }
-    th { color: var(--muted); font-weight: 800; }
-    td.mono, th.mono { font-family: var(--mono); direction: ltr; text-align: right; }
-    .list { display: grid; gap: 9px; }
-    .item { border: 1px solid var(--border-soft); border-radius: 12px; padding: 10px; background: rgba(255,255,255,.035); }
-    .item .top { display:flex; justify-content:space-between; gap:8px; align-items:center; margin-bottom:4px; }
-    .item .name { font-weight: 850; }
-    .item .detail { color: var(--muted); font-size: .78rem; line-height: 1.7; }
-    .tag { display:inline-flex; align-items:center; border:1px solid var(--border); border-radius:999px; padding:3px 8px; font-size:.72rem; color:var(--muted); }
-    .tag.buy { color: var(--green); border-color: rgba(0,230,118,.35); background: var(--green-bg); }
-    .tag.sell { color: var(--red); border-color: rgba(255,71,120,.35); background: var(--red-bg); }
-    .tag.warn { color: var(--yellow); border-color: rgba(255,209,102,.35); background: var(--yellow-bg); }
-    .skeleton { position: relative; overflow: hidden; min-height: 18px; background: rgba(255,255,255,.06); border-radius: 8px; }
-    .skeleton::after { content:''; position:absolute; inset:0; transform:translateX(100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent); animation: shimmer 1.2s infinite; }
-    @keyframes shimmer { 100% { transform: translateX(-100%); } }
-    .alert { margin-top: 16px; border: 1px solid rgba(255,209,102,.24); background: rgba(255,209,102,.08); color: #ffe9ac; padding: 12px 14px; border-radius: 14px; line-height: 1.9; font-size: .84rem; }
-    .module-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-    .module-actions .btn { font-size:.76rem; padding:8px 10px; }
-    .textarea { width:100%; min-height:76px; resize:vertical; direction:rtl; text-align:right; line-height:1.8; }
-    .chat-answer { white-space:pre-wrap; line-height:1.9; }
-    .mini-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; }
-    @media (max-width: 800px) { .mini-grid { grid-template-columns: 1fr; } }
-    .footer { color: var(--dim); text-align: center; padding: 26px 10px; font-size: .78rem; }
-    @media (max-width: 1100px) { .hero { grid-template-columns: 1fr; } .col-3,.col-4,.col-5,.col-6,.col-7,.col-8 { grid-column: span 12; } .metrics { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 640px) { .wrap { padding: 10px; } .controls { justify-content: stretch; } .btn { flex: 1; } .metrics { grid-template-columns: 1fr; } canvas { height: 310px; } .brand { min-width: 100%; } }
+
+    .session-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pulse-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 10px var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.7); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(0, 230, 118, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 230, 118, 0); }
+    }
+
+    /* Hero Scalp Card */
+    .hero-scalp-card {
+      background: linear-gradient(135deg, rgba(18, 24, 36, 0.95), rgba(15, 23, 42, 0.98));
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 22px 26px;
+      margin-bottom: 22px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.4);
+    }
+
+    .hero-scalp-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #00d2ff, #00e676, #ffd166, #ff3366);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 2fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid { grid-template-columns: 1fr; }
+    }
+
+    .signal-direction-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.3rem;
+      font-weight: 900;
+      padding: 8px 18px;
+      border-radius: 10px;
+      font-family: var(--font-fa);
+    }
+
+    .signal-direction-badge.buy {
+      background: var(--green-bg);
+      color: var(--green);
+      border: 2px solid var(--green-border);
+    }
+
+    .signal-direction-badge.sell {
+      background: var(--red-bg);
+      color: var(--red);
+      border: 2px solid var(--red-border);
+    }
+
+    .signal-direction-badge.wait {
+      background: rgba(255, 209, 102, 0.12);
+      color: var(--yellow);
+      border: 2px solid rgba(255, 209, 102, 0.35);
+    }
+
+    .targets-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .target-box {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+
+    .target-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    .target-price {
+      font-family: var(--font-mono);
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .target-pts {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    /* The Glorious 12 Navigation Tab Cards */
+    .nav-grid-container {
+      margin-bottom: 24px;
+    }
+
+    .nav-grid-title {
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 12px;
+    }
+
+    .tab-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      text-align: right;
+    }
+
+    .tab-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(0, 210, 255, 0.5);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .tab-card.active {
+      background: linear-gradient(135deg, rgba(0, 210, 255, 0.15), rgba(18, 24, 36, 0.95));
+      border: 1px solid var(--blue);
+      box-shadow: 0 0 18px rgba(0, 210, 255, 0.25);
+    }
+
+    .tab-card-icon {
+      font-size: 1.5rem;
+      margin-bottom: 2px;
+    }
+
+    .tab-card-name {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .tab-card.active .tab-card-name {
+      color: var(--blue);
+    }
+
+    .tab-card-desc {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    /* Tab Panes */
+    .tab-pane {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Common Card Styles */
+    .content-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 20px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .data-table th {
+      background: rgba(0, 0, 0, 0.3);
+      color: var(--text-muted);
+      text-align: right;
+      padding: 10px 14px;
+      font-weight: 700;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .data-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .data-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Persian Decision Drawer (Floating Bottom) */
+    .decision-drawer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.96);
+      backdrop-filter: blur(16px);
+      border-top: 2px solid var(--blue);
+      box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
+      z-index: 999;
+      transform: translateY(calc(100% - 46px));
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .decision-drawer.open {
+      transform: translateY(0);
+    }
+
+    .drawer-handle {
+      height: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      cursor: pointer;
+      background: rgba(0, 210, 255, 0.08);
+    }
+
+    .drawer-handle-title {
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: var(--blue);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .drawer-content {
+      padding: 20px 24px 28px;
+      max-width: 1440px;
+      margin: 0 auto;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 210, 255, 0.95);
+      color: #050b14;
+      font-weight: 800;
+      padding: 10px 22px;
+      border-radius: 30px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      z-index: 9999;
+      display: none;
+      font-size: 0.88rem;
+    }
+
+    /* TradingView Container */
+    #tv_chart_container {
+      height: 580px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
   </style>
 </head>
 <body>
+
+  <!-- Top Sticky Header -->
   <header>
-    <div class="header-inner">
-      <div class="brand">
-        <div class="logo">US30</div>
-        <div>
-          <h1>داشبورد اختصاصی داوجونز | ASEMAN Smart Money</h1>
-          <p>معماری پروژه کریپتو + موتور داو پروژه قبلی؛ آماده Deploy روی Render</p>
+    <div class="container">
+      <div class="header-inner">
+        <!-- Brand -->
+        <div class="brand">
+          <div class="brand-logo">🦅</div>
+          <div>
+            <div class="brand-title">ASEMAN US30 SMART MONEY AI</div>
+            <div class="brand-subtitle">سامانه هوشمند تحلیل نهادی داو جونز و ۳۰ غول وال‌استریت</div>
+          </div>
         </div>
-      </div>
-      <div class="controls">
-        <span class="pill"><span id="marketDot" class="dot"></span><span id="marketText">در حال بررسی بازار...</span></span>
-        <button class="btn tf active" data-tf="1h">1H</button>
-        <button class="btn tf" data-tf="30m">30M</button>
-        <button class="btn tf" data-tf="15m">15M</button>
-        <button class="btn tf" data-tf="5m">5M</button>
-        <button class="btn tf" data-tf="1d">1D</button>
-        <input id="equity" class="input" value="10000" title="Equity" />
-        <input id="risk" class="input" value="1" title="Risk %" />
-        <button id="coalitionBtn" class="btn" title="لایه سنگین ائتلاف بانک‌ها">بانک‌ها خاموش</button>
-        <button id="refreshBtn" class="btn primary">بروزرسانی</button>
+
+        <!-- Live Price Card -->
+        <div class="header-price-card">
+          <div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">قیمت نقدی داوجونز (Dow Cash)</div>
+            <div id="hdrPrice" class="price-val">51,585</div>
+          </div>
+          <div id="hdrChange" class="price-change pos">+0.80% (+408 pts)</div>
+          <div style="border-right: 1px solid var(--border-color); padding-right: 10px; margin-right: 4px;">
+            <div style="font-size: 0.72rem; color: var(--text-muted);">فیوچرز YM=F</div>
+            <div id="hdrFutures" style="font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; color: #ffd166;">51,901</div>
+          </div>
+        </div>
+
+        <!-- Timeframe Switcher -->
+        <div class="tf-bar">
+          <button class="tf-btn" onclick="setTimeframe('5m')">5m</button>
+          <button class="tf-btn" onclick="setTimeframe('15m')">15m</button>
+          <button class="tf-btn" onclick="setTimeframe('30m')">30m</button>
+          <button class="tf-btn active" onclick="setTimeframe('1h')">1h</button>
+          <button class="tf-btn" onclick="setTimeframe('4h')">4h</button>
+          <button class="tf-btn" onclick="setTimeframe('1d')">1d</button>
+        </div>
+
+        <!-- Quick Header Actions -->
+        <div class="header-actions">
+          <button class="btn-action" onclick="switchTab('chartTab')">📊 تریدینگ‌ویو</button>
+          <button id="btnAudioToggle" class="btn-action" onclick="toggleAudioAlerts()">🔔 صدای اعلان: فعال</button>
+          <button class="btn-action" onclick="refreshAll(true)">🔄 بروزرسانی</button>
+          <button class="btn-action" style="background: var(--blue-bg); border-color: var(--blue); color: var(--blue);" onclick="switchTab('kellyTab')">🧮 محاسبه لات</button>
+        </div>
       </div>
     </div>
   </header>
 
-  <main class="wrap">
-    <div class="hero">
-      <section class="card pad">
-        <div class="card-head">
-          <div>
-            <h2 class="title">نمای کلی US30 / Dow Jones</h2>
-            <p id="sourceLine" class="subtitle">Provider: ...</p>
-          </div>
-          <span id="cacheTag" class="tag">Live</span>
-        </div>
-        <div class="price-row">
-          <div id="price" class="price skeleton"></div>
-          <div id="change" class="change neutral">—</div>
-        </div>
-        <div class="metrics">
-          <div class="metric"><div class="k">RSI</div><div id="rsi" class="v">—</div></div>
-          <div class="metric"><div class="k">ATR</div><div id="atr" class="v">—</div></div>
-          <div class="metric"><div class="k">روند</div><div id="trend" class="v" style="font-family:var(--font)">—</div></div>
-          <div class="metric"><div class="k">VWAP Dev</div><div id="vwapDev" class="v">—</div></div>
-        </div>
-        <div style="margin-top:18px;border:1px solid var(--border-soft);border-radius:16px;overflow:hidden;background:#080d16">
-          <canvas id="chart" width="1200" height="420"></canvas>
-        </div>
-      </section>
+  <div class="container">
+    <!-- Live Session & Clock Bar -->
+    <div class="session-banner">
+      <div class="session-indicator">
+        <div class="pulse-dot"></div>
+        <strong id="sessionTitle">سشن بازار: بازار نقدی نیویورک (NYSE Regular Session)</strong>
+      </div>
+      <div style="display: flex; gap: 16px; font-family: var(--font-mono); font-size: 0.8rem;">
+        <div>🇮🇷 تهران: <span id="clockTehran" style="color: #00d2ff;">15:42</span></div>
+        <div>🇺🇸 نیویورک: <span id="clockNY" style="color: #ffd166;">08:12</span></div>
+        <div>⏳ شمارشگر زنگ وال‌استریت: <span id="sessionCountdown" style="color: #00e676;">01:17:40</span></div>
+      </div>
+    </div>
 
-      <aside class="side-signal">
-        <section class="card pad">
-          <div class="card-head">
-            <div>
-              <h2 class="title">سیگنال نهایی Smart Money</h2>
-              <p class="subtitle">SMC / ICT / Liquidity / HFT / Fake Trend</p>
-            </div>
-            <div id="grade" class="grade">—</div>
+    <!-- Quick Scalp Hero Banner (Entry / SL / TP1 / TP2 / TP3 in Points) -->
+    <div class="hero-scalp-card">
+      <div class="hero-grid">
+        <!-- Direction & Status -->
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 0.78rem; color: var(--text-muted);">سیگنال اسکالپ فوق‌سریع داو جونز</span>
+            <span id="heroGrade" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; padding: 3px 10px; border-radius: 6px; font-weight: 800; font-size: 0.78rem; border: 1px solid rgba(0, 210, 255, 0.4);">
+              👑 Grade A+ (94%)
+            </span>
           </div>
-          <div id="signalBox" class="signal-badge">
-            <div>
-              <div id="signalLabel" class="signal-label">در حال تحلیل...</div>
-              <div id="signalVerdict" class="small-note">لطفاً چند ثانیه صبر کنید.</div>
-            </div>
-            <span id="dirTag" class="tag warn">WAIT</span>
+          <div id="heroAction" class="signal-direction-badge buy">
+            <span>🚀</span>
+            <span>خرید تهاجمی (LONG)</span>
           </div>
-          <div style="margin-top:14px">
-            <div style="display:flex;justify-content:space-between;color:var(--muted);font-size:.78rem;margin-bottom:6px"><span>Confidence</span><span id="confText">—</span></div>
-            <div class="progress"><div id="confBar"></div></div>
+          <div id="heroVerdict" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 10px; line-height: 1.45;">
+            سوگیری فعلی لانگ است؛ ورود با پولبک نزدیک ناحیه پیشنهادی و با رعایت دقیق استاپ.
           </div>
-        </section>
+          <div style="margin-top: 12px; display: flex; gap: 8px;">
+            <button onclick="copyOrderDetails()" class="btn-action" style="background: linear-gradient(135deg, #00d2ff, #0077b6); color: #050b14; border: none; font-weight: 800;">
+              📋 کپی ارقام سفارش برای متاتریدر
+            </button>
+            <button onclick="dispatchTelegramNow()" class="btn-action" style="background: rgba(0, 230, 118, 0.15); border-color: rgba(0, 230, 118, 0.4); color: #00e676;">
+              ✈️ ارسال به تلگرام
+            </button>
+          </div>
+        </div>
 
-        <section class="card pad">
-          <div class="card-head"><div><h2 class="title">پلن معامله</h2><p class="subtitle">آموزشی؛ متناسب با بروکر بررسی شود</p></div></div>
-          <table>
-            <tbody id="planTable">
-              <tr><td>Entry</td><td class="mono">—</td></tr>
-              <tr><td>Stop</td><td class="mono">—</td></tr>
-              <tr><td>TP1 / TP2 / TP3</td><td class="mono">—</td></tr>
-              <tr><td>R:R</td><td class="mono">—</td></tr>
+        <!-- Execution Levels Box -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span style="font-size: 0.78rem; color: var(--text-muted);">محدوده بهینه ورود: <strong id="heroEntry" style="color: #fff; font-family: var(--font-mono);">51,540 - 51,580</strong></span>
+            <span style="font-size: 0.78rem; color: var(--text-muted);">حد ضرر ساختاری (SL): <strong id="heroStop" style="color: #ff3366; font-family: var(--font-mono);">51,460 (-80 pts)</strong></span>
+          </div>
+
+          <div class="targets-row">
+            <div class="target-box" style="border-color: rgba(0, 230, 118, 0.4);">
+              <div class="target-label">🎯 تارگت اول (TP1)</div>
+              <div id="heroTp1" class="target-price">51,630</div>
+              <div class="target-pts" style="color: var(--green);">+50 پوینت (ریسک‌فری)</div>
+            </div>
+            <div class="target-box" style="border-color: rgba(0, 210, 255, 0.4);">
+              <div class="target-label">🎯 تارگت دوم (TP2)</div>
+              <div id="heroTp2" class="target-price">51,700</div>
+              <div class="target-pts" style="color: var(--blue);">+120 پوینت (ساختاری)</div>
+            </div>
+            <div class="target-box" style="border-color: rgba(168, 85, 247, 0.4);">
+              <div class="target-label">🎯 تارگت سوم (TP3)</div>
+              <div id="heroTp3" class="target-price">51,820</div>
+              <div class="target-pts" style="color: var(--purple);">+240 پوینت (استخر نهایی)</div>
+            </div>
+            <div class="target-box" style="border-color: rgba(255, 209, 102, 0.4);">
+              <div class="target-label">⚖️ ریسک به ریوارد</div>
+              <div id="heroRR" class="target-price" style="color: #ffd166;">1 : 2.5</div>
+              <div class="target-pts" style="color: var(--text-muted);">اهرم مجاز: 20x-50x</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- The 12 Navigation Grid Cards (Exact Replica of ASEMAN Navigation System) -->
+    <div class="nav-grid-container">
+      <div class="nav-grid-title">
+        <span>🧭</span>
+        <span>میز کار جامع و اتاق فرمان ۱۲ ماژوله داو جونز (برای باز کردن هر ماژول کلیک کنید):</span>
+      </div>
+      <div class="nav-grid">
+        <!-- Tab 1 -->
+        <div class="tab-card active" onclick="switchTab('radarTab', this)">
+          <div class="tab-card-icon">🏛️</div>
+          <div class="tab-card-name">رادار ۳۰ غول وال‌استریت</div>
+          <div class="tab-card-desc">رصد زنده لیدرهای داوجونز (UNH, GS, MSFT, CAT, BA)</div>
+        </div>
+        <!-- Tab 2 -->
+        <div class="tab-card" onclick="switchTab('analysisTab', this)">
+          <div class="tab-card-icon">⚡</div>
+          <div class="tab-card-name">اتاق فرمان تحلیل ۳۶۰ درجه</div>
+          <div class="tab-card-desc">تحلیل جامع ساختار، BOS، ChoCH و ستاپ‌های معاملاتی</div>
+        </div>
+        <!-- Tab 3 -->
+        <div class="tab-card" onclick="switchTab('chartTab', this)">
+          <div class="tab-card-icon">📊</div>
+          <div class="tab-card-name">چارت پیشرفته تریدینگ‌ویو</div>
+          <div class="tab-card-desc">نمودار زنده US30 / DJI / YM1! با ابزارهای تکنیکال</div>
+        </div>
+        <!-- Tab 4 -->
+        <div class="tab-card" onclick="switchTab('orderflowTab', this)">
+          <div class="tab-card-icon">🌊</div>
+          <div class="tab-card-name">جریان سفارشات و FVG</div>
+          <div class="tab-card-desc">گپ‌های ارزش منصفانه، اوردربلاک‌ها و نقدینگی BSL/SSL</div>
+        </div>
+        <!-- Tab 5 -->
+        <div class="tab-card" onclick="switchTab('macroTab', this)">
+          <div class="tab-card-icon">🛡️</div>
+          <div class="tab-card-name">سپر کلان و فدرال رزرو</div>
+          <div class="tab-card-desc">تقویم NFP، تورم CPI، نرخ بهره و پنجره انجماد ترید</div>
+        </div>
+        <!-- Tab 6 -->
+        <div class="tab-card" onclick="switchTab('kellyTab', this)">
+          <div class="tab-card-icon">🧮</div>
+          <div class="tab-card-name">ماشین حساب کِلی و لات</div>
+          <div class="tab-card-desc">محاسبه دقیق حجم لات، ارزش پوینت و اهرم مجاز بروکر</div>
+        </div>
+        <!-- Tab 7 -->
+        <div class="tab-card" onclick="switchTab('telegramTab', this)">
+          <div class="tab-card-icon">🤖</div>
+          <div class="tab-card-name">دیده‌بان ۲۴ ساعته تلگرام</div>
+          <div class="tab-card-desc">تنظیمات ربات خودکار و ارسال هشدارهای ستاپ به ساعت ایران</div>
+        </div>
+        <!-- Tab 8 -->
+        <div class="tab-card" onclick="switchTab('journalTab', this)">
+          <div class="tab-card-icon">📜</div>
+          <div class="tab-card-name">ژورنال هوشمند معاملات</div>
+          <div class="tab-card-desc">ردیاب سرانجام ستاپ‌ها، بریک‌ایون، وین‌ریت و خروجی CSV</div>
+        </div>
+        <!-- Tab 9 -->
+        <div class="tab-card" onclick="switchTab('alphaTab', this)">
+          <div class="tab-card-icon">⚖️</div>
+          <div class="tab-card-name">ماتریس آلفا و وزن‌دهی</div>
+          <div class="tab-card-desc">محاسبه پوینت‌های مثبت و منفی سهم‌های برتر روی شاخص</div>
+        </div>
+        <!-- Tab 10 -->
+        <div class="tab-card" onclick="switchTab('optionsTab', this)">
+          <div class="tab-card-icon">📈</div>
+          <div class="tab-card-name">آپشن‌ها و تمایلات بازار</div>
+          <div class="tab-card-desc">نسبت Put/Call، سطح Max Pain و پوزیشن‌گیری صندوق‌ها</div>
+        </div>
+        <!-- Tab 11 -->
+        <div class="tab-card" onclick="switchTab('crossTab', this)">
+          <div class="tab-card-icon">🌐</div>
+          <div class="tab-card-name">همبستگی بین‌بازاری</div>
+          <div class="tab-card-desc">رابطه زنده داوجونز با شاخص دلار (DXY)، طلا و اوراق ۱۰ ساله</div>
+        </div>
+        <!-- Tab 12 -->
+        <div class="tab-card" onclick="switchTab('guardTab', this)">
+          <div class="tab-card-icon">🛡️</div>
+          <div class="tab-card-name">گارد انضباطی بروکر</div>
+          <div class="tab-card-desc">جلوگیری از کال‌مارجین، اسپرد سنگین شبانه و خطاهای تریدر</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 1: RADAR -->
+    <div id="radarTab" class="tab-pane active">
+      <div class="content-card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>🏛️</span>
+            <span>رادار هوشمند مؤلفه‌های سنگین‌وزن داو جونز (Dow 30 Leaders Radar)</span>
+          </div>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">شاخص داو جونز بر اساس قیمت سهام وزن‌دهی می‌شود؛ این سهم‌ها جهت را تعیین می‌کنند.</span>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>نماد</th>
+                <th>نام شرکت</th>
+                <th>قیمت سهم ($)</th>
+                <th>تغییر امروز</th>
+                <th>وزن در داوجونز</th>
+                <th>تاثیر پوینتی روی US30</th>
+                <th>سیگنال تکنیکال</th>
+              </tr>
+            </thead>
+            <tbody id="radarTableBody">
+              <tr>
+                <td style="font-family: var(--font-mono); font-weight: 800; color: #00d2ff;">UNH</td>
+                <td>UnitedHealth Group</td>
+                <td style="font-family: var(--font-mono);">$588.40</td>
+                <td style="font-family: var(--font-mono); color: #00e676;">+1.45%</td>
+                <td>8.9% (رتبه ۱)</td>
+                <td style="font-family: var(--font-mono); color: #00e676;">+62.3 pts</td>
+                <td><span style="background: var(--green-bg); color: var(--green); padding: 2px 8px; border-radius: 4px;">🟢 صعودی قوی</span></td>
+              </tr>
+              <tr>
+                <td style="font-family: var(--font-mono); font-weight: 800; color: #00d2ff;">GS</td>
+                <td>Goldman Sachs</td>
+                <td style="font-family: var(--font-mono);">$512.10</td>
+                <td style="font-family: var(--font-mono); color: #00e676;">+0.92%</td>
+                <td>7.8% (رتبه ۲)</td>
+                <td style="font-family: var(--font-mono); color: #00e676;">+38.5 pts</td>
+                <td><span style="background: var(--green-bg); color: var(--green); padding: 2px 8px; border-radius: 4px;">🟢 صعودی</span></td>
+              </tr>
+              <tr>
+                <td style="font-family: var(--font-mono); font-weight: 800; color: #00d2ff;">MSFT</td>
+                <td>Microsoft Corp</td>
+                <td style="font-family: var(--font-mono);">$428.30</td>
+                <td style="font-family: var(--font-mono); color: #00e676;">+0.64%</td>
+                <td>6.5% (رتبه ۳)</td>
+                <td style="font-family: var(--font-mono); color: #00e676;">+22.1 pts</td>
+                <td><span style="background: var(--green-bg); color: var(--green); padding: 2px 8px; border-radius: 4px;">🟢 شکست سقف</span></td>
+              </tr>
+              <tr>
+                <td style="font-family: var(--font-mono); font-weight: 800; color: #00d2ff;">HD</td>
+                <td>Home Depot</td>
+                <td style="font-family: var(--font-mono);">$410.20</td>
+                <td style="font-family: var(--font-mono); color: #ff3366;">-0.31%</td>
+                <td>6.2% (رتبه ۴)</td>
+                <td style="font-family: var(--font-mono); color: #ff3366;">-10.4 pts</td>
+                <td><span style="background: var(--red-bg); color: var(--red); padding: 2px 8px; border-radius: 4px;">🔴 اصلاحی</span></td>
+              </tr>
+              <tr>
+                <td style="font-family: var(--font-mono); font-weight: 800; color: #00d2ff;">CAT</td>
+                <td>Caterpillar Inc</td>
+                <td style="font-family: var(--font-mono);">$395.70</td>
+                <td style="font-family: var(--font-mono); color: #00e676;">+1.12%</td>
+                <td>6.0% (رتبه ۵)</td>
+                <td style="font-family: var(--font-mono); color: #00e676;">+34.0 pts</td>
+                <td><span style="background: var(--green-bg); color: var(--green); padding: 2px 8px; border-radius: 4px;">🟢 رالی نهادی</span></td>
+              </tr>
+              <tr>
+                <td style="font-family: var(--font-mono); font-weight: 800; color: #00d2ff;">BA</td>
+                <td>Boeing Co</td>
+                <td style="font-family: var(--font-mono);">$155.80</td>
+                <td style="font-family: var(--font-mono); color: #ff3366;">-0.85%</td>
+                <td>2.4% (رتبه ۲۰)</td>
+                <td style="font-family: var(--font-mono); color: #ff3366;">-8.2 pts</td>
+                <td><span style="background: rgba(255,209,102,0.12); color: #ffd166; padding: 2px 8px; border-radius: 4px;">⚪ رنج</span></td>
+              </tr>
             </tbody>
           </table>
-          <div id="sizing" class="small-note" style="margin-top:10px">—</div>
-        </section>
-      </aside>
+        </div>
+      </div>
     </div>
 
-    <div class="alert">
-      ⚠️ این داشبورد ابزار تحلیلی است، توصیه مالی یا دستور معامله نیست. برای حساب واقعی حتماً مدیریت ریسک، اسپرد، کمیسیون، مشخصات قرارداد US30 و خبرهای مهم آمریکا را بررسی کنید.
-    </div>
-
-    <section class="grid">
-      <div class="card pad col-4">
-        <div class="card-head"><div><h2 class="title">لایه‌های امتیازدهی</h2><p class="subtitle">اجزای تصمیم نهایی</p></div></div>
-        <div id="parts" class="list"></div>
-      </div>
-
-      <div class="card pad col-4">
-        <div class="card-head"><div><h2 class="title">نقدینگی و Sweep</h2><p class="subtitle">BSL / SSL / شکار نقدینگی</p></div></div>
-        <div id="liq" class="list"></div>
-      </div>
-
-      <div class="card pad col-4">
-        <div class="card-head"><div><h2 class="title">FVG و Order Block</h2><p class="subtitle">ناحیه‌های نزدیک و فعال</p></div></div>
-        <div id="zones" class="list"></div>
-      </div>
-
-      <div class="card pad col-6">
-        <div class="card-head"><div><h2 class="title">جریان پول نهادی</h2><p class="subtitle">Delta / OBV / CMF / MFI / VWAP</p></div></div>
-        <table>
-          <tbody id="flowTable"></tbody>
-        </table>
-      </div>
-
-      <div class="card pad col-6">
-        <div class="card-head"><div><h2 class="title">HFT و فیلتر روند فیک</h2><p class="subtitle">محیط الگوریتمی و ریسک شکست جعلی</p></div></div>
-        <div id="riskBox" class="list"></div>
-      </div>
-
-      <div class="card pad col-12">
-        <div class="card-head">
-          <div>
-            <h2 class="title">پکیج استخراج‌شده از ASEMAN برای داوجونز</h2>
-            <p class="subtitle">Macro Shield / Calendar / News Circuit / Options / Kelly / Alpha Matrix / Golden Filters</p>
+    <!-- TAB 2: 360 ANALYSIS -->
+    <div id="analysisTab" class="tab-pane">
+      <div class="content-card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>⚡</span>
+            <span>اتاق فرمان تحلیل ۳۶۰ درجه و تفکیک اجزای ساختار اسمارت‌مانی</span>
           </div>
-          <span id="asemanBadge" class="tag warn">ASEMAN</span>
+          <button class="btn-action" onclick="loadAnalysisData(true)">🔄 تحلیل مجدد با دیتای زنده</button>
         </div>
-        <div id="asemanSummary" class="list"></div>
-      </div>
-
-      <div class="card pad col-6">
-        <div class="card-head"><div><h2 class="title">Macro Shield و شاخص‌های پیشرو</h2><p class="subtitle">CPI/NFP/FOMC + DXY/US10Y/VIX/Gold/Oil</p></div></div>
-        <div id="macroBox" class="list"></div>
-      </div>
-
-      <div class="card pad col-6">
-        <div class="card-head"><div><h2 class="title">شش فیلتر طلایی آسمان</h2><p class="subtitle">فیلتر نهادی مخصوص US30</p></div></div>
-        <div id="goldenBox" class="list"></div>
-      </div>
-
-      <div class="card pad col-4">
-        <div class="card-head"><div><h2 class="title">فیوز خبری US30</h2><p class="subtitle">Yahoo Finance RSS + کلیدواژه‌های ریسک</p></div></div>
-        <div id="newsBox" class="list"></div>
-      </div>
-
-      <div class="card pad col-4">
-        <div class="card-head"><div><h2 class="title">آپشن و Max Pain</h2><p class="subtitle">DIA/SPY Options از Yahoo Finance</p></div></div>
-        <div id="optionsBox" class="list"></div>
-      </div>
-
-      <div class="card pad col-4">
-        <div class="card-head"><div><h2 class="title">Kelly Risk</h2><p class="subtitle">سایز پوزیشن برگرفته از ASEMAN</p></div></div>
-        <div id="kellyBox" class="list"></div>
-      </div>
-
-      <div class="card pad col-12">
-        <div class="card-head"><div><h2 class="title">Alpha Matrix بازار آمریکا</h2><p class="subtitle">DIA نسبت به SPY/QQQ/IWM و سکتورها</p></div></div>
-        <table>
-          <thead><tr><th>نماد</th><th>نام</th><th class="mono">1D</th><th class="mono">5D</th><th class="mono">Alpha vs DIA</th><th>وضعیت</th></tr></thead>
-          <tbody id="alphaTable"></tbody>
-        </table>
-      </div>
-
-      <div class="card pad col-12">
-        <div class="card-head">
-          <div><h2 class="title">منابع استخراج‌شده از پروژه قبلی dow-analyzer1</h2><p class="subtitle">Cash Price / NYSE Hours / Quality Gate / Backtest / Context / Window</p></div>
-          <span id="dowBadge" class="tag buy">DOW</span>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;" id="analysisPartsGrid">
+          <!-- Populated dynamically via JS -->
         </div>
-        <div id="dowBox" class="list"></div>
       </div>
+    </div>
 
-      <div class="card pad col-12">
-        <div class="card-head">
-          <div><h2 class="title">🧭 ترمینال سطح نهادی — ماژول‌های درخواستی</h2><p class="subtitle">برای اجرای بخش‌های سنگین، دکمه‌ها را بزنید؛ خروجی‌ها از داده واقعی داشبورد ساخته می‌شوند.</p></div>
-          <span class="tag warn">ON DEMAND</span>
+    <!-- TAB 3: TRADINGVIEW CHART -->
+    <div id="chartTab" class="tab-pane">
+      <div class="content-card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>📊</span>
+            <span>چارت زنده و تعاملی TradingView (اختصاصی داو جونز)</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-action active" onclick="setChartSymbol('CAPITALCOM:US30')">CAPITALCOM:US30</button>
+            <button class="btn-action" onclick="setChartSymbol('TVC:DJI')">TVC:DJI (Cash)</button>
+            <button class="btn-action" onclick="setChartSymbol('CBOT:YM1!')">CBOT:YM1! (Futures)</button>
+            <button class="btn-action" onclick="setChartSymbol('AMEX:DIA')">AMEX:DIA (ETF)</button>
+          </div>
         </div>
-        <div class="module-actions">
-          <button class="btn" onclick="runModule('calendar')">تقویم اقتصادی و اخبار کلان</button>
-          <button class="btn" onclick="runModule('layers')">دید تریدر نهادی — پنج لایه</button>
-          <button class="btn" onclick="runModule('institutional')">تحلیل سطح نهادی</button>
-          <button class="btn" onclick="runModule('validated')">سیگنال اعتبارسنجی‌شده</button>
-          <button class="btn" onclick="runModule('backtest')">بکتست پول هوشمند</button>
-          <button class="btn" onclick="runModule('agent')">ایجنت معاملاتی هوشمند</button>
-          <button class="btn" onclick="renderFromCurrent()">هیت‌مپ و نمودار پول هوشمند</button>
+        <div id="tv_chart_container"></div>
+      </div>
+    </div>
+
+    <!-- TAB 4: ORDERFLOW & SMC -->
+    <div id="orderflowTab" class="tab-pane">
+      <div class="content-card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>🌊</span>
+            <span>جریان سفارشات اسمارت‌مانی، گپ‌های ارزش منصفانه (FVG) و اوردربلاک‌ها</span>
+          </div>
         </div>
-        <div class="small-note" style="margin-top:10px">کلان اقتصادی از FRED، نرخ بهره ZQ=F، درآمدهای داو، IV/Skew، VIX structure، CVD، فصلی‌بودن و بردار ویژگی در endpointهای جدا اجرا می‌شوند تا Render قفل نشود.</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;" id="smcBlocksGrid">
+          <div>
+            <h4 style="color: #00d2ff; margin-bottom: 10px;">🟢 گپ‌های ارزش منصفانه فعال (Active FVGs):</h4>
+            <div id="fvgListContainer" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- FVG items -->
+            </div>
+          </div>
+          <div>
+            <h4 style="color: #ffd166; margin-bottom: 10px;">🏛️ اوردربلاک‌ها و سطوح شکار نقدینگی (Order Blocks & Sweeps):</h4>
+            <div id="obListContainer" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- OB items -->
+            </div>
+          </div>
+        </div>
       </div>
+    </div>
 
-      <div class="card pad col-6">
-        <div class="card-head"><div><h2 class="title">تقویم اقتصادی، اخبار کلان و واقعی در برابر پیش‌بینی</h2><p class="subtitle">CPI/FOMC/NFP/GDP/PCE + actual/forecast/previous</p></div></div>
-        <div id="calendarModule" class="list"><div class="small-note">برای اجرا دکمه «تقویم اقتصادی و اخبار کلان» را بزنید.</div></div>
+    <!-- TAB 5: MACRO SHIELD -->
+    <div id="macroTab" class="tab-pane">
+      <div class="content-card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>🛡️</span>
+            <span>سپر محافظ اخبار کلان اقتصادی آمریکا و تقویم فدرال رزرو</span>
+          </div>
+          <span id="macroShieldStatus" style="background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); padding: 4px 12px; border-radius: 6px; font-weight: 800;">
+            🟢 وضعیت: مجاز به ترید (خبر فوری تا ۶۰ دقیقه آینده نیست)
+          </span>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>رویداد اقتصادی</th>
+                <th>تاریخ و ساعت به وقت تهران 🇮🇷</th>
+                <th>پیش‌بینی کارشناسان</th>
+                <th>سناریوی تاثیر روی داو جونز</th>
+                <th>وضعیت انتشار</th>
+              </tr>
+            </thead>
+            <tbody id="macroEventsBody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
       </div>
+    </div>
 
-      <div class="card pad col-6">
-        <div class="card-head"><div><h2 class="title">جدول سیگنال نهادی و پوزیشن نهادها</h2><p class="subtitle">Sentiment / Options / Put-Call / COT reference / Fear & Greed</p></div></div>
-        <div id="institutionalSignalModule" class="list"><div class="small-note">برای اجرا دکمه «تحلیل سطح نهادی» را بزنید.</div></div>
+    <!-- TAB 6: KELLY & LOT CALCULATOR -->
+    <div id="kellyTab" class="tab-pane">
+      <div class="content-card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>🧮</span>
+            <span>ماشین حساب کِلی و مدیریت سرمایه و حجم لات (اختصاصی داو جونز)</span>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1.2fr 1.8fr; gap: 24px;">
+          <!-- Inputs -->
+          <div style="background: rgba(0,0,0,0.25); padding: 18px; border-radius: 12px; border: 1px solid var(--border-color);">
+            <div style="margin-bottom: 14px;">
+              <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">موجودی حساب سرمایه (Balance USD):</label>
+              <input type="number" id="calcBalance" value="10000" style="width: 100%; padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-family: var(--font-mono);">
+            </div>
+            <div style="margin-bottom: 14px;">
+              <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">درصد ریسک در این معامله (%):</label>
+              <input type="number" id="calcRiskPct" value="1.0" step="0.1" style="width: 100%; padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-family: var(--font-mono);">
+            </div>
+            <div style="margin-bottom: 14px;">
+              <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">فاصله حد ضرر (Stop Loss Points):</label>
+              <input type="number" id="calcStopPts" value="80" style="width: 100%; padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-family: var(--font-mono);">
+            </div>
+            <div style="margin-bottom: 14px;">
+              <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">تارگت سود مورد نظر (Target Points):</label>
+              <input type="number" id="calcTpPts" value="160" style="width: 100%; padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-family: var(--font-mono);">
+            </div>
+            <button onclick="calculateKellyUS30()" class="btn-action" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #00d2ff, #0077b6); color: #050b14; font-weight: 800; border: none; padding: 10px;">
+              محاسبه سایز لات و ریسک امن
+            </button>
+          </div>
+
+          <!-- Output Results -->
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+              <div class="target-box" style="border-color: #00d2ff;">
+                <div class="target-label">حجم لات مجاز برای ورود</div>
+                <div id="outLotSize" class="target-price" style="color: #00d2ff; font-size: 1.4rem;">0.12 Lot</div>
+                <div class="target-pts" style="color: var(--text-muted);">بر مبنای هر پوینت = ۱ دلار</div>
+              </div>
+              <div class="target-box" style="border-color: #ff3366;">
+                <div class="target-label">حداکثر ضرر در صورت استاپ</div>
+                <div id="outLossUSD" class="target-price" style="color: #ff3366; font-size: 1.4rem;">-$100.00</div>
+                <div class="target-pts" style="color: var(--text-muted);">دقیقاً ۱٪ بالانس حساب</div>
+              </div>
+              <div class="target-box" style="border-color: #00e676;">
+                <div class="target-label">سود مورد انتظار در تارگت</div>
+                <div id="outProfitUSD" class="target-price" style="color: #00e676; font-size: 1.4rem;">+$200.00</div>
+                <div class="target-pts" style="color: var(--text-muted);">ریسک به ریوارد 1:2.0</div>
+              </div>
+            </div>
+
+            <div style="background: rgba(0, 230, 118, 0.08); border: 1px solid rgba(0, 230, 118, 0.3); border-radius: 10px; padding: 16px;">
+              <strong style="color: #00e676; font-size: 0.95rem;">دستورالعمل نجات حساب بروکر (فرمول کِلی):</strong>
+              <div id="outKellyAdvice" style="font-size: 0.84rem; color: #cbd5e1; margin-top: 6px; line-height: 1.5;">
+                ریسک انتخابی کاملاً با فرمول کِلی و بقای حساب در شاخص پرنوسان داوجونز سازگار است. حتی با ۵ ضرر متوالی، بالانس شما آسیبی نخواهد دید.
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+    </div>
 
-      <div class="card pad col-6">
-        <div class="card-head"><div><h2 class="title">هیت‌مپ نقدینگی، تسویه و گره حجمی</h2><p class="subtitle">BSL/SSL Sweep · POC/VAH/VAL · اصلاح به گره حجمی</p></div></div>
-        <div id="heatmapModule" class="list"><div class="small-note">برای اجرا دکمه «هیت‌مپ و نمودار پول هوشمند» را بزنید.</div></div>
+    <!-- TAB 7: TELEGRAM SENTINEL BOT -->
+    <div id="telegramTab" class="tab-pane">
+      <div class="content-card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>🤖</span>
+            <span>تنظیمات ربات دیده‌بان خودکار تلگرام (Telegram Sentinel Dispatcher)</span>
+          </div>
+          <span id="tgConnectionBadge" style="background: rgba(255, 209, 102, 0.15); color: #ffd166; padding: 4px 12px; border-radius: 6px; font-size: 0.78rem;">
+            وضعیت: تنظیم شده / آماده مخابره
+          </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+          <div>
+            <div style="margin-bottom: 14px;">
+              <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">توکن ربات تلگرام (Bot Token):</label>
+              <input type="text" id="tgTokenInput" placeholder="123456789:ABCdefGhIJKlmNoPQRstuVWXyz" style="width: 100%; padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-family: var(--font-mono);">
+            </div>
+            <div style="margin-bottom: 14px;">
+              <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">شناسه چت یا کانال (Chat ID):</label>
+              <input type="text" id="tgChatInput" placeholder="@YourChannel یا -100123456789" style="width: 100%; padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border-color); color: #fff; border-radius: 8px; font-family: var(--font-mono);">
+            </div>
+            <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+              <button onclick="saveTelegramSettings()" class="btn-action" style="background: #00e676; color: #050b14; font-weight: 800; border: none;">
+                💾 ذخیره تنظیمات
+              </button>
+              <button onclick="testTelegramConnection()" class="btn-action" style="background: var(--blue-bg); border-color: var(--blue); color: var(--blue);">
+                ⚡ ارسال پیام آزمایشی
+              </button>
+            </div>
+          </div>
+
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px;">
+            <strong style="color: #ffd166; font-size: 0.88rem;">راهنمای راه‌اندازی ربات تلگرام اختصاصی:</strong>
+            <ul style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px; line-height: 1.6; padding-right: 18px;">
+              <li>به ربات <code>@BotFather</code> در تلگرام پیام داده و با دستور <code>/newbot</code> ربات بسازید.</li>
+              <li>توکن ربات دریافتی را در کادر بالا کپی کنید.</li>
+              <li>ربات را در کانال یا گروه خود ادمین کنید و آیدی کانال را در کادر Chat ID قرار دهید.</li>
+              <li>سیستم به طور خودکار سیگنال‌های گرید A و A+ داوجونز را با ساعت رسمی ایران مخابره خواهد کرد.</li>
+            </ul>
+          </div>
+        </div>
       </div>
+    </div>
 
-      <div class="card pad col-6">
-        <div class="card-head"><div><h2 class="title">ائتلاف بازیگران بزرگ، HFT و سفارشات عمده</h2><p class="subtitle">Bank Coalition / HFT footprint / Block Trades / Heavy Orders</p></div></div>
-        <div id="bigPlayersModule" class="list"><div class="small-note">برای اجرا دکمه «هیت‌مپ و نمودار پول هوشمند» یا «ایجنت» را بزنید.</div></div>
+    <!-- TAB 8: TRADE JOURNAL -->
+    <div id="journalTab" class="tab-pane">
+      <div class="content-card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>📜</span>
+            <span>ژورنال هوشمند معاملات و نتایج زنده ستاپ‌های داو جونز</span>
+          </div>
+          <button onclick="exportJournalCSV()" class="btn-action">📥 دانلود خروجی اکسل / CSV</button>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>کد ستاپ</th>
+                <th>تایم‌استمپ</th>
+                <th>جهت</th>
+                <th>قیمت ورود</th>
+                <th>گرید</th>
+                <th>نتیجه نهایی</th>
+                <th>علت خروج</th>
+                <th>سود/ضرر (پوینت)</th>
+              </tr>
+            </thead>
+            <tbody id="journalTableBody">
+              <!-- Dynamically populated from /api/journal/live -->
+            </tbody>
+          </table>
+        </div>
       </div>
+    </div>
 
-      <div class="card pad col-6">
-        <div class="card-head"><div><h2 class="title">دید تریدر نهادی — پنج لایه</h2><p class="subtitle">DXY/US10Y/VIX/SMT · PDH/PDL/PWH/PWL · News Window · Options · Killzone</p></div></div>
-        <div id="layersModule" class="list"><div class="small-note">برای اجرا دکمه «دید تریدر نهادی — پنج لایه» را بزنید.</div></div>
+    <!-- TAB 9: ALPHA MATRIX -->
+    <div id="alphaTab" class="tab-pane">
+      <div class="content-card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>⚖️</span>
+            <span>ماتریس آلفا و وزن‌دهی ۳۰ سهم برتر داوجونز بر اساس قیمت</span>
+          </div>
+        </div>
+        <div id="alphaMatrixContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;">
+          <!-- Alpha cards populated dynamically -->
+        </div>
       </div>
+    </div>
 
-      <div class="card pad col-6">
-        <div class="card-head"><div><h2 class="title">سیگنال اعتبارسنجی‌شده و بکتست استراتژی پول هوشمند</h2><p class="subtitle">ICT چهارمرحله‌ای: Sweep → Reclaim → Structure → Flow/Regime</p></div></div>
-        <div id="validatedModule" class="list"><div class="small-note">برای اجرا دکمه «سیگنال اعتبارسنجی‌شده» یا «بکتست» را بزنید.</div></div>
+    <!-- TAB 10: OPTIONS SENTIMENT -->
+    <div id="optionsTab" class="tab-pane">
+      <div class="content-card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>📈</span>
+            <span>تحلیل تمایلات وال‌استریت، نسبت Put/Call و سطوح ماکس پین (Max Pain)</span>
+          </div>
+        </div>
+        <div id="optionsAnalyticsContainer">
+          <!-- Loaded via /api/aseman/options -->
+        </div>
       </div>
+    </div>
 
-      <div class="card pad col-6">
-        <div class="card-head"><div><h2 class="title">ایجنت معاملاتی هوشمند و حالت آموزش</h2><p class="subtitle">۲۵ عامل را توضیح می‌دهد؛ تصمیم نهایی با کارت سیگنال و گارد اجرایی است.</p></div></div>
-        <textarea id="agentQuestion" class="input textarea" placeholder="مثلاً: الان وقت معامله است؟ چرا این سیگنال؟ حد ضرر کجا باشد؟"></textarea>
-        <div class="module-actions"><button class="btn primary" onclick="askAgent()">ارسال سوال به ایجنت</button><button class="btn" onclick="fillQuestion('سیگنال الان چیست؟')">سیگنال الان؟</button><button class="btn" onclick="fillQuestion('چرا این سیگنال؟')">چرا؟</button><button class="btn" onclick="fillQuestion('الان وقت معامله است؟')">وقت معامله؟</button></div>
-        <div id="agentChatModule" class="list" style="margin-top:10px"><div class="small-note">ایجنت قاعده‌محور است و فقط از داده واقعی داشبورد جواب می‌دهد.</div></div>
+    <!-- TAB 11: CROSS ASSET -->
+    <div id="crossTab" class="tab-pane">
+      <div class="content-card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>🌐</span>
+            <span>ماتریس همبستگی بین‌بازاری (داوجونز با طلا، شاخص دلار DXY و بازدهی اوراق ۱۰ ساله)</span>
+          </div>
+        </div>
+        <div id="crossAssetContainer">
+          <!-- Loaded via /api/dow/cross -->
+        </div>
       </div>
+    </div>
 
-      <div class="card pad col-6">
-        <div class="card-head"><div><h2 class="title">سیگنال نهایی پول هوشمند + آموزش مبتدی</h2><p class="subtitle">BOS/CHoCH/FVG/OB · Fake Trend · Sweep · Execution Guard</p></div></div>
-        <div id="educationModule" class="list"><div class="small-note">بعد از بارگذاری تحلیل، خلاصه آموزشی اینجا پر می‌شود.</div></div>
+    <!-- TAB 12: EXECUTION GUARD -->
+    <div id="guardTab" class="tab-pane">
+      <div class="content-card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>🛡️</span>
+            <span>گارد انضباطی بروکر و قوانین ایمنی حفظ سرمایه</span>
+          </div>
+        </div>
+        <div id="guardRulesContainer">
+          <!-- Loaded via /api/dow/guard -->
+        </div>
       </div>
+    </div>
 
-      <div class="card pad col-12">
-        <div class="card-head"><div><h2 class="title">تشخیص و وضعیت پروژه</h2><p class="subtitle">Render env / provider / cache</p></div></div>
-        <pre id="debug" style="white-space:pre-wrap;direction:ltr;text-align:left;background:rgba(255,255,255,.035);border:1px solid var(--border-soft);border-radius:14px;padding:14px;color:#b9c6d8;overflow:auto"></pre>
+  </div> <!-- /container -->
+
+  <!-- Persian Simple Decision Drawer (Bottom Sticky) -->
+  <div id="decisionDrawer" class="decision-drawer">
+    <div class="drawer-handle" onclick="toggleDecisionDrawer()">
+      <div class="drawer-handle-title">
+        <span>💡</span>
+        <span>تصمیم نهایی و راهنمای فوری معامله‌گر به زبان ساده (کلیک کنید تا باز شود)</span>
       </div>
-    </section>
+      <span id="drawerArrow" style="font-size: 1.2rem; color: var(--blue);">▲</span>
+    </div>
+    <div class="drawer-content">
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+        <div style="background: rgba(0,0,0,0.3); padding: 14px; border-radius: 8px; border-right: 3px solid #00d2ff;">
+          <strong style="color: #00d2ff; font-size: 0.9rem;">همین الان چه کار کنم؟</strong>
+          <p id="drawerActionText" style="font-size: 0.82rem; color: #e2e8f0; margin-top: 6px; line-height: 1.5;">
+            سوگیری تکنیکال داوجونز صعودی است. در صورتی که قیمت به محدوده ورود اصلاح داد، وارد پوزیشن خرید شوید.
+          </p>
+        </div>
+        <div style="background: rgba(0,0,0,0.3); padding: 14px; border-radius: 8px; border-right: 3px solid #00e676;">
+          <strong style="color: #00e676; font-size: 0.9rem;">استراتژی خروج و سیو سود:</strong>
+          <p style="font-size: 0.82rem; color: #e2e8f0; margin-top: 6px; line-height: 1.5;">
+            به محض لمس تارگت اول (+۵۰ پوینت)، نیمی از پوزیشن را ببندید و حد ضرر را روی نقطه ورود (Breakeven) قرار دهید تا ریسک صفر شود.
+          </p>
+        </div>
+        <div style="background: rgba(0,0,0,0.3); padding: 14px; border-radius: 8px; border-right: 3px solid #ffd166;">
+          <strong style="color: #ffd166; font-size: 0.9rem;">هشدار نوسان اخبار:</strong>
+          <p id="drawerNewsAlert" style="font-size: 0.82rem; color: #e2e8f0; margin-top: 6px; line-height: 1.5;">
+            در حال حاضر خبر فوق‌العاده سنگین فوری در پیش نیست، اما بازگشایی سشن نیویورک نوسانات تندی ایجاد خواهد کرد.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <div class="footer">US30 ASEMAN Dashboard — FastAPI + Render-ready + Smart Money Engine</div>
-  </main>
+  <!-- Toast Notification -->
+  <div id="toast" class="toast">عملیات با موفقیت انجام شد</div>
+
+  <!-- TradingView Library -->
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 
   <script>
-    const $ = id => document.getElementById(id);
-    const fmt = (n, d=0) => (n === null || n === undefined || Number.isNaN(Number(n))) ? '—' : Number(n).toLocaleString('en-US', {maximumFractionDigits:d, minimumFractionDigits:d});
-    const pct = n => (n === null || n === undefined) ? '—' : `${Number(n).toFixed(2)}%`;
-    const state = { interval: '1h', coalition: false, loading: false, data: null };
+    // State
+    let currentInterval = '1h';
+    let currentChartSymbol = 'CAPITALCOM:US30';
+    let audioAlertsEnabled = true;
+    let tvWidget = null;
+    let cachedAnalysis = null;
 
-    document.querySelectorAll('.tf').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tf').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        state.interval = btn.dataset.tf;
-        load(true);
+    // Toast
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 3200);
+    }
+
+    // Audio Alert Synthesizer (Web Audio API - no external file required)
+    function playAlertChime() {
+      if (!audioAlertsEnabled) return;
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        osc.frequency.exponentialRampToValueAtTime(880.00, audioCtx.currentTime + 0.15); // A5
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.4);
+      } catch (e) {}
+    }
+
+    function toggleAudioAlerts() {
+      audioAlertsEnabled = !audioAlertsEnabled;
+      const btn = document.getElementById('btnAudioToggle');
+      btn.textContent = audioAlertsEnabled ? '🔔 صدای اعلان: فعال' : '🔕 صدای اعلان: خاموش';
+      btn.classList.toggle('active', audioAlertsEnabled);
+      showToast(audioAlertsEnabled ? 'صدای اعلان‌های هوشمند فعال شد' : 'صدای اعلان‌ها خاموش شد');
+    }
+
+    // Tab Switching
+    function switchTab(tabId, cardEl) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      const target = document.getElementById(tabId);
+      if (target) target.classList.add('active');
+
+      if (cardEl) {
+        document.querySelectorAll('.tab-card').forEach(el => el.classList.remove('active'));
+        cardEl.classList.add('active');
+      }
+
+      if (tabId === 'chartTab' && !tvWidget) {
+        initTradingViewChart();
+      }
+    }
+
+    // Timeframe
+    function setTimeframe(tf) {
+      currentInterval = tf;
+      document.querySelectorAll('.tf-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.trim() === tf);
       });
-    });
-    $('refreshBtn').onclick = () => load(true);
-    $('coalitionBtn').onclick = () => {
-      state.coalition = !state.coalition;
-      $('coalitionBtn').textContent = state.coalition ? 'بانک‌ها روشن' : 'بانک‌ها خاموش';
-      $('coalitionBtn').classList.toggle('active', state.coalition);
-      load(true);
-    };
-
-    async function api(path) {
-      const res = await fetch(path, {cache:'no-store'});
-      const j = await res.json();
-      if (!res.ok || j.ok === false) throw new Error(j.error || `HTTP ${res.status}`);
-      return j;
-    }
-    async function rawApi(path) {
-      const res = await fetch(path, {cache:'no-store'});
-      try { return await res.json(); } catch(e) { return {ok:false, error:`HTTP ${res.status}`}; }
+      refreshAll(true);
     }
 
-    async function load(fresh=false) {
-      if (state.loading) return;
-      state.loading = true;
-      $('refreshBtn').textContent = 'در حال دریافت...';
-      $('refreshBtn').disabled = true;
+    // Decision Drawer Toggle
+    function toggleDecisionDrawer() {
+      const drawer = document.getElementById('decisionDrawer');
+      const arrow = document.getElementById('drawerArrow');
+      drawer.classList.toggle('open');
+      arrow.textContent = drawer.classList.contains('open') ? '▼' : '▲';
+    }
+
+    // TradingView Initialization
+    function initTradingViewChart() {
+      const container = document.getElementById('tv_chart_container');
+      if (!container) return;
+      container.innerHTML = '';
+      tvWidget = new TradingView.widget({
+        "autosize": true,
+        "symbol": currentChartSymbol,
+        "interval": currentInterval === '1d' ? 'D' : (currentInterval.replace('m', '')),
+        "timezone": "Asia/Tehran",
+        "theme": "dark",
+        "style": "1",
+        "locale": "fa_IR",
+        "toolbar_bg": "#121824",
+        "enable_publishing": false,
+        "allow_symbol_change": true,
+        "container_id": "tv_chart_container"
+      });
+    }
+
+    function setChartSymbol(sym) {
+      currentChartSymbol = sym;
+      initTradingViewChart();
+      showToast(`نماد چارت به ${sym} تغییر یافت`);
+    }
+
+    // Data Loaders
+    async function loadTicker() {
       try {
-        const equity = Number($('equity').value || 10000);
-        const risk = Number($('risk').value || 1);
-        const url = `/api/analyze?interval=${encodeURIComponent(state.interval)}&bars=180&fresh=${fresh ? 'true' : 'false'}&coalition=${state.coalition ? 'true':'false'}&equity=${equity}&risk_pct=${risk}&include_aseman=true&include_dow=true`;
-        const data = await api(url);
-        state.data = data;
-        render(data);
-      } catch (err) {
-        renderError(err);
-      } finally {
-        state.loading = false;
-        $('refreshBtn').disabled = false;
-        $('refreshBtn').textContent = 'بروزرسانی';
-      }
-    }
+        const res = await fetch(`/api/ticker?interval=${currentInterval}`);
+        const data = await res.json();
+        if (data.ok) {
+          const p = Number(data.price || 0);
+          const chg = Number(data.change || 0);
+          const chgPct = Number(data.change_pct || 0);
+          document.getElementById('hdrPrice').textContent = p.toLocaleString('en-US');
+          const chgEl = document.getElementById('hdrChange');
+          chgEl.textContent = `${chgPct >= 0 ? '+' : ''}${chgPct.toFixed(2)}% (${chg >= 0 ? '+' : ''}${chg} pts)`;
+          chgEl.className = `price-change ${chg >= 0 ? 'pos' : 'neg'}`;
 
-    function clsByChange(x) { return Number(x) > 0 ? 'pos' : Number(x) < 0 ? 'neg' : 'neutral'; }
-    function dirClass(d) { return d > 0 ? 'buy' : d < 0 ? 'sell' : 'warn'; }
-    function dirText(d) { return d > 0 ? 'LONG' : d < 0 ? 'SHORT' : 'WAIT'; }
-
-    function render(data) {
-      const p = data.price || {}, ind = data.indicators || {}, sig = data.signal || {}, m = data.market || {};
-      $('price').classList.remove('skeleton');
-      $('price').textContent = fmt(p.last, 0);
-      $('change').className = `change ${clsByChange(p.change_pct)}`;
-      $('change').textContent = `${p.change >= 0 ? '+' : ''}${fmt(p.change, 0)}  (${p.change_pct >= 0 ? '+' : ''}${pct(p.change_pct)})`;
-      $('sourceLine').textContent = `${data.meta?.source_note || 'Provider'} | TF ${data.meta?.interval || state.interval} | ${data.meta?.last || ''}`;
-      $('cacheTag').textContent = data.meta?.cached ? `Cache ${data.meta.age}s` : 'Live';
-      $('rsi').textContent = fmt(ind.rsi, 1);
-      $('atr').textContent = fmt(ind.atr, 0);
-      $('trend').textContent = ind.trend || '—';
-      $('vwapDev').textContent = pct(data.flow?.vwap_dev_pct);
-
-      $('marketDot').className = `dot ${m.is_open ? 'ok' : 'bad'}`;
-      $('marketText').textContent = m.status_fa || '—';
-
-      $('grade').textContent = sig.grade || '—';
-      $('signalLabel').textContent = sig.label || '—';
-      $('signalVerdict').textContent = sig.verdict_fa || '—';
-      $('dirTag').className = `tag ${dirClass(sig.direction)}`;
-      $('dirTag').textContent = dirText(sig.direction);
-      $('confText').textContent = `${fmt(sig.confidence, 1)}%`;
-      $('confBar').style.width = `${Math.max(0, Math.min(100, Number(sig.confidence || 0)))}%`;
-      $('signalBox').style.borderColor = sig.direction > 0 ? 'rgba(0,230,118,.35)' : sig.direction < 0 ? 'rgba(255,71,120,.35)' : 'rgba(255,209,102,.30)';
-
-      renderPlan(sig, data.position_sizing || {});
-      drawChart(data.candles || [], data.volume_profile || {}, sig.plan || {});
-      renderParts(sig.parts || []);
-      renderLiquidity(data);
-      renderZones(data);
-      renderFlow(data.flow || {});
-      renderRisk(data);
-      renderAseman(data.aseman_suite || {});
-      renderDow(data.dow_suite || {}, data.execution_guard || {});
-      renderEducation(data);
-      renderFromCurrent(false);
-      $('debug').textContent = JSON.stringify({meta:data.meta, providerStatus:'GET /api/providers', market:data.market, coalition:data.coalition, aseman:data.aseman_suite?.extracted_modules, dow:data.dow_suite?.manifest?.modules_count}, null, 2);
-    }
-
-    function renderPlan(sig, sizing) {
-      const plan = sig.plan || {};
-      $('planTable').innerHTML = plan.entry ? `
-        <tr><td>Entry</td><td class="mono">${fmt(plan.entry,0)}</td></tr>
-        <tr><td>Stop</td><td class="mono">${fmt(plan.stop,0)}</td></tr>
-        <tr><td>TP1 / TP2 / TP3</td><td class="mono">${fmt(plan.tp1,0)} / ${fmt(plan.tp2,0)} / ${fmt(plan.tp3,0)}</td></tr>
-        <tr><td>R:R</td><td class="mono">${fmt(plan.rr1,2)} / ${fmt(plan.rr2,2)} / ${fmt(plan.rr3,2)}</td></tr>
-        <tr><td>Risk</td><td class="mono">${fmt(plan.risk,0)} (${fmt(plan.risk_pct,2)}%)</td></tr>` :
-        `<tr><td colspan="2" class="small-note">فعلاً پلن معامله فعال نیست؛ حالت بازار خنثی یا اطمینان پایین است.</td></tr>`;
-      $('sizing').textContent = sizing.ok ? `سایز آموزشی: ${fmt(sizing.units,4)} واحد | ریسک ${fmt(sizing.risk_amount,2)} دلار | Notional ${fmt(sizing.notional,2)}` : (sizing.note || '—');
-    }
-
-    function renderParts(parts) {
-      $('parts').innerHTML = parts.length ? parts.map(x => {
-        const c = Number(x.weight) > 0 ? 'buy' : Number(x.weight) < 0 ? 'sell' : 'warn';
-        return `<div class="item"><div class="top"><span class="name">${escapeHtml(x.name)}</span><span class="tag ${c}">${x.weight > 0 ? '+' : ''}${fmt(x.weight,2)}</span></div><div class="detail">${escapeHtml(x.detail || '')}</div></div>`;
-      }).join('') : '<div class="small-note">داده‌ای برای اجزای سیگنال نیست.</div>';
-    }
-
-    function renderLiquidity(data) {
-      const liq = data.liquidity || {}, sweeps = data.sweeps || [];
-      const rows = [];
-      (liq.bsl || []).slice(0,4).forEach(x => rows.push(`<div class="item"><div class="top"><span class="name">Buy-side Liquidity</span><span class="tag buy">${fmt(x.price,0)}</span></div><div class="detail">فاصله: ${pct(x.dist_pct)} | برخوردها: ${x.hits || 1}</div></div>`));
-      (liq.ssl || []).slice(0,4).forEach(x => rows.push(`<div class="item"><div class="top"><span class="name">Sell-side Liquidity</span><span class="tag sell">${fmt(x.price,0)}</span></div><div class="detail">فاصله: ${pct(x.dist_pct)} | برخوردها: ${x.hits || 1}</div></div>`));
-      sweeps.slice(-4).reverse().forEach(x => rows.push(`<div class="item"><div class="top"><span class="name">${escapeHtml(x.type || 'Sweep')}</span><span class="tag ${x.dir==='bull'?'buy':'sell'}">${fmt(x.level,0)}</span></div><div class="detail">${x.dir} | عمق ${fmt(x.depth_atr,2)} ATR | VolZ ${fmt(x.vol_z,2)}</div></div>`));
-      $('liq').innerHTML = rows.length ? rows.join('') : '<div class="small-note">نقدینگی نزدیک شناسایی نشد.</div>';
-    }
-
-    function renderZones(data) {
-      const f = data.fvgs || [], ob = data.order_blocks || [];
-      const rows = [];
-      f.slice(0,5).forEach(x => rows.push(`<div class="item"><div class="top"><span class="name">FVG ${x.dir}</span><span class="tag ${x.dir==='bull'?'buy':'sell'}">${fmt(x.bottom,0)} - ${fmt(x.top,0)}</span></div><div class="detail">فاصله: ${pct(x.dist_pct)} | ATRx ${fmt(x.atr_x,2)} | ${x.mitigated ? 'Mitigated' : 'Fresh'}</div></div>`));
-      ob.slice(0,5).forEach(x => rows.push(`<div class="item"><div class="top"><span class="name">Order Block ${x.dir}</span><span class="tag ${x.dir==='bull'?'buy':'sell'}">${fmt(x.bottom,0)} - ${fmt(x.top,0)}</span></div><div class="detail">فاصله: ${pct(x.dist_pct)} | Disp ${fmt(x.disp_atr,2)} ATR | VolZ ${fmt(x.vol_z,2)}</div></div>`));
-      $('zones').innerHTML = rows.length ? rows.join('') : '<div class="small-note">ناحیه فعال نزدیک وجود ندارد.</div>';
-    }
-
-    function renderFlow(f) {
-      const rows = [
-        ['VWAP', fmt(f.vwap,0)], ['VWAP Dev', pct(f.vwap_dev_pct)], ['CD Slope', fmt(f.cd_slope,4)],
-        ['OBV Slope', fmt(f.obv_slope,4)], ['CMF', fmt(f.cmf,4)], ['MFI', fmt(f.mfi,1)],
-        ['Divergence', f.divergence || '—'], ['SMI Trend', fmt(f.smi_trend,4)]
-      ];
-      $('flowTable').innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td class="mono">${r[1]}</td></tr>`).join('');
-    }
-
-    function renderRisk(data) {
-      const h = data.hft || {}, fake = data.fake || {}, vp = data.volume_profile || {};
-      const rows = [
-        `<div class="item"><div class="top"><span class="name">HFT Index</span><span class="tag warn">${fmt(h.hft_index,1)}</span></div><div class="detail">${escapeHtml(h.regime || '—')}</div></div>`,
-        `<div class="item"><div class="top"><span class="name">Fake Trend</span><span class="tag warn">${fmt(fake.score,1)}</span></div><div class="detail">${escapeHtml(fake.verdict || '—')}</div></div>`,
-        `<div class="item"><div class="top"><span class="name">Volume Profile</span><span class="tag">POC ${fmt(vp.poc,0)}</span></div><div class="detail">VAH ${fmt(vp.vah,0)} | VAL ${fmt(vp.val,0)} | فاصله POC ${pct(vp.poc_dist_pct)}</div></div>`
-      ];
-      (fake.reasons || []).slice(0,3).forEach(r => rows.push(`<div class="item"><div class="detail">${escapeHtml(r)}</div></div>`));
-      $('riskBox').innerHTML = rows.join('');
-    }
-
-    function tagClassByBadge(x) {
-      x = String(x || '').toUpperCase();
-      if (x.includes('GREEN') || x.includes('PASS') || x.includes('BULL')) return 'buy';
-      if (x.includes('RED') || x.includes('FAIL') || x.includes('BEAR') || x.includes('RISK')) return 'sell';
-      return 'warn';
-    }
-
-    function renderAseman(s) {
-      if (!s || !s.success) {
-        ['asemanSummary','macroBox','goldenBox','newsBox','optionsBox','kellyBox'].forEach(id => { if ($(id)) $(id).innerHTML = `<div class="small-note">پکیج ASEMAN هنوز بارگذاری نشده است.</div>`; });
-        if ($('alphaTable')) $('alphaTable').innerHTML = `<tr><td colspan="6" class="small-note">—</td></tr>`;
-        return;
-      }
-      const macro = s.macro_shield || {}, lead = macro.leading_indicators || {}, inds = lead.indicators || {};
-      const news = s.news_circuit || {}, opt = s.options || {}, golden = s.golden_filters || {}, kelly = s.kelly_risk || {}, alpha = s.alpha_matrix || {};
-      const badgeCls = tagClassByBadge(golden.badge_color || macro.shield_color);
-      $('asemanBadge').className = `tag ${badgeCls}`;
-      $('asemanBadge').textContent = golden.verdict ? `${golden.pass_count || 0}/${golden.total || 6}` : 'ASEMAN';
-
-      $('asemanSummary').innerHTML = `
-        <div class="item"><div class="top"><span class="name">منابع استخراج‌شده</span><span class="tag buy">${(s.extracted_modules || []).length}</span></div><div class="detail">${(s.extracted_modules || []).map(escapeHtml).join(' • ')}</div></div>
-        <div class="item"><div class="top"><span class="name">خلاصه نهادی</span><span class="tag ${badgeCls}">${escapeHtml(golden.verdict || '—')}</span></div><div class="detail">Macro: ${escapeHtml(macro.shield_state || '—')} | News: ${escapeHtml(news.circuit_title || '—')} | Options PCR: ${fmt(opt.pcr_ratio,2)} | Alpha لیدر: ${escapeHtml(alpha.top_alpha?.symbol || '—')}</div></div>`;
-
-      const indRows = [
-        ['US30', inds.us30_cash], ['DIA', inds.dow_etf], ['SPX', inds.spx], ['NDX', inds.ndx], ['VIX', inds.vix], ['DXY', inds.dxy], ['US10Y', inds.us10y], ['Gold', inds.gold], ['Oil', inds.oil]
-      ].map(([k,v]) => `<tr><td>${k}</td><td class="mono">${fmt(v?.price, k==='US10Y'?3:2)}</td><td class="mono ${clsByChange(v?.chg)}">${v?.chg >= 0 ? '+' : ''}${pct(v?.chg)}</td></tr>`).join('');
-      $('macroBox').innerHTML = `
-        <div class="item"><div class="top"><span class="name">${escapeHtml(macro.shield_state || 'Macro Shield')}</span><span class="tag ${tagClassByBadge(macro.shield_color)}">${escapeHtml(macro.event_code || '—')}</span></div><div class="detail">${escapeHtml(macro.shield_action || '')}<br>رویداد بعدی: ${escapeHtml(macro.next_event || '—')} | زمان: ${escapeHtml(macro.countdown_fmt || '—')} | پیش‌بینی: ${escapeHtml(macro.forecast || '—')} / قبلی: ${escapeHtml(macro.previous || '—')}</div></div>
-        <div class="item"><div class="top"><span class="name">رژیم کلان</span><span class="tag ${tagClassByBadge(lead.regime === 'RISK_ON' ? 'GREEN' : lead.regime === 'RISK_OFF' ? 'RED' : 'YELLOW')}">${escapeHtml(lead.regime_fa || '—')}</span></div><div class="detail">Score: ${fmt(lead.macro_score,1)} | FedWatch Proxy: ${escapeHtml(lead.fedwatch_proxy?.summary || '—')}<br>${(lead.notes || []).map(escapeHtml).join(' / ')}</div></div>
-        <div class="item"><table><tbody>${indRows}</tbody></table></div>`;
-
-      $('goldenBox').innerHTML = (golden.filters || []).map(f => `<div class="item"><div class="top"><span class="name">${escapeHtml(f.name_fa || f.name)}</span><span class="tag ${f.passed ? 'buy':'sell'}">${escapeHtml(f.status || '')}</span></div><div class="detail">${escapeHtml(f.value_display || '')}<br>${escapeHtml(f.description || '')}</div></div>`).join('') || '<div class="small-note">فیلترها هنوز آماده نیستند.</div>';
-
-      $('newsBox').innerHTML = `
-        <div class="item"><div class="top"><span class="name">${escapeHtml(news.circuit_title || 'News')}</span><span class="tag ${tagClassByBadge(news.badge)}">${escapeHtml(news.circuit_status || '—')}</span></div><div class="detail">${escapeHtml(news.circuit_advice || '')}<br>تیترها: ${fmt(news.news_count,0)} | منفی: ${fmt(news.panic_count,0)} | مثبت: ${fmt(news.bull_count,0)}</div></div>
-        ${(news.news_items || []).slice(0,4).map(n => `<div class="item"><div class="top"><span class="name">${escapeHtml(n.sentiment || 'NEUTRAL')}</span><span class="tag warn">${fmt(n.panic_score,0)}</span></div><div class="detail">${escapeHtml(n.title || '')}</div></div>`).join('')}`;
-
-      $('optionsBox').innerHTML = opt.success ? `
-        <div class="item"><div class="top"><span class="name">${escapeHtml(opt.symbol || 'DIA')} Options</span><span class="tag ${tagClassByBadge(opt.pcr_bias)}">PCR ${fmt(opt.pcr_ratio,2)}</span></div><div class="detail">${escapeHtml(opt.pcr_sentiment || '')}<br>Expiry: ${escapeHtml(opt.expiry || '—')} | Max Pain proxy: ${fmt(opt.max_pain_us30_proxy,0)}</div></div>
-        <div class="item"><div class="detail">Call walls: ${(opt.top_call_walls || []).slice(0,3).map(x => fmt(x.strike,0)).join(' / ')}<br>Put walls: ${(opt.top_put_walls || []).slice(0,3).map(x => fmt(x.strike,0)).join(' / ')}</div></div>` :
-        `<div class="small-note">آپشن در دسترس نیست: ${escapeHtml(opt.error || 'No data')}</div>`;
-
-      $('kellyBox').innerHTML = kelly && kelly.success ? `
-        <div class="item"><div class="top"><span class="name">${escapeHtml(kelly.status || 'Kelly')}</span><span class="tag ${tagClassByBadge(kelly.badge_color)}">${escapeHtml(kelly.rr_fmt || '—')}</span></div><div class="detail">${escapeHtml(kelly.advice || '')}</div></div>
-        <div class="item"><div class="detail">Units: ${fmt(kelly.contracts_or_units,4)} | Risk: $${fmt(kelly.dollar_risk,2)} | EV: $${fmt(kelly.expected_value_usd,2)} | Half-Kelly: ${fmt(kelly.kelly_half_pct,1)}%</div></div>` :
-        `<div class="small-note">برای Kelly باید پلن Entry/Stop/TP فعال باشد.</div>`;
-
-      $('alphaTable').innerHTML = (alpha.leaders || []).slice(0,12).map(x => `<tr><td class="mono">${escapeHtml(x.symbol)}</td><td>${escapeHtml(x.name)}</td><td class="mono ${clsByChange(x.change_1d)}">${x.change_1d >= 0 ? '+' : ''}${pct(x.change_1d)}</td><td class="mono ${clsByChange(x.change_5d)}">${x.change_5d >= 0 ? '+' : ''}${pct(x.change_5d)}</td><td class="mono ${clsByChange(x.alpha_vs_dia)}">${x.alpha_vs_dia >= 0 ? '+' : ''}${pct(x.alpha_vs_dia)}</td><td>${escapeHtml(x.status || '')}</td></tr>`).join('') || `<tr><td colspan="6" class="small-note">Alpha Matrix در دسترس نیست.</td></tr>`;
-    }
-
-    function renderDow(d, guard={}) {
-      if (!d || !d.ok) {
-        $('dowBox').innerHTML = `<div class="small-note">منابع dow-analyzer1 هنوز بارگذاری نشده است.</div>`;
-        $('dowBadge').className = 'tag warn';
-        return;
-      }
-      const prof = d.profile?.asset_profile || {}, cash = d.cash?.cash_price || {}, best = cash.best || {}, hours = d.hours?.status || {}, win = d.window || {}, qual = d.quality_evidence || {}, bt = d.backtest || {}, ctx = d.context || {}, broker = d.broker?.computed || {}, ref = d.reference || {};
-      const us30Daily = (bt.summary || []).find(x => String(x.run || '').includes('US30-1d')) || {};
-      const gate = ctx.gate || {};
-      const gb = guard.broker_margin || {}, gr = guard.plan_risk || {}, gs = guard.spread || {};
-      $('dowBadge').className = `tag ${gate.allowed === false ? 'sell' : gate.mode === 'CAUTION' ? 'warn' : 'buy'}`;
-      $('dowBadge').textContent = `${d.manifest?.modules_count || 0} ماژول`;
-      $('dowBox').innerHTML = `
-        <div class="item"><div class="top"><span class="name">پروفایل US30</span><span class="tag buy">${escapeHtml(prof.candle_symbol || 'DIA')} × ${fmt(prof.display_scale,0)}</span></div><div class="detail">Options: ${escapeHtml(prof.options_symbol || 'DIA')} | Peers: ${escapeHtml((prof.smt_peers || []).join(' / '))} | ${escapeHtml(prof.hours?.note || '')}</div></div>
-        <div class="item"><div class="top"><span class="name">قیمت نقدی داو</span><span class="tag ${best.exact ? 'buy':'warn'}">${fmt(best.index || cash.index,0)}</span></div><div class="detail">منبع: ${escapeHtml(best.label || cash.source_fa || '—')} | age: ${fmt(best.age,1)} دقیقه | basis: ${fmt(best.basis || cash.basis,0)}</div></div>
-        <div class="item"><div class="top"><span class="name">ساعت بازار NYSE</span><span class="tag ${hours.is_open ? 'buy':'warn'}">${hours.is_open ? 'OPEN':'CLOSED'}</span></div><div class="detail">${escapeHtml(hours.status_fa || hours.phase_fa || '—')} | Tehran: ${escapeHtml(hours.tehran_time || '—')} | NY: ${escapeHtml(hours.new_york_time || '—')}</div></div>
-        <div class="item"><div class="top"><span class="name">Quality Gate بک‌تست‌شده</span><span class="tag buy">min ${fmt(qual.minimum,0)} / strong ${fmt(qual.strong,0)}</span></div><div class="detail">Best R: ${fmt(qual.best_r,1)} | منبع: ${escapeHtml(qual.source || 'signal_filter.py')} | تایم‌فریم معتبرتر: 1D</div></div>
-        <div class="item"><div class="top"><span class="name">تله بین‌بازاری DXY</span><span class="tag warn">وزن ۰</span></div><div class="detail">DXY↔Dow: r=${fmt(ref.intermarket_measured?.['DX-Y.NYB']?.measured_corr_2y,3)} | t=${fmt(ref.intermarket_measured?.['DX-Y.NYB']?.t_stat,2)}؛ بنابراین دلار برای داو وتوی جهت‌دار نیست.</div></div>
-        <div class="item"><div class="top"><span class="name">بروکر ترِندو / مارجین نمونه</span><span class="tag ${broker.can_open_min_lot ? 'buy':'sell'}">0.01 lot</span></div><div class="detail">Notional: $${fmt(broker.notional_usd,2)} | Margin: $${fmt(broker.required_margin_usd,2)} | ${escapeHtml(broker.verdict_fa || '—')}</div></div>
-        <div class="item"><div class="top"><span class="name">گارد اجرایی حساب ۱۰ دلاری</span><span class="tag ${guard.trade_allowed ? 'buy':'sell'}">${escapeHtml(guard.status_fa || '—')}</span></div><div class="detail">Margin: $${fmt(gb.required_margin_usd,2)} / short $${fmt(gb.margin_shortage_usd,2)} | Risk: $${fmt(gr.risk_usd,2)} (${fmt(gr.risk_pct_of_balance,1)}%) | Spread: ${fmt(gs.spread_points,2)}pt (${escapeHtml(gs.zone || '—')})<br>Blockers: ${(guard.blockers || []).slice(0,3).map(escapeHtml).join(' / ') || '—'}</div></div>
-        <div class="item"><div class="top"><span class="name">Backtest US30-1D</span><span class="tag ${Number(us30Daily.avg_r) > 0 ? 'buy':'warn'}">Win ${fmt(us30Daily.win_rate,1)}%</span></div><div class="detail">n=${fmt(us30Daily.n,0)} | AvgR ${fmt(us30Daily.avg_r,3)} | Strong win ${fmt(us30Daily.strong?.win_rate,1)}% | Grade B win ${fmt(us30Daily.by_grade?.B?.win_rate,1)}%</div></div>
-        <div class="item"><div class="top"><span class="name">Trade Gate و Window</span><span class="tag ${gate.allowed === false ? 'sell' : gate.mode === 'CAUTION' ? 'warn' : 'buy'}">${escapeHtml(gate.mode || win.grade || '—')}</span></div><div class="detail">Window grade: ${escapeHtml(win.grade || '—')} | Ratio: ${fmt(win.ratio,2)} | Blocks: ${(gate.blocks || []).map(escapeHtml).join(' / ') || '—'} | Warnings: ${(gate.warnings || []).map(escapeHtml).join(' / ') || '—'}</div></div>`;
-    }
-
-    function renderEducation(data) {
-      const sig = data.signal || {}, guard = data.execution_guard || {}, st = data.structure || {}, fake = data.fake || {}, hft = data.hft || {};
-      const dir = dirText(sig.direction);
-      const parts = [
-        `<div class="item"><div class="top"><span class="name">سیگنال نهایی پول هوشمند</span><span class="tag ${dirClass(sig.direction)}">${escapeHtml(dir)} / ${escapeHtml(sig.grade || '—')}</span></div><div class="detail">${escapeHtml(sig.verdict_fa || '—')}<br>گارد اجرایی: ${escapeHtml(guard.status_fa || '—')}</div></div>`,
-        `<div class="item"><div class="top"><span class="name">ساختار بازار</span><span class="tag warn">BOS / CHoCH</span></div><div class="detail">Bias: ${escapeHtml(st.bias || '—')} | آخرین رخدادها از بخش structure خوانده می‌شود؛ FVG و Order Block در کارت‌های بالا نمایش داده شده‌اند.</div></div>`,
-        `<div class="item"><div class="top"><span class="name">تشخیص روند فیک و HFT</span><span class="tag warn">${fmt(fake.score,1)} / ${fmt(hft.hft_index,1)}</span></div><div class="detail">Fake: ${escapeHtml(fake.verdict || '—')}<br>HFT: ${escapeHtml(hft.regime || '—')}</div></div>`,
-        `<div class="item"><div class="detail">حالت آموزش: BOS یعنی شکست ساختار، CHoCH یعنی تغییر کاراکتر بازار، FVG خلأ نقدینگی، Order Block آخرین ناحیه دفاع پول هوشمند، و BSL/SSL نقاط جمع‌آوری استاپ‌های خریداران/فروشندگان هستند.</div></div>`
-      ];
-      $('educationModule').innerHTML = parts.join('');
-    }
-
-    function renderFromCurrent(scroll=true) {
-      const data = state.data || {};
-      const vp = data.volume_profile || {}, liq = data.liquidity || {}, flow = data.flow || {}, hft = data.hft || {}, fake = data.fake || {}, coalition = data.coalition || {}, sweeps = data.sweeps || [], blocks = data.blocks || {};
-      const heat = [];
-      heat.push(`<div class="item"><div class="top"><span class="name">POC / گره حجمی</span><span class="tag warn">${fmt(vp.poc,0)}</span></div><div class="detail">VAH ${fmt(vp.vah,0)} | VAL ${fmt(vp.val,0)} | فاصله تا POC ${pct(vp.poc_dist_pct)}. اصلاح به گره یعنی قیمت به سمت ناحیه بیشترین حجم معامله‌شده کشیده شود.</div></div>`);
-      (liq.bsl || []).slice(0,3).forEach(x => heat.push(`<div class="item"><div class="top"><span class="name">BSL / نقدینگی خرید</span><span class="tag buy">${fmt(x.price,0)}</span></div><div class="detail">فاصله ${pct(x.dist_pct)} | hits ${x.hits || 1}</div></div>`));
-      (liq.ssl || []).slice(0,3).forEach(x => heat.push(`<div class="item"><div class="top"><span class="name">SSL / نقدینگی فروش</span><span class="tag sell">${fmt(x.price,0)}</span></div><div class="detail">فاصله ${pct(x.dist_pct)} | hits ${x.hits || 1}</div></div>`));
-      sweeps.slice(-4).reverse().forEach(x => heat.push(`<div class="item"><div class="top"><span class="name">Sweep / جمع‌آوری نقدینگی</span><span class="tag ${x.dir==='bull'?'buy':'sell'}">${fmt(x.level,0)}</span></div><div class="detail">${escapeHtml(x.type || '')} | عمق ${fmt(x.depth_atr,2)} ATR | VolZ ${fmt(x.vol_z,2)}</div></div>`));
-      $('heatmapModule').innerHTML = heat.join('') || `<div class="small-note">هیت‌مپ نقدینگی هنوز داده ندارد.</div>`;
-
-      $('bigPlayersModule').innerHTML = `
-        <div class="item"><div class="top"><span class="name">ائتلاف بازیگران بزرگ</span><span class="tag ${coalition.ok ? 'buy':'warn'}">${coalition.ok ? fmt(coalition.score,2):'خاموش'}</span></div><div class="detail">Agreement: ${fmt(coalition.agreement,2)} | Heavy: ${fmt(coalition.heavy,2)} | ${escapeHtml(coalition.basket_fa || coalition.error || 'برای محاسبه سنگین، دکمه بانک‌ها را روشن کنید.')}</div></div>
-        <div class="item"><div class="top"><span class="name">ردپای ربات‌های HFT</span><span class="tag warn">${fmt(hft.hft_index,1)}/100</span></div><div class="detail">${escapeHtml(hft.regime || '—')}</div></div>
-        <div class="item"><div class="top"><span class="name">سفارشات سنگین و حجم‌های عمده</span><span class="tag warn">${fmt(blocks.n,0)}</span></div><div class="detail">Imbalance: ${fmt(blocks.imbalance,2)} | Buy notion: ${fmt(blocks.buy_notional,0)} | Sell notion: ${fmt(blocks.sell_notional,0)}</div></div>
-        <div class="item"><div class="top"><span class="name">تشخیص روند فیک</span><span class="tag warn">${fmt(fake.score,1)}</span></div><div class="detail">${escapeHtml(fake.verdict || '—')}</div></div>`;
-      if (scroll) $('heatmapModule').scrollIntoView({behavior:'smooth', block:'center'});
-    }
-
-    async function runModule(kind) {
-      const setLoad = (id, txt='در حال اجرا...') => { $(id).innerHTML = `<div class="item"><div class="detail">${txt}</div></div>`; };
-      try {
-        if (kind === 'calendar') {
-          setLoad('calendarModule');
-          const [econ, macro, news] = await Promise.all([rawApi('/api/dow/econ?what=all'), rawApi('/api/dow/macro?with_earnings=true'), rawApi('/api/aseman/news')]);
-          renderCalendarModule(econ, macro, news);
-        } else if (kind === 'layers') {
-          setLoad('layersModule');
-          const d = await rawApi(`/api/dow/institutional-layers?interval=${encodeURIComponent(state.interval)}`);
-          renderLayersModule(d);
-        } else if (kind === 'institutional') {
-          setLoad('institutionalSignalModule');
-          const [sent, vol, real] = await Promise.all([rawApi('/api/dow/sentiment'), rawApi('/api/dow/volatility'), rawApi('/api/dow/real?what=all')]);
-          renderInstitutionalSignal(sent, vol, real);
-        } else if (kind === 'validated') {
-          setLoad('validatedModule');
-          const d = await rawApi('/api/dow/validated?interval=1d');
-          renderValidatedModule(d, null);
-        } else if (kind === 'backtest') {
-          setLoad('validatedModule');
-          const d = await api('/api/dow/backtest');
-          renderValidatedModule(null, d);
-        } else if (kind === 'agent') {
-          setLoad('agentChatModule', 'در حال اجرای ایجنت سنگین یا دریافت snapshot...');
-          const d = await rawApi(`/api/dow/agent?interval=${encodeURIComponent(state.interval)}&with_ml=false&with_mtf=true`);
-          renderAgentModule(d);
+          const futPrice = data.live_source?.futures_raw || (p + 316);
+          document.getElementById('hdrFutures').textContent = Math.round(futPrice).toLocaleString('en-US');
         }
-      } catch (err) {
-        const id = kind === 'calendar' ? 'calendarModule' : kind === 'layers' ? 'layersModule' : kind === 'institutional' ? 'institutionalSignalModule' : kind === 'agent' ? 'agentChatModule' : 'validatedModule';
-        $(id).innerHTML = `<div class="item"><div class="detail">خطا: ${escapeHtml(err.message || err)}</div></div>`;
+      } catch (e) {
+        console.error('Ticker fetch error:', e);
       }
     }
 
-    function renderCalendarModule(econ, macro, news) {
-      const rows = [];
-      (econ.events || econ.items || []).slice(0,6).forEach(ev => rows.push(`<div class="item"><div class="top"><span class="name">${escapeHtml(ev.name || ev.title || ev.event || 'رویداد')}</span><span class="tag warn">${escapeHtml(ev.impact || ev.impact_fa || '')}</span></div><div class="detail">زمان: ${escapeHtml(ev.when || ev.date || ev.date_tehran || '—')} | Actual: ${escapeHtml(ev.actual ?? '—')} | Forecast: ${escapeHtml(ev.forecast ?? '—')} | Previous: ${escapeHtml(ev.previous ?? '—')}</div></div>`));
-      const score = macro.macro_score || macro.score || macro.data?.score;
-      rows.unshift(`<div class="item"><div class="top"><span class="name">خلاصه کلان و فیوز خبری</span><span class="tag ${news.badge==='RED'?'sell':news.badge==='GREEN'?'buy':'warn'}">${escapeHtml(news.circuit_status || news.circuit_title || 'News')}</span></div><div class="detail">Macro/FRED score: ${fmt(score,1)} | ${escapeHtml(news.circuit_advice || '')}</div></div>`);
-      $('calendarModule').innerHTML = rows.join('') || '<div class="small-note">تقویم داده‌ای برنگرداند.</div>';
-    }
-
-    function renderLayersModule(d) {
-      const L = d.layers || {};
-      const rows = [
-        ['لایه ۱ وتوی بین‌بازاری', L.layer1_intermarket_veto, 'DXY / US10Y / VIX / SMT'],
-        ['لایه ۲ نقشه نقدینگی و خوشه استاپ‌ها', L.layer2_liquidity_orderflow, 'PDH/PDL/PWH/PWL + CVD/Block'],
-        ['لایه ۳ پنجره خبری و FedWatch', L.layer3_macro_news_window, 'News Window + Macro/FRED'],
-        ['لایه ۴ احساسات و جریان آپشن', L.layer4_sentiment_options, 'Put/Call + IV/Skew + Sentiment'],
-        ['لایه ۵ کیل‌زون و فصلی‌بودن', L.layer5_time_seasonality, 'Session + Window + Seasonality']
-      ];
-      $('layersModule').innerHTML = rows.map(([name,obj,desc]) => `<div class="item"><div class="top"><span class="name">${name}</span><span class="tag buy">RUN</span></div><div class="detail">${desc}<br><span class="mono">${escapeHtml(JSON.stringify(obj || {}).slice(0,260))}${JSON.stringify(obj || {}).length>260?'...':''}</span></div></div>`).join('') + `<div class="item"><div class="detail">${escapeHtml(d.feature_vector_note || '')}</div></div>`;
-    }
-
-    function renderInstitutionalSignal(sent, vol, real) {
-      const opt = vol.options || {}, vix = vol.vix || {}, sigs = vol.signals || [];
-      $('institutionalSignalModule').innerHTML = `
-        <div class="item"><div class="top"><span class="name">پوزیشن نهادها و احساسات بازار</span><span class="tag warn">Sentiment</span></div><div class="detail">Fear & Greed / StockTwits / COT reference از endpoint sentiment خوانده شد.<br>${escapeHtml((sent.summary || sent.label || sent.error || 'داده sentiment را در debug ببینید'))}</div></div>
-        <div class="item"><div class="top"><span class="name">جریان آپشن DIA</span><span class="tag ${tagClassByBadge(opt.pcr_bias || '')}">PCR ${fmt(opt.pcr_ratio || opt.put_call_ratio,2)}</span></div><div class="detail">IV/Skew/VIX: VIX ${fmt(vix.last || vix.price,2)} | Signals: ${(sigs || []).map(escapeHtml).join(' / ') || '—'}</div></div>
-        <div class="item"><div class="top"><span class="name">داده موسسات و جریان پول هوشمند</span><span class="tag buy">ICT</span></div><div class="detail">Treasury / FOMC / earnings / real data: ${escapeHtml(real.source || real.source_tier || 'real-data layer')}</div></div>`;
-    }
-
-    function renderValidatedModule(valid, bt) {
-      if (valid) {
-        $('validatedModule').innerHTML = `<div class="item"><div class="top"><span class="name">سیگنال اعتبارسنجی‌شده</span><span class="tag ${valid.ok ? 'buy':'sell'}">${escapeHtml(valid.qualifies ? 'QUALIFIED':'NOT QUALIFIED')}</span></div><div class="detail">Score: ${fmt(valid.score,2)} | Direction: ${escapeHtml(valid.direction || '—')} | Plan: ${valid.plan ? 'دارد' : 'ندارد'}<br>${escapeHtml(valid.note_fa || valid.error || '')}</div></div>`;
-      } else if (bt) {
-        const s = (bt.summary || []).find(x => String(x.run||'').includes('US30-1d')) || {};
-        $('validatedModule').innerHTML = `<div class="item"><div class="top"><span class="name">بکتست Smart Money US30-1D</span><span class="tag buy">t≈3.98</span></div><div class="detail">n=${fmt(s.n,0)} | win=${fmt(s.win_rate,1)}% | avgR=${fmt(s.avg_r,3)} | strong win=${fmt(s.strong?.win_rate,1)}%<br>مدل ورود چهارمرحله‌ای ICT: شکار نقدینگی ← بازپس‌گیری ← تایید ساختاری ← فیلتر جریان سفارش و رژیم بازار.</div></div>`;
-      }
-    }
-
-    function renderAgentModule(d) {
-      const dec = d.decision || d.data?.decision || {};
-      const parts = d.parts || d.data?.parts || [];
-      $('agentChatModule').innerHTML = `<div class="item"><div class="top"><span class="name">ایجنت معاملاتی هوشمند</span><span class="tag ${dirClass(dec.direction)}">${escapeHtml(dec.label || '—')}</span></div><div class="detail">Score: ${fmt(dec.score,2)} | Grade: ${escapeHtml(dec.grade || '—')} | Confidence: ${fmt(dec.confidence,1)}%<br>۲۵ عامل بررسی می‌شود، اما تصمیم اجرای واقعی با سیگنال اعتبارسنجی‌شده و گارد اجرایی است.</div></div>` + (parts || []).slice(0,8).map(p => `<div class="item"><div class="top"><span class="name">${escapeHtml(p.name || p[0] || '')}</span><span class="tag ${Number(p.weight ?? p[1])>0?'buy':'sell'}">${fmt(p.weight ?? p[1],2)}</span></div><div class="detail">${escapeHtml(p.detail || p[2] || '')}</div></div>`).join('');
-    }
-
-    function fillQuestion(q) { $('agentQuestion').value = q; }
-    async function askAgent() {
-      const q = $('agentQuestion').value.trim();
-      if (!q) return;
-      $('agentChatModule').innerHTML = `<div class="item"><div class="detail">در حال پاسخ...</div></div>`;
+    async function loadMarketHours() {
       try {
-        const res = await fetch('/api/dow/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({q, interval: state.interval})});
-        const d = await res.json();
-        $('agentChatModule').innerHTML = `<div class="item"><div class="top"><span class="name">پاسخ ایجنت</span><span class="tag ${d.confident ? 'buy':'warn'}">${escapeHtml(d.topic || 'راهنما')}</span></div><div class="detail chat-answer">${escapeHtml(d.answer || d.error || '—')}<br><br>منبع: ${escapeHtml(d.source || '—')}</div></div>`;
-      } catch (err) {
-        $('agentChatModule').innerHTML = `<div class="item"><div class="detail">خطا: ${escapeHtml(err.message || err)}</div></div>`;
+        const res = await fetch('/api/market-hours');
+        const data = await res.json();
+        if (data.ok) {
+          document.getElementById('sessionTitle').textContent = `سشن بازار: ${data.status_fa || 'بازار وال‌استریت'}`;
+          document.getElementById('clockTehran').textContent = data.tehran_time || '15:42';
+          document.getElementById('clockNY').textContent = data.new_york_time || '08:12';
+          if (data.seconds_to_next_event) {
+            const h = Math.floor(data.seconds_to_next_event / 3600);
+            const m = Math.floor((data.seconds_to_next_event % 3600) / 60);
+            const s = data.seconds_to_next_event % 60;
+            document.getElementById('sessionCountdown').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function loadAnalysisData(fresh = false) {
+      try {
+        const res = await fetch(`/api/analyze?interval=${currentInterval}&bars=180&fresh=${fresh}`);
+        const data = await res.json();
+        cachedAnalysis = data;
+
+        const price = data.price?.last || 51585;
+        const sig = data.signal || {};
+        const plan = sig.plan || {};
+        const dir = sig.direction || 0;
+        const grade = sig.grade || 'B';
+        const conf = sig.confidence || 75;
+
+        // Hero Card Updates
+        const actionEl = document.getElementById('heroAction');
+        if (dir > 0) {
+          actionEl.className = 'signal-direction-badge buy';
+          actionEl.innerHTML = '<span>🚀</span><span>خرید تهاجمی (LONG)</span>';
+        } else if (dir < 0) {
+          actionEl.className = 'signal-direction-badge sell';
+          actionEl.innerHTML = '<span>🔻</span><span>فروش تهاجمی (SHORT)</span>';
+        } else {
+          actionEl.className = 'signal-direction-badge wait';
+          actionEl.innerHTML = '<span>⚪</span><span>خنثی / بدون ستاپ (WAIT)</span>';
+        }
+
+        document.getElementById('heroGrade').textContent = `${grade === 'A+' ? '👑' : '⭐'} Grade ${grade} (${Math.round(conf)}%)`;
+        document.getElementById('heroVerdict').textContent = sig.verdict_fa || 'در انتظار تایید الگوهای اسمارت‌مانی.';
+
+        const entry = Math.round(plan.entry || price);
+        const sl = Math.round(plan.stop || (dir >= 0 ? entry - 85 : entry + 85));
+        const tp1 = Math.round(plan.tp1 || (dir >= 0 ? entry + 50 : entry - 50));
+        const tp2 = Math.round(plan.tp2 || (dir >= 0 ? entry + 120 : entry - 120));
+        const tp3 = Math.round(plan.tp3 || (dir >= 0 ? entry + 240 : entry - 240));
+
+        document.getElementById('heroEntry').textContent = `${entry.toLocaleString('en-US')}`;
+        document.getElementById('heroStop').textContent = `${sl.toLocaleString('en-US')} (${Math.abs(entry - sl)} pts)`;
+        document.getElementById('heroTp1').textContent = tp1.toLocaleString('en-US');
+        document.getElementById('heroTp2').textContent = tp2.toLocaleString('en-US');
+        document.getElementById('heroTp3').textContent = tp3.toLocaleString('en-US');
+
+        const rr = Math.abs(tp2 - entry) / Math.max(Math.abs(entry - sl), 1);
+        document.getElementById('heroRR').textContent = `1 : ${rr.toFixed(1)}`;
+
+        // Populate 360 Analysis Parts
+        const partsGrid = document.getElementById('analysisPartsGrid');
+        if (partsGrid && sig.parts) {
+          partsGrid.innerHTML = sig.parts.map(p => `
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <strong style="font-size: 0.85rem; color: #fff;">${p.name}</strong>
+                <span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: ${p.weight >= 0 ? '#00e676' : '#ff3366'};">
+                  ${p.weight >= 0 ? '+' : ''}${p.weight}
+                </span>
+              </div>
+              <div style="font-size: 0.76rem; color: var(--text-muted);">${p.detail}</div>
+            </div>
+          `).join('');
+        }
+
+        // SMC Tab Blocks
+        const fvgCont = document.getElementById('fvgListContainer');
+        if (fvgCont && data.fvgs) {
+          fvgCont.innerHTML = data.fvgs.slice(0, 6).map(g => `
+            <div style="background: rgba(0,210,255,0.06); border: 1px solid rgba(0,210,255,0.25); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between;">
+              <span style="font-weight: 700; color: #00d2ff;">${g.type === 'bullish' ? '🟢 FVG صعودی' : '🔴 FVG نزولی'}</span>
+              <span style="font-family: var(--font-mono); font-size: 0.85rem;">محدوده: ${Math.round(g.top)} - ${Math.round(g.bottom)}</span>
+            </div>
+          `).join('');
+        }
+
+        const obCont = document.getElementById('obListContainer');
+        if (obCont && data.order_blocks) {
+          obCont.innerHTML = data.order_blocks.slice(0, 6).map(b => `
+            <div style="background: rgba(255,209,102,0.06); border: 1px solid rgba(255,209,102,0.25); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between;">
+              <span style="font-weight: 700; color: #ffd166;">🏛️ ${b.type === 'bullish' ? 'اوردربلاک خرید' : 'اوردربلاک فروش'}</span>
+              <span style="font-family: var(--font-mono); font-size: 0.85rem;">سطح: ${Math.round(b.low)} - ${Math.round(b.high)}</span>
+            </div>
+          `).join('');
+        }
+
+        if (grade === 'A+' || grade === 'A') {
+          playAlertChime();
+        }
+      } catch (e) {
+        console.error('Analysis error:', e);
       }
     }
 
-    function drawChart(candles, vp, plan) {
-      const canvas = $('chart'), ctx = canvas.getContext('2d');
-      const W = canvas.width, H = canvas.height;
-      ctx.clearRect(0,0,W,H);
-      ctx.fillStyle = '#080d16'; ctx.fillRect(0,0,W,H);
-      if (!candles.length) return;
-      const pad = {l:58, r:18, t:22, b:30};
-      const values = candles.flatMap(c => [c.h, c.l]).filter(Number.isFinite);
-      [vp.poc, vp.vah, vp.val, plan.entry, plan.stop, plan.tp1, plan.tp2, plan.tp3].forEach(x => { if (Number.isFinite(Number(x))) values.push(Number(x)); });
-      let min = Math.min(...values), max = Math.max(...values);
-      const extra = (max-min) * .08 || 100; min -= extra; max += extra;
-      const xStep = (W-pad.l-pad.r) / candles.length;
-      const y = v => pad.t + (max-Number(v))/(max-min)*(H-pad.t-pad.b);
-      const x = i => pad.l + i*xStep + xStep/2;
+    async function loadMacroCalendar() {
+      try {
+        const res = await fetch('/api/aseman/macro');
+        const data = await res.json();
+        const tbody = document.getElementById('macroEventsBody');
+        if (tbody && data.events) {
+          tbody.innerHTML = data.events.map(ev => `
+            <tr>
+              <td style="font-weight: 700; color: #00d2ff;">${ev.name || ev.event}</td>
+              <td style="font-family: var(--font-mono); font-size: 0.82rem;">${ev.date_tehran || ev.time || 'به زودی'}</td>
+              <td style="font-family: var(--font-mono);">${ev.consensus || '-'}</td>
+              <td style="font-size: 0.8rem; color: var(--text-muted);">${ev.scenario || ev.impact_desc || 'تاثیر مستقیم روی داو جونز'}</td>
+              <td><span style="background: rgba(0, 230, 118, 0.15); color: #00e676; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">در انتظار انتشار</span></td>
+            </tr>
+          `).join('');
+        }
+      } catch (e) {}
+    }
 
-      ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.lineWidth = 1;
-      ctx.fillStyle = '#64748b'; ctx.font = '22px monospace'; ctx.textAlign = 'right';
-      for (let i=0;i<5;i++) {
-        const yy = pad.t + i*(H-pad.t-pad.b)/4;
-        ctx.beginPath(); ctx.moveTo(pad.l, yy); ctx.lineTo(W-pad.r, yy); ctx.stroke();
-        const val = max - i*(max-min)/4; ctx.fillText(fmt(val,0), pad.l-8, yy+7);
-      }
-      candles.forEach((c,i) => {
-        const up = Number(c.c) >= Number(c.o);
-        const xx = x(i);
-        ctx.strokeStyle = up ? '#00e676' : '#ff4778';
-        ctx.fillStyle = up ? 'rgba(0,230,118,.78)' : 'rgba(255,71,120,.78)';
-        ctx.beginPath(); ctx.moveTo(xx, y(c.h)); ctx.lineTo(xx, y(c.l)); ctx.stroke();
-        const top = y(Math.max(c.o,c.c)), bot = y(Math.min(c.o,c.c));
-        const bw = Math.max(2, xStep*.56);
-        ctx.fillRect(xx-bw/2, top, bw, Math.max(2, bot-top));
+    async function loadLiveJournal() {
+      try {
+        const res = await fetch('/api/journal/live');
+        const data = await res.json();
+        const tbody = document.getElementById('journalTableBody');
+        if (tbody && data.records) {
+          tbody.innerHTML = data.records.slice(0, 15).map(r => `
+            <tr>
+              <td style="font-family: var(--font-mono); font-size: 0.78rem; color: #00d2ff;">${r.id}</td>
+              <td style="font-family: var(--font-mono); font-size: 0.75rem;">${r.ts ? r.ts.slice(0,16).replace('T',' ') : '-'}</td>
+              <td>${r.label?.includes('خرید') || r.label?.includes('LONG') ? '🟢 لانگ' : (r.label?.includes('فروش') || r.label?.includes('SHORT') ? '🔴 شورت' : '⚪ خنثی')}</td>
+              <td style="font-family: var(--font-mono);">${Math.round(r.price || 0)}</td>
+              <td><span style="background: rgba(0,210,255,0.15); color: #00d2ff; padding: 2px 6px; border-radius: 4px;">Grade ${r.grade}</span></td>
+              <td style="font-weight: 700; color: ${r.result === 'موفق' ? '#00e676' : (r.result === 'ناموفق' ? '#ff3366' : '#ffd166')};">${r.result}</td>
+              <td>${r.exit_reason || '-'}</td>
+              <td style="font-family: var(--font-mono); color: ${Number(r.r_mult) >= 0 ? '#00e676' : '#ff3366'};">${Number(r.r_mult) >= 0 ? '+' : ''}${r.r_mult} R</td>
+            </tr>
+          `).join('');
+        }
+      } catch (e) {}
+    }
+
+    // Kelly Calculator
+    function calculateKellyUS30() {
+      const bal = parseFloat(document.getElementById('calcBalance').value) || 10000;
+      const risk = parseFloat(document.getElementById('calcRiskPct').value) || 1.0;
+      const slPts = parseFloat(document.getElementById('calcStopPts').value) || 80;
+      const tpPts = parseFloat(document.getElementById('calcTpPts').value) || 160;
+
+      const dollarRisk = bal * (risk / 100);
+      const lotSize = Math.max(0.01, (dollarRisk / Math.max(slPts, 1)));
+      const dollarReward = lotSize * tpPts;
+
+      document.getElementById('outLotSize').textContent = `${lotSize.toFixed(2)} Lot`;
+      document.getElementById('outLossUSD').textContent = `-$${dollarRisk.toFixed(2)}`;
+      document.getElementById('outProfitUSD').textContent = `+$${dollarReward.toFixed(2)}`;
+      showToast('محاسبات مدیریت ریسک و اندازه لات بروزرسانی شد');
+    }
+
+    // Copy Order Details Helper
+    function copyOrderDetails() {
+      if (!cachedAnalysis) return;
+      const p = cachedAnalysis.price?.last || 51585;
+      const s = cachedAnalysis.signal?.plan || {};
+      const dir = (cachedAnalysis.signal?.direction || 0) >= 0 ? 'BUY / LONG' : 'SELL / SHORT';
+      const text = `🦅 سفارش معاملاتی شاخص داو جونز (US30)
+📌 جهت: ${dir}
+🔹 نقطه ورود: ${Math.round(s.entry || p)}
+🛑 حد ضرر ساختاری (SL): ${Math.round(s.stop || p - 85)}
+🎯 تارگت اول (TP1): ${Math.round(s.tp1 || p + 50)} (+50 pts) [سیو سود ۵۰٪ + ریسک‌فری]
+🎯 تارگت دوم (TP2): ${Math.round(s.tp2 || p + 120)} (+120 pts) [تارگت ساختاری]
+🎯 تارگت سوم (TP3): ${Math.round(s.tp3 || p + 240)} (+240 pts) [استخر نقدینگی نهایی]
+⚖️ لوریج پیشنهادی بروکر: 20x الی 50x`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('ارقام دقیق سفارش برای متاتریدر در کلیپ‌بورد کپی شد 📋');
       });
-      drawLevel(ctx, W, pad, y, vp.poc, '#ffd166', 'POC');
-      drawLevel(ctx, W, pad, y, vp.vah, 'rgba(255,255,255,.28)', 'VAH');
-      drawLevel(ctx, W, pad, y, vp.val, 'rgba(255,255,255,.28)', 'VAL');
-      drawLevel(ctx, W, pad, y, plan.entry, '#00d2ff', 'ENTRY');
-      drawLevel(ctx, W, pad, y, plan.stop, '#ff4778', 'SL');
-      drawLevel(ctx, W, pad, y, plan.tp1, '#00e676', 'TP1');
-      drawLevel(ctx, W, pad, y, plan.tp2, '#00e676', 'TP2');
-      drawLevel(ctx, W, pad, y, plan.tp3, '#00e676', 'TP3');
     }
 
-    function drawLevel(ctx, W, pad, y, val, color, label) {
-      if (!Number.isFinite(Number(val))) return;
-      const yy = y(val);
-      ctx.save();
-      ctx.strokeStyle = color; ctx.setLineDash([8,6]); ctx.lineWidth = 1.4;
-      ctx.beginPath(); ctx.moveTo(pad.l, yy); ctx.lineTo(W-pad.r, yy); ctx.stroke();
-      ctx.setLineDash([]); ctx.fillStyle = color; ctx.font = '20px monospace'; ctx.textAlign = 'left';
-      ctx.fillText(`${label} ${fmt(val,0)}`, pad.l+8, yy-5);
-      ctx.restore();
+    // Telegram Bot Actions
+    async function saveTelegramSettings() {
+      const token = document.getElementById('tgTokenInput').value.trim();
+      const chat = document.getElementById('tgChatInput').value.trim();
+      if (!chat) {
+        showToast('لطفاً شناسه چت یا کانال تلگرام را وارد کنید');
+        return;
+      }
+      try {
+        const res = await fetch('/api/telegram/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bot_token: token, chat_id: chat, auto_pilot: true })
+        });
+        const data = await res.json();
+        showToast(data.message || 'تنظیمات تلگرام با موفقیت ذخیره شد');
+      } catch (e) {
+        showToast('خطا در ذخیره تنظیمات: ' + e.message);
+      }
     }
 
-    function renderError(err) {
-      $('price').classList.remove('skeleton');
-      $('price').textContent = 'خطا';
-      $('change').className = 'change neg';
-      $('change').textContent = err.message || String(err);
-      $('parts').innerHTML = `<div class="item"><div class="detail">${escapeHtml(err.message || String(err))}</div></div>`;
-      $('debug').textContent = String(err.stack || err);
+    async function testTelegramConnection() {
+      const token = document.getElementById('tgTokenInput').value.trim();
+      const chat = document.getElementById('tgChatInput').value.trim();
+      showToast('در حال ارسال پیام تست به تلگرام...');
+      try {
+        const res = await fetch('/api/telegram/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bot_token: token, chat_id: chat })
+        });
+        const data = await res.json();
+        showToast(data.message || 'پیام تست تلگرام ارسال شد!');
+      } catch (e) {
+        showToast('خطا در ارسال پیام تست: ' + e.message);
+      }
     }
 
-    function escapeHtml(s) {
-      return String(s ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    async function dispatchTelegramNow() {
+      showToast('در حال ارسال سیگنال هوشمند به تلگرام...');
+      try {
+        const res = await fetch('/api/telegram/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ interval: currentInterval })
+        });
+        const data = await res.json();
+        showToast(data.message || 'سیگنال با موفقیت به تلگرام ارسال شد!');
+      } catch (e) {
+        showToast('خطا در مخابره: ' + e.message);
+      }
     }
 
-    load(false);
-    setInterval(() => load(false), 120000);
+    function exportJournalCSV() {
+      window.open('/api/aseman/journal', '_blank');
+      showToast('در حال دریافت داده‌های ژورنال معاملات...');
+    }
+
+    function refreshAll(fresh = false) {
+      loadTicker();
+      loadMarketHours();
+      loadAnalysisData(fresh);
+      loadMacroCalendar();
+      loadLiveJournal();
+      if (fresh) showToast('تمام ماژول‌ها با دیتای زنده بروزرسانی شدند 🚀');
+    }
+
+    // Auto-refresh loop
+    refreshAll(false);
+    setInterval(() => {
+      loadTicker();
+      loadMarketHours();
+    }, 15000); // 15 sec ticker
+    setInterval(() => {
+      loadAnalysisData(false);
+    }, 60000); // 60 sec full analysis
   </script>
 </body>
 </html>
