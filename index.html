@@ -594,11 +594,11 @@
         </div>
         <div class="ticker-item">
           <span class="ticker-label">قیمت لحظه‌ای</span>
-          <span class="ticker-val" id="topLivePrice">51,642.4</span>
+          <span class="ticker-val" id="topLivePrice">در حال بارگذاری...</span>
         </div>
         <div class="ticker-item">
           <span class="ticker-label">تغییر روزانه</span>
-          <span class="ticker-val" id="topLiveChange" style="color: #00e676;">+276.8 (+0.54%)</span>
+          <span class="ticker-val" id="topLiveChange" style="color: #94a3b8;">--</span>
         </div>
         <div class="ticker-item">
           <span class="ticker-label">وضعیت ارتباط شبکه</span>
@@ -647,17 +647,17 @@
             <span style="font-size: 0.76rem; color: var(--text-muted);">
               سیگنال تجمیعی ۵ ماژول | <span id="heroSetupTitle" style="color: #00d2ff; font-weight: 800;">🏛️ ستاپ دی‌ترید ۱ ساعته نهادی</span>
             </span>
-            <span id="heroSignalGrade" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 0.75rem;">
-              GRADE A+
+            <span id="heroSignalGrade" style="background: rgba(255, 179, 0, 0.15); color: #ffb300; border: 1px solid #ffb300; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 0.75rem;">
+              GRADE --
             </span>
           </div>
 
-          <div id="heroSignalAction" style="font-size: 1.5rem; font-weight: 900; color: #00e676; margin-bottom: 4px;">
-            🟢 خرید قدرتمند نهادی (STRONG BUY)
+          <div id="heroSignalAction" style="font-size: 1.5rem; font-weight: 900; color: #ffb300; margin-bottom: 4px;">
+            ⏳ در حال ارزیابی ۵ ماژول تحلیلی...
           </div>
 
           <div style="font-size: 0.78rem; color: #94a3b8; line-height: 1.5;">
-            وضعیت همگرایی: <span id="heroConfluenceScore" style="color: #fff; font-weight: 700;">۹۸٪ همگرایی کامل ۵ ماژول</span>
+            وضعیت همگرایی: <span id="heroConfluenceScore" style="color: #fff; font-weight: 700;">پایش زنده ائتلاف بانک‌ها، FVG و نقدینگی...</span>
           </div>
 
           <div style="margin-top: 10px; display: flex; gap: 8px;">
@@ -1522,7 +1522,7 @@
     let _activeInterval = '1h';
     let _activeTab = 'radarTab';
     let _macroTargetEpoch = 1791981000; // US CPI release
-    let _lastPrice = 51642.4;
+    let _lastPrice = null;
     let _secondsSinceRefresh = 0;
     let _tvWidget = null;
 
@@ -1685,13 +1685,16 @@
         document.getElementById('heroTp3Pts').textContent = `+${data.tp3_pts} pts`;
 
         // Update Checklist
-        if (data.checklist && data.checklist.length >= 4) {
-          const chkHtml = data.checklist.slice(0, 4).map(c => `
+        if (data.checklist && data.checklist.length) {
+          const chkHtml = data.checklist.map(c => {
+            const badgeColor = c.status === 'pass' ? '#00e676' : (c.status === 'fail' ? '#ff3366' : '#ffd166');
+            return `
             <div class="checklist-item">
               <span>${c.name}:</span>
-              <strong style="color: ${c.status === 'pass' ? '#00e676' : '#ff3366'};">${c.badge}</strong>
+              <strong style="color: ${badgeColor};">${c.badge}</strong>
             </div>
-          `).join('');
+            `;
+          }).join('');
           document.getElementById('heroConfluenceChecklist').innerHTML = chkHtml;
         }
 
@@ -1707,16 +1710,18 @@
     // 4. PRICE FLASH ANIMATION
     function updatePriceWithFlash(newPrice) {
       const topPriceEl = document.getElementById('topLivePrice');
-      if (!topPriceEl) return;
+      if (!topPriceEl || !newPrice || isNaN(newPrice)) return;
       const formatted = Number(newPrice).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
       topPriceEl.textContent = formatted;
 
-      if (newPrice > _lastPrice) {
-        topPriceEl.className = 'ticker-val price-tick-up';
-        setTimeout(() => topPriceEl.className = 'ticker-val', 800);
-      } else if (newPrice < _lastPrice) {
-        topPriceEl.className = 'ticker-val price-tick-down';
-        setTimeout(() => topPriceEl.className = 'ticker-val', 800);
+      if (_lastPrice !== null) {
+        if (newPrice > _lastPrice + 0.2) {
+          topPriceEl.className = 'ticker-val price-tick-up';
+          setTimeout(() => topPriceEl.className = 'ticker-val', 800);
+        } else if (newPrice < _lastPrice - 0.2) {
+          topPriceEl.className = 'ticker-val price-tick-down';
+          setTimeout(() => topPriceEl.className = 'ticker-val', 800);
+        }
       }
       _lastPrice = newPrice;
     }
@@ -1728,13 +1733,15 @@
         if (res.ok) {
           const data = await res.json();
           const p = Number(data.price || data.close || _lastPrice);
-          updatePriceWithFlash(p);
+          if (p && !isNaN(p)) {
+            updatePriceWithFlash(p);
+          }
 
-          const chgPct = data.change_percent || 0.54;
-          const chgAbs = data.change_points || (p * chgPct / 100);
+          const chgPct = data.change_percent ?? data.change_pct ?? 0.0;
+          const chgAbs = data.change_points ?? data.change ?? 0.0;
           const chgEl = document.getElementById('topLiveChange');
           if (chgEl) {
-            chgEl.textContent = `${chgAbs >= 0 ? '+' : ''}${chgAbs.toFixed(1)} (${chgPct >= 0 ? '+' : ''}${chgPct.toFixed(2)}%)`;
+            chgEl.textContent = `${chgAbs >= 0 ? '+' : ''}${Number(chgAbs).toFixed(1)} (${chgPct >= 0 ? '+' : ''}${Number(chgPct).toFixed(2)}%)`;
             chgEl.style.color = chgPct >= 0 ? '#00e676' : '#ff3366';
           }
         }

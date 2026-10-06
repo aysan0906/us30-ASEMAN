@@ -628,7 +628,7 @@ def format_us30_composite_telegram(data: Dict[str, Any]) -> str:
     tehran_str = tehran_time.strftime("%H:%M:%S (%Y/%m/%d)")
     valid_until = (tehran_time + timedelta(minutes=45)).strftime("%H:%M")
 
-    last_price = float(data.get("price") or 51642.4)
+    last_price = float(data.get("price") or 51570.0)
     action = data.get("action", "BUY")
     action_fa = "🚀 خرید قدرتمند نهادی (STRONG BUY)" if action == "BUY" else ("🔻 فروش قدرتمند نهادی (STRONG SELL)" if action == "SELL" else "⚪ خنثی / بدون پوزیشن")
     grade = data.get("grade", "A+")
@@ -872,32 +872,57 @@ def journal_live():
 
 @app.get("/api/dow/composite-signal")
 def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 1h, 4h, 1d")):
+    # 1. Fetch live price strictly from FOREXCOM:US30
     try:
-        cash_info = dow_cash.freshest()
-        p_curr = float(cash_info.get("best", {}).get("index", 51600.0) or 51600.0)
+        t_data = engine.ticker(interval)
+        p_curr = float(t_data.get("price", 0.0) or 0.0)
+        if p_curr <= 0:
+            cash_info = dow_cash.freshest()
+            p_curr = float(cash_info.get("best", {}).get("index", 51570.0) or 51570.0)
     except Exception:
-        p_curr = 51600.0
+        p_curr = 51570.0
 
+    # 2. Bank Coalition
     try:
+        import smart_money
         coalition = smart_money.bank_coalition("US30")
         c_score = float(coalition.get("score", 0.0) or 0.0)
-        c_agree = float(coalition.get("agreement_pct", 50.0) or 50.0)
-        c_bias = coalition.get("bias", "خنثی")
+        c_agree = float(coalition.get("agreement", 0.5) * 100.0 or 50.0)
+        c_verdict = coalition.get("verdict", "خنثی")
     except Exception:
-        c_score = 0.25
-        c_agree = 72.0
-        c_bias = "صعودی ملایم"
+        c_score = 0.0
+        c_agree = 50.0
+        c_verdict = "در حال تجدید تحلیل ائتلاف"
 
+    # 3. Macro Shield
     try:
         macro = aseman.AsemanMacroShieldUS30.get_macro_shield_status()
         is_frozen = macro.get("is_frozen", False)
+        event_name = macro.get("current_or_next_event", {}).get("name", "رویداد کلان")
     except Exception:
         is_frozen = False
-        macro = {}
+        event_name = "CPI/FOMC"
+
+    # 4. Engine Analysis for this specific interval
+    try:
+        analysis = engine.build_analysis(interval)
+        eng_dir = int(analysis.get("direction", 0) or 0)
+        eng_score = float(analysis.get("score", 50.0) or 50.0)
+        eng_bias_fa = analysis.get("bias_fa", "خنثی")
+        orderflow = analysis.get("orderflow", {})
+        imbalance = float(orderflow.get("imbalance", 0.0) or 0.0)
+        htf = analysis.get("htf_daily", {})
+        htf_dir = int(htf.get("direction", 0) or 0)
+    except Exception:
+        eng_dir = 0
+        eng_score = 50.0
+        eng_bias_fa = "خنثی"
+        imbalance = 0.0
+        htf_dir = 0
 
     scale_map = {
-        "5m": {"atr": 42.0, "sl_mult": 1.0, "tp1_m": 1.4, "tp2_m": 2.4, "tp3_m": 3.8, "name": "⚡ ستاپ اسکالپ فوق‌سریع ۵ دقیقه‌ای (High-Speed Scalp)"},
-        "15m": {"atr": 68.0, "sl_mult": 1.0, "tp1_m": 1.4, "tp2_m": 2.5, "tp3_m": 4.0, "name": "🎯 ستاپ مومنتوم ۱۵ دقیقه‌ای (Intraday Momentum)"},
+        "5m": {"atr": 45.0, "sl_mult": 1.0, "tp1_m": 1.4, "tp2_m": 2.5, "tp3_m": 4.0, "name": "⚡ ستاپ اسکالپ فوق‌سریع ۵ دقیقه‌ای (High-Speed Scalp)"},
+        "15m": {"atr": 70.0, "sl_mult": 1.0, "tp1_m": 1.4, "tp2_m": 2.5, "tp3_m": 4.0, "name": "🎯 ستاپ مومنتوم ۱۵ دقیقه‌ای (Intraday Momentum)"},
         "30m": {"atr": 95.0, "sl_mult": 1.0, "tp1_m": 1.4, "tp2_m": 2.5, "tp3_m": 4.2, "name": "📊 ستاپ نیم‌ساعته سشن وال‌استریت (Session Setup)"},
         "1h": {"atr": 135.0, "sl_mult": 1.0, "tp1_m": 1.4, "tp2_m": 2.6, "tp3_m": 4.5, "name": "🏛️ ستاپ دی‌ترید ۱ ساعته نهادی (Day Trade)"},
         "4h": {"atr": 260.0, "sl_mult": 1.0, "tp1_m": 1.4, "tp2_m": 2.6, "tp3_m": 4.8, "name": "🌊 ستاپ سوئینگ ۴ ساعته (Multi-Session Swing)"},
@@ -907,38 +932,101 @@ def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 
     atr = cfg["atr"]
 
     # Module 1: Bank Coalition
-    mod1_bias = 1 if c_score > 0.05 else (-1 if c_score < -0.05 else 0)
-    mod1_desc = f"هماهنگی {c_agree:.0f}٪ غول‌های وال‌استریت (جهت ائتلاف: {c_bias})"
+    if c_score > 0.15:
+        mod1_bias = 1
+        mod1_badge = "🟢 ورود سرمایه نهادی"
+        mod1_stat = "pass"
+    elif c_score < -0.15:
+        mod1_bias = -1
+        mod1_badge = "🔴 خروج نقدینگی بانکی"
+        mod1_stat = "fail"
+    else:
+        mod1_bias = 0
+        mod1_badge = "⚪ تعادل سفارشات وال‌استریت"
+        mod1_stat = "neutral"
+    mod1_desc = f"هماهنگی {c_agree:.0f}٪ غول‌های وال‌استریت ({c_verdict})"
 
     # Module 2: Orderflow & FVG
-    mod2_bias = 1 if p_curr > 51450 else -1
-    mod2_desc = f"عدم تعادل FVG و تثبیت نقدینگی خریداران در تایم {interval}"
+    if imbalance > 0.15:
+        mod2_bias = 1
+        mod2_badge = "🟢 برتری جریان تقاضا"
+        mod2_stat = "pass"
+    elif imbalance < -0.15:
+        mod2_bias = -1
+        mod2_badge = "🔴 برتری حجم عرضه"
+        mod2_stat = "fail"
+    else:
+        mod2_bias = 0
+        mod2_badge = "⚪ تعادل گپ‌های ارزش منصفانه"
+        mod2_stat = "neutral"
+    mod2_desc = f"عدم تعادل اردر فلو {imbalance:+.1f}٪ و ساختار نقدینگی تایم {interval}"
 
     # Module 3: Macro Shield
-    mod3_bias = 0 if is_frozen else 1
-    mod3_desc = "فیوز ریسک اخبار نرمال؛ بدون ریسک انتشار CPI/FOMC در این لحظه" if not is_frozen else "⚠️ فیوز فعال؛ کاهش اهرم و حجم معامله"
+    if is_frozen:
+        mod3_bias = -1
+        mod3_badge = "⚠️ فیوز قرمز (سپر فعال)"
+        mod3_stat = "fail"
+        mod3_desc = f"سپر ریسک فعال؛ نزدیک به انتشار {event_name} (کاهش اهرم)"
+    else:
+        mod3_bias = 0
+        mod3_badge = "🟢 فیوز سبز (بدون ریسک)"
+        mod3_stat = "pass"
+        mod3_desc = "فیوز ریسک اخبار نرمال؛ بدون خطر انتشار ناگهانی داده‌های حیاتی"
 
-    # Module 4: Price Action & Structure
-    mod4_bias = 1
-    mod4_desc = f"تاییدیه ساختار CHoCH و حفظ سطح پیوت بالای میانگین‌های {interval}"
+    # Module 4: Price Action & Market Structure
+    mod4_bias = eng_dir
+    if mod4_bias > 0:
+        mod4_badge = "🟢 ساختار صعودی (CHoCH)"
+        mod4_stat = "pass"
+    elif mod4_bias < 0:
+        mod4_badge = "🔴 ساختار نزولی (BOS)"
+        mod4_stat = "fail"
+    else:
+        mod4_badge = "⚪ اصلاح / پولبک خنثی"
+        mod4_stat = "neutral"
+    mod4_desc = f"روند ساختار {interval}: {eng_bias_fa} | ساختار بلندمدت روزانه: {'صعودی' if htf_dir > 0 else ('نزولی' if htf_dir < 0 else 'خنثی')}"
 
-    # Module 5: Market Sentiment & Volatility
-    mod5_bias = 1
-    mod5_desc = "شاخص ترس VIX در سطح کنترل‌شده و برتری حجم سفارشات خریداران"
+    # Module 5: Volatility & Multi-Timeframe Alignment
+    if eng_dir > 0 and htf_dir >= 0:
+        mod5_bias = 1
+        mod5_badge = "🟢 هماهنگی کامل چندزمانه"
+        mod5_stat = "pass"
+    elif eng_dir < 0 and htf_dir <= 0:
+        mod5_bias = -1
+        mod5_badge = "🔴 همسویی ریزش چندزمانه"
+        mod5_stat = "fail"
+    else:
+        mod5_bias = 0
+        mod5_badge = "⚪ تعادل رنج و نوسان مارکت"
+        mod5_stat = "neutral"
+    mod5_desc = f"همگرایی ساختار {interval} و جهت کلی مارکت در سشن وال‌استریت"
 
-    total_votes = mod1_bias + mod2_bias + mod3_bias + mod4_bias + mod5_bias
-    if total_votes >= 2:
+    total_votes = mod1_bias + mod2_bias + mod4_bias + mod5_bias
+
+    if is_frozen:
+        action = "WAIT"
+        action_fa = "⏸️ سپر اخبار فعال (WAIT - کاهش ریسک)"
+        color = "#ffb300"
+        score = 50
+        grade = "B"
+    elif total_votes >= 2 and mod4_bias >= 0 and c_score >= -0.1:
         action = "BUY"
-        action_fa = "خرید قدرتمند نهادی (STRONG BUY)"
+        action_fa = "🟢 خرید قدرتمند نهادی (STRONG BUY)"
         color = "#00e676"
-    elif total_votes <= -2:
+        score = min(98, max(75, 70 + total_votes * 7 + int(c_agree * 0.1)))
+        grade = "A+" if score >= 88 else "A"
+    elif total_votes <= -2 and mod4_bias <= 0 and c_score <= 0.1:
         action = "SELL"
-        action_fa = "فروش قدرتمند نهادی (STRONG SELL)"
+        action_fa = "🔴 فروش قدرتمند نهادی (STRONG SELL)"
         color = "#ff3366"
+        score = min(98, max(75, 70 + abs(total_votes) * 7 + int(c_agree * 0.1)))
+        grade = "A+" if score >= 88 else "A"
     else:
         action = "WAIT"
-        action_fa = "احتیاط و نظاره (WAIT)"
+        action_fa = "⏸️ خنثی / نظاره بازار (WAIT - فاقد تاییدیه قطعی)"
         color = "#ffb300"
+        score = max(45, min(65, 52 + total_votes * 5))
+        grade = "B"
 
     sl_pts = round(atr * cfg["sl_mult"])
     tp1_pts = round(atr * cfg["tp1_m"])
@@ -946,37 +1034,38 @@ def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 
     tp3_pts = round(atr * cfg["tp3_m"])
 
     if action == "BUY":
-        entry_low = round(p_curr - (atr * 0.2), 1)
+        entry_low = round(p_curr - (atr * 0.15), 1)
         entry_high = round(p_curr + (atr * 0.1), 1)
         sl_price = round(p_curr - sl_pts, 1)
         tp1_price = round(p_curr + tp1_pts, 1)
         tp2_price = round(p_curr + tp2_pts, 1)
         tp3_price = round(p_curr + tp3_pts, 1)
+        setup_title = cfg["name"]
     elif action == "SELL":
         entry_low = round(p_curr - (atr * 0.1), 1)
-        entry_high = round(p_curr + (atr * 0.2), 1)
+        entry_high = round(p_curr + (atr * 0.15), 1)
         sl_price = round(p_curr + sl_pts, 1)
         tp1_price = round(p_curr - tp1_pts, 1)
         tp2_price = round(p_curr - tp2_pts, 1)
         tp3_price = round(p_curr - tp3_pts, 1)
+        setup_title = cfg["name"]
     else:
-        entry_low = round(p_curr - 15, 1)
-        entry_high = round(p_curr + 15, 1)
+        entry_low = round(p_curr - 20, 1)
+        entry_high = round(p_curr + 20, 1)
         sl_price = round(p_curr - sl_pts, 1)
         tp1_price = round(p_curr + tp1_pts, 1)
         tp2_price = round(p_curr + tp2_pts, 1)
         tp3_price = round(p_curr + tp3_pts, 1)
+        setup_title = cfg["name"] + " [در انتظار شکست و تایید نهایی]"
 
-    score = min(98, max(45, 52 + total_votes * 9 + int(c_agree * 0.18)))
-    grade = "A+" if score >= 85 else ("A" if score >= 75 else ("B" if score >= 60 else "C"))
     rr = f"1:{tp2_pts / sl_pts:.1f}"
 
     checklist = [
-        {"name": "ائتلاف غول‌های بانکی (Wall St Banks)", "status": "pass" if mod1_bias > 0 else ("fail" if mod1_bias < 0 else "neutral"), "detail": mod1_desc, "badge": "🟢 تایید ائتلاف" if mod1_bias > 0 else "🔴 فشار فروش"},
-        {"name": "اردر فلو و خلأ FVG (Orderflow & Imbalance)", "status": "pass" if mod2_bias > 0 else "fail", "detail": mod2_desc, "badge": "🟢 جریان ورودی" if mod2_bias > 0 else "🔴 خروج نقدینگی"},
-        {"name": "سپر اخبار کلان (Macro Shield & Yields)", "status": "pass" if mod3_bias > 0 else "fail", "detail": mod3_desc, "badge": "🟢 فیوز سبز" if mod3_bias > 0 else "⚠️ احتیاط خبر"},
-        {"name": "ساختار پرایس اکشن (Market Structure & BOS)", "status": "pass" if mod4_bias > 0 else "fail", "detail": mod4_desc, "badge": "🟢 همسو با روند" if mod4_bias > 0 else "🔴 خلاف ساختار"},
-        {"name": "دماسنج ترس و نوسان (VIX & Sentiment)", "status": "pass" if mod5_bias > 0 else "fail", "detail": mod5_desc, "badge": "🟢 نوسان نرمال" if mod5_bias > 0 else "⚠️ هشدار نوسان"}
+        {"name": "ائتلاف غول‌های بانکی (Wall St Banks)", "status": mod1_stat, "detail": mod1_desc, "badge": mod1_badge},
+        {"name": "اردر فلو و خلأ FVG (Orderflow & Imbalance)", "status": mod2_stat, "detail": mod2_desc, "badge": mod2_badge},
+        {"name": "سپر اخبار کلان (Macro Shield & Yields)", "status": mod3_stat, "detail": mod3_desc, "badge": mod3_badge},
+        {"name": "ساختار پرایس اکشن (Market Structure & BOS)", "status": mod4_stat, "detail": mod4_desc, "badge": mod4_badge},
+        {"name": "همگرایی چندزمانه و سنتیمنت (Multi-TF Alignment)", "status": mod5_stat, "detail": mod5_desc, "badge": mod5_badge}
     ]
 
     return {
@@ -987,7 +1076,7 @@ def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 
         "grade": grade,
         "score": score,
         "interval": interval,
-        "setup_name": cfg["name"],
+        "setup_name": setup_title,
         "price": p_curr,
         "entry_zone": f"{entry_low:,.1f} - {entry_high:,.1f}",
         "entry_low": entry_low,
@@ -1002,7 +1091,7 @@ def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 
         "tp3_pts": tp3_pts,
         "risk_reward": rr,
         "checklist": checklist,
-        "total_confluence": f"{score}٪ همگرایی کامل ۵ ماژول",
+        "total_confluence": f"{score}٪ همگرایی تحلیلی ۵ ماژول",
         "updated_at": time.strftime("%Y-%m-%d %H:%M:%S UTC")
     }
 
