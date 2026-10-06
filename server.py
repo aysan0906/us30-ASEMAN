@@ -1126,6 +1126,20 @@ def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 
         tp3_price = round(p_curr + tp3_pts, 1)
         setup_title = cfg["name"] + " [در انتظار شکست و تایید نهایی]"
 
+    # Connect Option Walls from Module 10 / Elite GEX to anchor TP3
+    try:
+        gex_info = elite.get_gex_and_option_walls(p_curr)
+        call_w = float(gex_info.get("call_wall", 52000.0))
+        put_w = float(gex_info.get("put_wall", 51000.0))
+        if action == "BUY" and tp3_price > call_w:
+            tp3_price = call_w
+            tp3_pts = round(abs(tp3_price - p_curr))
+        elif action == "SELL" and tp3_price < put_w:
+            tp3_price = put_w
+            tp3_pts = round(abs(p_curr - tp3_price))
+    except Exception:
+        pass
+
     rr = f"1:{tp2_pts / sl_pts:.1f}"
 
     checklist = [

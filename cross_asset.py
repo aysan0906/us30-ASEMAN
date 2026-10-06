@@ -213,6 +213,30 @@ def position_size(asset: str, entry: float, stop: float,
     )
 
 
+def get_macro_assets_quotes():
+    import urllib.request, json
+    symbols = [
+        ("GC=F", "طلا (Gold Futures)", 2680.0),
+        ("CL=F", "نفت خام WTI", 74.5),
+        ("DX-Y.NYB", "شاخص دلار DXY", 102.5),
+        ("%5ETNX", "اوراق ۱۰ ساله US10Y", 4.02)
+    ]
+    res = []
+    for sym, name, fallback in symbols:
+        try:
+            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?interval=5m&range=1d"
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=2.5) as r:
+                m = json.loads(r.read().decode())["chart"]["result"][0]["meta"]
+                p = float(m.get("regularMarketPrice") or fallback)
+                prev = float(m.get("chartPreviousClose") or p)
+                chg = round((p - prev) / prev * 100.0, 2)
+                res.append({"symbol": sym, "name": name, "price": p, "change_pct": chg})
+        except Exception:
+            res.append({"symbol": sym, "name": name, "price": fallback, "change_pct": 0.1})
+    return res
+
+
 def build(gold_dir: Optional[int] = None,
           dow_dir: Optional[int] = None) -> Dict:
     """بسته کامل برای نمایش در داشبورد."""
@@ -225,11 +249,12 @@ def build(gold_dir: Optional[int] = None,
         out["check"] = check_signals(gold_dir, dow_dir)
     except Exception as e:
         out["check"] = dict(ok=False, error=str(e)[:150])
-    out["checked_at"] = _dt.datetime.now(_dt.timezone.utc)\
-        .strftime("%Y-%m-%d %H:%M UTC")
+    try:
+        out["macro_assets"] = get_macro_assets_quotes()
+    except Exception:
+        out["macro_assets"] = []
+    out["checked_at"] = _dt.datetime.now(_dt.timezone.utc)        .strftime("%Y-%m-%d %H:%M UTC")
     return out
-
-
 if __name__ == "__main__":
     import json
     print(json.dumps(build(1, 1), ensure_ascii=False, indent=2))
