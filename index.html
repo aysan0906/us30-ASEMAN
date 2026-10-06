@@ -571,7 +571,93 @@
     .chat-send-btn:hover {
       background: #38bdf8;
     }
-  </style>
+  
+    /* ================================================= */
+    /* 6 ADVANCED INSTITUTIONAL MODULES STYLING          */
+    /* ================================================= */
+    .elite-suite-container {
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(18, 24, 36, 0.98));
+      border: 1px solid rgba(0, 210, 255, 0.3);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+    }
+
+    .elite-suite-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 16px;
+    }
+
+    .elite-suite-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 16px;
+    }
+
+    .elite-card {
+      background: rgba(10, 15, 29, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+    }
+
+    .elite-card:hover {
+      border-color: rgba(0, 210, 255, 0.45);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 210, 255, 0.12);
+    }
+
+    .elite-card-title {
+      font-size: 0.98rem;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .elite-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      font-size: 0.8rem;
+    }
+
+    .elite-val-badge {
+      font-family: var(--font-mono);
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 5px;
+      font-size: 0.78rem;
+    }
+
+    .elite-note-box {
+      margin-top: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.75rem;
+      line-height: 1.5;
+      color: #94a3b8;
+    }
+</style>
 </head>
 <body>
 
@@ -742,6 +828,205 @@
         <div class="checklist-item">
           <span>📈 پرایس اکشن و شکست ساختار BOS:</span>
           <strong id="chkMod4" style="color: #00e676;">🟢 شکست ساختار CHoCH</strong>
+        </div>
+      </div>
+    </div>
+
+    
+    <!-- ======================================================== -->
+    <!-- 6 ADVANCED INSTITUTIONAL MODULES SUITE                   -->
+    <!-- ======================================================== -->
+    <div class="elite-suite-container">
+      <div class="elite-suite-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(135deg, rgba(0, 210, 255, 0.2), rgba(168, 85, 247, 0.2)); border: 1px solid rgba(0, 210, 255, 0.4); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+            🏛️
+          </div>
+          <div>
+            <h2 style="font-size: 1.15rem; font-weight: 900; color: #fff; margin: 0;">شش ماژول طلایی وال‌استریت (Wall Street Institutional Suite)</h2>
+            <span style="font-size: 0.76rem; color: #94a3b8;">کالبدشکافی زنده سشن‌ها، دیوارهای گاما، تیک نیویورک، تله جوداس، ضریب مقسوم‌علیه و حراج MOC</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <span id="eliteLastUpdateBadge" style="background: rgba(0, 210, 255, 0.12); color: #00d2ff; border: 1px solid rgba(0, 210, 255, 0.3); padding: 4px 12px; border-radius: 6px; font-size: 0.74rem; font-family: var(--font-mono); font-weight: 700;">
+            🔄 به‌روزرسانی زنده: فعال
+          </span>
+        </div>
+      </div>
+
+      <div class="elite-suite-grid">
+        <!-- MODULE 1: KILLZONES & ORB -->
+        <div class="elite-card">
+          <div>
+            <div class="elite-card-title">
+              <span>⏱️ ۱. سشن‌های وال‌استریت & بریک‌اوت ORB</span>
+              <span id="eliteKzVolScore" style="font-size: 0.72rem; color: #ffd166; font-family: var(--font-mono); font-weight: 800; background: rgba(255, 209, 102, 0.15); padding: 2px 6px; border-radius: 4px;">نوسان: ۵ / ۵</span>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">سشن فعال:</span>
+              <strong id="eliteKzZone" style="color: #00e676; font-size: 0.78rem;">در حال پایش سشن...</strong>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">وضعیت ستاپ ORB:</span>
+              <strong id="eliteOrbStatus" style="color: #ffd166; font-size: 0.78rem;">محاسبه دامنه بازگشایی...</strong>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">دامنه ۱۵ دقیقه اول:</span>
+              <span id="eliteOrbLevels" class="elite-val-badge" style="background: rgba(255, 255, 255, 0.05); color: #fff;">سقف: -- | کف: --</span>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">اهداف معاملاتی ORB:</span>
+              <span id="eliteOrbTargets" style="font-size: 0.74rem; color: #38bdf8; font-family: var(--font-mono);">تارگت ۱: -- | تارگت ۲: --</span>
+            </div>
+          </div>
+          <div class="elite-note-box" id="eliteKzAdvice">
+            💡 ستاپ ORB بر مبنای شکست تثبیت‌شده سقف/کف ۱۵ دقیقه ابتدایی سشن نیویورک با تارگت‌های ۱.۵ برابری اجرا می‌شود.
+          </div>
+        </div>
+
+        <!-- MODULE 2: GEX & OPTION WALLS -->
+        <div class="elite-card">
+          <div>
+            <div class="elite-card-title">
+              <span>🎲 ۲. دیوارهای گاما & سطوح آپشن نهادی</span>
+              <span id="eliteGexNet" class="elite-val-badge" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.3);">GEX: +145M$</span>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">رژیم گاما:</span>
+              <strong id="eliteGexRegime" style="color: #00e676; font-size: 0.78rem;">گامای مثبت نهادی</strong>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">دیوار مقاومت کال (Call Wall):</span>
+              <span id="eliteGexCallWall" class="elite-val-badge" style="background: rgba(255, 51, 102, 0.15); color: #ff3366; border: 1px solid rgba(255, 51, 102, 0.3);">52,005 (سقف آهنین)</span>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">دیوار حمایت پوت (Put Wall):</span>
+              <span id="eliteGexPutWall" class="elite-val-badge" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.3);">51,005 (کف بتنی)</span>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">تراز چرخش صفر / Max Pain:</span>
+              <span style="font-family: var(--font-mono); font-size: 0.76rem; color: #ffd166;">Zero: <span id="eliteGexZeroFlip">51,480</span> | Pain: <span id="eliteGexMaxPain">51,350</span></span>
+            </div>
+          </div>
+          <div class="elite-note-box" id="eliteGexDesc">
+            💡 در رژیم گامای مثبت، مارکت‌میکرها نوسان بازار را مهار کرده و قیمت به سمت میانگین بازمی‌گردد.
+          </div>
+        </div>
+
+        <!-- MODULE 3: NYSE INTERNALS -->
+        <div class="elite-card">
+          <div>
+            <div class="elite-card-title">
+              <span>📊 ۳. داخلی‌های بورس نیویورک & رادار ضدتله</span>
+              <span id="eliteTrapStatus" style="font-size: 0.72rem; color: #38bdf8; font-weight: 800;">تایید جریان نقدینگی</span>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">شاخص تیک نیویورک ($TICK):</span>
+              <span id="eliteTickVal" class="elite-val-badge" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.3);">+485</span>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">وضعیت سفارشات تیک:</span>
+              <strong id="eliteTickLabel" style="color: #00e676; font-size: 0.78rem;">خرید تهاجمی نهادی</strong>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">شاخص حجم ترامپ ($TRIN):</span>
+              <span style="font-family: var(--font-mono); font-weight: 800; color: #00e676;"><span id="eliteTrinVal">0.82</span> (<span id="eliteTrinLabel" style="font-size: 0.74rem;">برتری پرحجم خریداران</span>)</span>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">وسعت صعود/نزول سهام:</span>
+              <span id="eliteBreadthStatus" style="color: #ffd166; font-size: 0.76rem; font-family: var(--font-mono);">۱۹ مثبت / ۱۱ منفی</span>
+            </div>
+          </div>
+          <div class="elite-note-box" id="eliteTrapNote">
+            💡 سیستم رادار تله‌شناسی با انطباق تیک نیویورک و قیمت، تله‌های گاوی و خرسی فیک را در لحظه فاش می‌کند.
+          </div>
+        </div>
+
+        <!-- MODULE 4: ICT LIQUIDITY & JUDAS SWING -->
+        <div class="elite-card">
+          <div>
+            <div class="elite-card-title">
+              <span>🎯 ۴. استخرهای نقدینگی & تله جوداس (ICT)</span>
+              <span id="eliteJudasBias" class="elite-val-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">RANGE ACCUMULATION</span>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">سقف روز قبل (PDH):</span>
+              <span id="elitePdhVal" class="elite-val-badge" style="background: rgba(255, 51, 102, 0.15); color: #ff3366;">51,760.0 (+185 pts)</span>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">کف روز قبل (PDL):</span>
+              <span id="elitePdlVal" class="elite-val-badge" style="background: rgba(0, 230, 118, 0.15); color: #00e676;">51,330.0 (-245 pts)</span>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">مگنت نقدینگی خرید (BSL):</span>
+              <span id="eliteBslTarget" style="font-size: 0.74rem; color: #f43f5e; font-weight: 700;">سقف دیروز در 51,760.0</span>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">مگنت نقدینگی فروش (SSL):</span>
+              <span id="eliteSslTarget" style="font-size: 0.74rem; color: #10b981; font-weight: 700;">کف دیروز در 51,330.0</span>
+            </div>
+          </div>
+          <div class="elite-note-box" id="eliteJudasStatus">
+            💡 ردیاب تله جوداس شکار استاپ‌های سقف و کف روز قبل در ۳۰ دقیقه اول گشایش نیویورک را پایش می‌کند.
+          </div>
+        </div>
+
+        <!-- MODULE 5: DOW DIVISOR IMPACT -->
+        <div class="elite-card">
+          <div>
+            <div class="elite-card-title">
+              <span>⚖️ ۵. ضریب مقسوم‌علیه داو & تابلوی پوینت‌ها</span>
+              <span id="eliteMultiplierVal" class="elite-val-badge" style="background: rgba(255, 209, 102, 0.15); color: #ffd166;">6.59 pts / $1</span>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">مقسوم‌علیه رسمی ۲۰۲۶:</span>
+              <span id="eliteDivisorVal" class="elite-val-badge" style="background: rgba(255, 255, 255, 0.05); color: #cbd5e1;">0.1517275</span>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">مجموع پوینت‌های تولیدی:</span>
+              <strong id="eliteNetPtsVal" style="color: #00e676; font-family: var(--font-mono); font-size: 0.85rem;">+194.3 pts</strong>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">برترین محرک صعود:</span>
+              <span id="eliteTopBullish" style="font-size: 0.74rem; color: #00e676; font-weight: 700;">GS: +68.4 pts</span>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">برترین ترمز نزول:</span>
+              <span id="eliteTopBearish" style="font-size: 0.74rem; color: #ff3366; font-weight: 700;">UNH: -42.1 pts</span>
+            </div>
+          </div>
+          <div class="elite-note-box" id="eliteHealthVerdict">
+            💡 بررسی سلامت صعود: هر ۱ دلار تغییر قیمت در سهام سنگین‌وزن داو، شاخص را ۶.۶ پوینت جابه‌جا می‌کند.
+          </div>
+        </div>
+
+        <!-- MODULE 6: MOC CLOSING AUCTION -->
+        <div class="elite-card">
+          <div>
+            <div class="elite-card-title">
+              <span>⏳ ۶. رادار عدم تعادل حراج پایانی (MOC)</span>
+              <span id="eliteMocCountdown" class="elite-val-badge" style="background: rgba(244, 63, 94, 0.15); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.3);">00:35:12</span>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">فاز معاملاتی پایانی:</span>
+              <strong id="eliteMocPhase" style="color: #ffd166; font-size: 0.78rem;">پیش از حراج پایانی (MOC)</strong>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">حجم عدم تعادل صندوق‌ها:</span>
+              <span id="eliteMocImbalance" class="elite-val-badge" style="background: rgba(0, 230, 118, 0.15); color: #00e676;">+1.42B$ (خرید سنگین)</span>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">سیگنال اسکالپ ۱۰ دقیقه آخر:</span>
+              <strong id="eliteMocBias" style="color: #00e676; font-family: var(--font-mono);">BUY SCALP</strong>
+            </div>
+            <div class="elite-row">
+              <span style="color: #94a3b8;">برنامه حرکتی اسکالپ:</span>
+              <span id="eliteMocScalpTarget" style="font-size: 0.72rem; color: #38bdf8; font-family: var(--font-mono);">انتظار: ۴۰-۷۵ pts | تارگت: +60 pts</span>
+            </div>
+          </div>
+          <div class="elite-note-box" id="eliteMocAdvice">
+            💡 رأس ساعت ۲۳:۲۰ تهران عدم تعادل تسویه صندوق‌های چند تریلیون دلاری وال‌استریت برای ۱۰ دقیقه پایانی فاش می‌شود.
+          </div>
         </div>
       </div>
     </div>
@@ -2162,11 +2447,186 @@
       }
     }
 
+    
+    // ========================================================
+    // FETCH 6 ADVANCED INSTITUTIONAL ELITE MODULES
+    // ========================================================
+    async function fetchEliteModules() {
+      try {
+        const res = await fetch('/api/dow/elite-suite');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.ok) return;
+
+        // 1. Killzones & ORB
+        const kz = data.killzones_orb;
+        if (kz) {
+          const zEl = document.getElementById('eliteKzZone');
+          if (zEl) {
+            zEl.textContent = kz.active_zone;
+            zEl.style.color = kz.zone_color || '#00e676';
+          }
+          const volEl = document.getElementById('eliteKzVolScore');
+          if (volEl) volEl.textContent = 'نوسان: ' + kz.volatility_score;
+          const advEl = document.getElementById('eliteKzAdvice');
+          if (advEl) advEl.textContent = '💡 ' + kz.zone_advice;
+
+          const orb = kz.orb;
+          if (orb) {
+            const stEl = document.getElementById('eliteOrbStatus');
+            if (stEl) {
+              stEl.textContent = orb.status;
+              stEl.style.color = orb.color;
+            }
+            const levEl = document.getElementById('eliteOrbLevels');
+            if (levEl) levEl.textContent = `سقف: ${Number(orb.high).toLocaleString()} | کف: ${Number(orb.low).toLocaleString()}`;
+            const tgEl = document.getElementById('eliteOrbTargets');
+            if (tgEl) tgEl.textContent = `تارگت ۱: ${Number(orb.tp1).toLocaleString()} | تارگت ۲: ${Number(orb.tp2).toLocaleString()} | استاپ: ${Number(orb.stop_loss).toLocaleString()}`;
+          }
+        }
+
+        // 2. GEX & Option Walls
+        const gex = data.gex_options;
+        if (gex) {
+          const regEl = document.getElementById('eliteGexRegime');
+          if (regEl) {
+            regEl.textContent = gex.regime;
+            regEl.style.color = gex.regime_color || '#00e676';
+          }
+          const netEl = document.getElementById('eliteGexNet');
+          if (netEl) netEl.textContent = 'GEX: ' + gex.net_gex;
+          const cwEl = document.getElementById('eliteGexCallWall');
+          if (cwEl) cwEl.textContent = Number(gex.call_wall).toLocaleString() + ' (سقف آهنین)';
+          const pwEl = document.getElementById('eliteGexPutWall');
+          if (pwEl) pwEl.textContent = Number(gex.put_wall).toLocaleString() + ' (کف بتنی)';
+          const zfEl = document.getElementById('eliteGexZeroFlip');
+          if (zfEl) zfEl.textContent = Number(gex.zero_gamma_flip).toLocaleString();
+          const mpEl = document.getElementById('eliteGexMaxPain');
+          if (mpEl) mpEl.textContent = Number(gex.max_pain).toLocaleString();
+          const descEl = document.getElementById('eliteGexDesc');
+          if (descEl) descEl.textContent = '💡 ' + gex.regime_desc;
+        }
+
+        // 3. NYSE Internals
+        const nys = data.nyse_internals;
+        if (nys) {
+          const tValEl = document.getElementById('eliteTickVal');
+          if (tValEl) {
+            tValEl.textContent = (nys.tick.value >= 0 ? '+' : '') + nys.tick.value;
+            tValEl.style.color = nys.tick.color;
+          }
+          const tLblEl = document.getElementById('eliteTickLabel');
+          if (tLblEl) {
+            tLblEl.textContent = nys.tick.label;
+            tLblEl.style.color = nys.tick.color;
+          }
+          const trValEl = document.getElementById('eliteTrinVal');
+          if (trValEl) {
+            trValEl.textContent = nys.trin.value;
+            trValEl.style.color = nys.trin.color;
+          }
+          const trLblEl = document.getElementById('eliteTrinLabel');
+          if (trLblEl) trLblEl.textContent = nys.trin.label;
+          const brEl = document.getElementById('eliteBreadthStatus');
+          if (brEl) brEl.textContent = nys.breadth.status;
+
+          const trap = nys.trap_radar;
+          if (trap) {
+            const trStEl = document.getElementById('eliteTrapStatus');
+            if (trStEl) {
+              trStEl.textContent = trap.status;
+              trStEl.style.color = trap.color;
+            }
+            const trNtEl = document.getElementById('eliteTrapNote');
+            if (trNtEl) trNtEl.textContent = '💡 ' + trap.note;
+          }
+        }
+
+        // 4. ICT Liquidity & Judas Swing
+        const liq = data.liquidity_judas;
+        if (liq) {
+          const pdhEl = document.getElementById('elitePdhVal');
+          if (pdhEl) pdhEl.textContent = Number(liq.pdh).toLocaleString() + ` (${liq.distance_to_pdh})`;
+          const pdlEl = document.getElementById('elitePdlVal');
+          if (pdlEl) pdlEl.textContent = Number(liq.pdl).toLocaleString() + ` (${liq.distance_to_pdl})`;
+          const bslEl = document.getElementById('eliteBslTarget');
+          if (bslEl) bslEl.textContent = liq.bsl_target;
+          const sslEl = document.getElementById('eliteSslTarget');
+          if (sslEl) sslEl.textContent = liq.ssl_target;
+
+          const js = liq.judas_swing;
+          if (js) {
+            const jStEl = document.getElementById('eliteJudasStatus');
+            if (jStEl) {
+              jStEl.textContent = '💡 ' + js.status;
+              jStEl.style.color = js.color;
+            }
+            const jbEl = document.getElementById('eliteJudasBias');
+            if (jbEl) jbEl.textContent = js.bias;
+          }
+        }
+
+        // 5. Dow Divisor Impact
+        const div = data.divisor_impact;
+        if (div) {
+          const divEl = document.getElementById('eliteDivisorVal');
+          if (divEl) divEl.textContent = div.divisor;
+          const mulEl = document.getElementById('eliteMultiplierVal');
+          if (mulEl) mulEl.textContent = div.multiplier + ' pts / $1';
+          const netEl = document.getElementById('eliteNetPtsVal');
+          if (netEl) {
+            netEl.textContent = (div.total_net_points >= 0 ? '+' : '') + div.total_net_points + ' pts';
+            netEl.style.color = div.total_net_points >= 0 ? '#00e676' : '#ff3366';
+          }
+          const tbEl = document.getElementById('eliteTopBullish');
+          if (tbEl) tbEl.textContent = div.top_bullish;
+          const tbrEl = document.getElementById('eliteTopBearish');
+          if (tbrEl) tbrEl.textContent = div.top_bearish;
+          const hvEl = document.getElementById('eliteHealthVerdict');
+          if (hvEl) hvEl.textContent = '💡 وضعیت وال‌استریت: ' + div.health_verdict;
+        }
+
+        // 6. MOC Closing Auction
+        const moc = data.moc_imbalance;
+        if (moc) {
+          const cdEl = document.getElementById('eliteMocCountdown');
+          if (cdEl) cdEl.textContent = moc.countdown;
+          const phEl = document.getElementById('eliteMocPhase');
+          if (phEl) {
+            phEl.textContent = moc.phase;
+            phEl.style.color = moc.phase_color;
+          }
+          const imbEl = document.getElementById('eliteMocImbalance');
+          if (imbEl) imbEl.textContent = moc.imbalance_amount;
+          const biasEl = document.getElementById('eliteMocBias');
+          if (biasEl) biasEl.textContent = moc.scalp_bias;
+
+          const pb = moc.scalp_playbook;
+          if (pb) {
+            const scpEl = document.getElementById('eliteMocScalpTarget');
+            if (scpEl) scpEl.textContent = `انتظار: ${pb.expected_move} | تارگت: +${pb.target_pts} pts | استاپ: -${pb.stop_loss_pts} pts`;
+            const advEl = document.getElementById('eliteMocAdvice');
+            if (advEl) advEl.textContent = '💡 ' + pb.advice;
+          }
+        }
+
+        const upBadge = document.getElementById('eliteLastUpdateBadge');
+        if (upBadge) upBadge.textContent = '🔄 به‌روزرسانی زنده: ' + (data.updated_at || 'الان');
+      } catch (e) {
+        console.error('Error in fetchEliteModules:', e);
+      }
+    }
+
+    // Refresh Elite Modules every 7 seconds
+    setInterval(fetchEliteModules, 7000);
+
+
     // 15. INITIALIZATION ON LOAD
     window.addEventListener('DOMContentLoaded', () => {
       updateLiveClocksAndCountdowns();
       fetchCompositeSignal('1h');
       pollLiveQuotes();
+      fetchEliteModules();
       fetchRadarLeaders();
       fetchMacroStatus();
       fetchBankCoalition();

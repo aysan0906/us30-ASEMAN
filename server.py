@@ -1157,6 +1157,76 @@ def dow_leaders():
     }
 
 
+import elite_modules as elite
+
+@app.get("/api/dow/elite-suite")
+def dow_elite_suite():
+    try:
+        t_data = engine.ticker("1h")
+        p = float(t_data.get("price", 51570.0) or 51570.0)
+        chg = float(t_data.get("change", 210.0) or 210.0)
+    except Exception:
+        p = 51570.0
+        chg = 210.0
+    return elite.get_all_elite_modules(p, chg)
+
+@app.get("/api/dow/killzones-orb")
+def dow_killzones_orb():
+    try:
+        t_data = engine.ticker("1h")
+        p = float(t_data.get("price", 51570.0) or 51570.0)
+    except Exception:
+        p = 51570.0
+    return elite.get_killzones_and_orb(p)
+
+@app.get("/api/dow/gex-options")
+def dow_gex_options():
+    try:
+        t_data = engine.ticker("1h")
+        p = float(t_data.get("price", 51570.0) or 51570.0)
+    except Exception:
+        p = 51570.0
+    return elite.get_gex_and_option_walls(p)
+
+@app.get("/api/dow/nyse-internals")
+def dow_nyse_internals():
+    try:
+        t_data = engine.ticker("1h")
+        p = float(t_data.get("price", 51570.0) or 51570.0)
+        chg = float(t_data.get("change", 210.0) or 210.0)
+    except Exception:
+        p = 51570.0
+        chg = 210.0
+    return elite.get_nyse_internals(p, chg)
+
+@app.get("/api/dow/liquidity-judas")
+def dow_liquidity_judas():
+    try:
+        t_data = engine.ticker("1h")
+        p = float(t_data.get("price", 51570.0) or 51570.0)
+    except Exception:
+        p = 51570.0
+    return elite.get_liquidity_and_judas(p)
+
+@app.get("/api/dow/divisor-impact")
+def dow_divisor_impact():
+    try:
+        t_data = engine.ticker("1h")
+        p = float(t_data.get("price", 51570.0) or 51570.0)
+    except Exception:
+        p = 51570.0
+    return elite.get_divisor_impact(p)
+
+@app.get("/api/dow/moc-imbalance")
+def dow_moc_imbalance():
+    try:
+        t_data = engine.ticker("1h")
+        p = float(t_data.get("price", 51570.0) or 51570.0)
+    except Exception:
+        p = 51570.0
+    return elite.get_moc_imbalance(p)
+
+
 def get_dashboard_html() -> str:
     p = APP_DIR / "index.html"
     if p.exists():
