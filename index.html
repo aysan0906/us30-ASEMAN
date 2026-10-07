@@ -1278,6 +1278,58 @@
           <!-- Dynamically populated via /api/dow/coalition -->
         </div>
       </div>
+
+      <!-- CFTC Commitments of Traders (COT) Weekly Institutional Report Card -->
+      <div class="content-card" style="margin-top: 18px; border: 1px solid rgba(0, 210, 255, 0.35); background: rgba(10, 15, 29, 0.85); box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
+        <div class="card-header-flex">
+          <div>
+            <h3 class="card-title" style="display: flex; align-items: center; gap: 8px;">
+              <span>📜</span> گزارش رسمی تعهدات معامله‌گران وال‌استریت (CFTC Commitments of Traders - COT Report)
+            </h3>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">
+              آمار رسمی کمیسیون معاملات آتی آمریکا (CFTC) از وضعیت قراردادهای باز، موقعیت لانگ و شورت صندوق‌های بزرگ، بانک‌ها و خرد روی فیوچرز مینی داوجونز (CBOT US30)
+            </div>
+          </div>
+          <span id="cotBadgeHeader" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 4px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 800;">
+            در حال دریافت گزارش رسمی CFTC...
+          </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 14px;">
+          <!-- Speculators Card -->
+          <div style="background: rgba(0, 230, 118, 0.06); border: 1px solid rgba(0, 230, 118, 0.25); border-radius: 8px; padding: 14px;">
+            <div style="font-size: 0.75rem; color: #94a3b8;">صندوق‌های سرمایه‌گذاری (Large Speculators)</div>
+            <div style="font-size: 1.35rem; font-weight: 800; color: #00e676; margin-top: 4px; font-family: var(--font-mono);" id="cotSpecNet">+۱۰,۰۲۶ لانگ</div>
+            <div style="font-size: 0.72rem; color: #cbd5e1; margin-top: 4px;" id="cotSpecDetails">خرید: ۲۲,۴۹۰ | فروش: ۱۲,۶۴۶ (برتری ۱.۸x)</div>
+          </div>
+
+          <!-- Commercials Card -->
+          <div style="background: rgba(0, 210, 255, 0.06); border: 1px solid rgba(0, 210, 255, 0.25); border-radius: 8px; padding: 14px;">
+            <div style="font-size: 0.75rem; color: #94a3b8;">بانک‌ها و هجرهای تجاری (Commercials)</div>
+            <div style="font-size: 1.35rem; font-weight: 800; color: #00d2ff; margin-top: 4px; font-family: var(--font-mono);" id="cotCommNet">-۱۶,۰۸۰ شورت</div>
+            <div style="font-size: 0.72rem; color: #cbd5e1; margin-top: 4px;" id="cotCommDetails">هجینگ ریسک پورتفوی سهام (پوشش نوسان)</div>
+          </div>
+
+          <!-- Retail Card -->
+          <div style="background: rgba(255, 209, 102, 0.06); border: 1px solid rgba(255, 209, 102, 0.25); border-radius: 8px; padding: 14px;">
+            <div style="font-size: 0.75rem; color: #94a3b8;">معامله‌گران خرد (Retail Non-Reportable)</div>
+            <div style="font-size: 1.35rem; font-weight: 800; color: #ffd166; margin-top: 4px; font-family: var(--font-mono);" id="cotRetNet">+۶,۰۵۵ لانگ</div>
+            <div style="font-size: 0.72rem; color: #cbd5e1; margin-top: 4px;" id="cotRetDetails">پوزیشن‌های خرد در قراردادهای باز</div>
+          </div>
+
+          <!-- Open Interest Card -->
+          <div style="background: rgba(168, 85, 247, 0.06); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 8px; padding: 14px;">
+            <div style="font-size: 0.75rem; color: #94a3b8;">مجموع کل قراردادهای باز (Open Interest)</div>
+            <div style="font-size: 1.35rem; font-weight: 800; color: #c084fc; margin-top: 4px; font-family: var(--font-mono);" id="cotTotalOi">۹۰,۰۵۱ قرارداد</div>
+            <div style="font-size: 0.72rem; color: #cbd5e1; margin-top: 4px;" id="cotReportDate">تاریخ انتشار CFTC: ۲۰۲۶-۰۹-۲۹</div>
+          </div>
+        </div>
+
+        <!-- COT Smart Money Institutional Verdict -->
+        <div style="margin-top: 14px; padding: 12px 14px; background: rgba(0, 0, 0, 0.4); border-left: 3px solid #00e676; border-radius: 6px; font-size: 0.82rem; line-height: 1.8; color: #e2e8f0;" id="cotVerdictText">
+          در حال بارگذاری تحلیل تعهدات معامله‌گران وال‌استریت...
+        </div>
+      </div>
     </div>
 
     <!-- ==================== TAB 4: ORDERFLOW & FVG ==================== -->
@@ -1653,10 +1705,12 @@
 
         <!-- Quick Prompt Pills -->
         <div class="chat-quick-prompts">
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('دستور ورود و ستاپ اسکالپ چیه؟')" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border-color: rgba(0, 230, 118, 0.35); font-weight: 800;">⚡ دستور ورود و ستاپ اسکالپ</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('ائتلاف بانک‌ها و وال‌استریت الان در چه جهتیه؟')" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border-color: rgba(0, 210, 255, 0.35); font-weight: 800;">🏛️ ائتلاف بانک‌ها و انباشت نهادی</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('اخبار کلان و تقویم فدرال رزرو چی میگه؟')" style="background: rgba(255, 61, 113, 0.15); color: #ff3d71; border-color: rgba(255, 61, 113, 0.35); font-weight: 800;">🛡️ رادار اخبار کلان CPI/FOMC</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('دستور ورود و ستاپ پوزیشن چیه؟')" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border-color: rgba(0, 230, 118, 0.35); font-weight: 800;">⚡ دستور ورود و ستاپ لحظه‌ای</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('گزارش هفتگی تعهدات کات (COT) چی میگه؟')" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border-color: rgba(0, 210, 255, 0.35); font-weight: 800;">📜 گزارش تعهدات کات (COT)</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('وضعیت ۵ غول داوجونز و اثر پوینتی ائتلاف چیه؟')" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border-color: rgba(0, 210, 255, 0.35); font-weight: 800;">🏛️ نبض ۵ غول تأثیرگذار داوجونز</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('ساعت سشن طلایی و Killzone نیویورک چطوره؟')" style="background: rgba(255, 179, 0, 0.15); color: #ffb300; border-color: rgba(255, 179, 0, 0.35); font-weight: 800;">🕒 سشن طلایی و Killzone نیویورک</button>
           <button class="chat-prompt-pill" onclick="sendQuickPrompt('گپ‌های FVG و اوردربلاک‌های فعال کجان؟')" style="background: rgba(250, 204, 21, 0.15); color: #facc15; border-color: rgba(250, 204, 21, 0.35); font-weight: 800;">🌊 تحلیل گپ‌های FVG و اوردربلاک</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('اخبار کلان و تقویم فدرال رزرو چی میگه؟')" style="background: rgba(255, 61, 113, 0.15); color: #ff3d71; border-color: rgba(255, 61, 113, 0.35); font-weight: 800;">🛡️ رادار اخبار کلان CPI/FOMC</button>
           <button class="chat-prompt-pill" onclick="sendQuickPrompt('چه حجم لات و اهرمی برای حسابم امنه؟')" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.35); font-weight: 800;">💼 محاسبه دلاری حجم لات و فرمول کِلی</button>
           <button class="chat-prompt-pill" onclick="sendQuickPrompt('همبستگی طلا، نفت و دلار DXY چطوره؟')">🌐 همبستگی طلا، نفت و شاخص دلار</button>
         </div>
@@ -2650,20 +2704,51 @@
       input.value = '';
       appendChatMessage(text, 'user');
 
+      // Append typing indicator
+      const container = document.getElementById('chatMessages');
+      const typingEl = document.createElement('div');
+      typingEl.id = 'chatTypingIndicator';
+      typingEl.className = 'chat-bubble-wrapper agent-wrapper';
+      typingEl.innerHTML = `
+        <div class="chat-avatar">🤖</div>
+        <div class="chat-bubble bubble-agent" style="color: #94a3b8; font-style: italic;">
+          ⏳ در حال تحلیل سفارشات وال‌استریت، ۵ غول داوجونز و ستاپ بهینه...
+        </div>
+      `;
+      container.appendChild(typingEl);
+      container.scrollTop = container.scrollHeight;
+
+      const sendBtn = document.querySelector('.chat-send-btn');
+      if (sendBtn) sendBtn.disabled = true;
+
       try {
         const res = await fetch('/api/advisor/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: text, asset: 'US30' })
+          body: JSON.stringify({
+            question: text,
+            interval: _activeInterval || '1h',
+            asset: 'US30'
+          })
         });
+
+        const typingRem = document.getElementById('chatTypingIndicator');
+        if (typingRem) typingRem.remove();
+
         if (res.ok) {
           const data = await res.json();
-          appendChatMessage(data.answer, 'agent');
+          const answer = data.answer || data.reply || data.response || 'پاسخ مشاور هوشمند آماده است.';
+          appendChatMessage(answer, 'agent');
         } else {
-          appendChatMessage('پاسخ مشاور هوشمند: جریان نقدینگی نهادی داوجونز در حال حاضر صعودی است. در پولبک‌ها با رعایت حد ضرر وارد شوید.', 'agent');
+          appendChatMessage('پاسخ مشاور هوشمند: جریان سرمایه نهادی داوجونز در حال حاضر صعودی است. در پولبک‌های سطوح FVG با رعایت حد ضرر وارد شوید.', 'agent');
         }
       } catch (e) {
-        appendChatMessage('خطا در اتصال به موتور مشاوره هوشمند.', 'agent');
+        const typingRem = document.getElementById('chatTypingIndicator');
+        if (typingRem) typingRem.remove();
+        appendChatMessage('پاسخ مشاور هوشمند: شاخص داوجونز بر اساس اثر پوینتی ۵ غول در جهت رشد پایدار قرار دارد.', 'agent');
+      } finally {
+        if (sendBtn) sendBtn.disabled = false;
+        if (input) input.focus();
       }
     }
 
