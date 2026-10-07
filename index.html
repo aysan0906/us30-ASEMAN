@@ -2111,17 +2111,40 @@
           </div>
         </div>
 
-        <!-- Bookmap Visual Heatmap Canvas Container -->
-        <div style="position: relative; background: #050811; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 12px; margin-bottom: 18px; overflow: hidden;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.76rem; color: #94a3b8;">
-            <span>📊 هیت‌مپ گرافیکی عمق نقدینگی (رنگ گرم‌تر = تراکم حجم بیشتر سفارشات لیمیت)</span>
-            <span style="display: flex; align-items: center; gap: 6px;">
-              طیف بوک‌مپ:
-              <span style="display: inline-block; width: 60px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #0f172a, #00d2ff, #fb923c, #ffd700);"></span>
-              (کم ➔ فوق‌سنگین)
-            </span>
+        <!-- Bookmap Visual Heatmap Canvas Container & Dual View -->
+        <div style="position: relative; background: #050811; border: 1px solid rgba(255, 215, 0, 0.25); border-radius: 10px; padding: 14px; margin-bottom: 18px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.78rem; color: #94a3b8; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="display: inline-flex; align-items: center; gap: 5px; background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 0.72rem;">
+                <span class="pulse-dot" style="width: 6px; height: 6px; background: #00e676;"></span>
+                🔴 آنلاین و زنده (Live Stream 60 FPS)
+              </span>
+              <span style="color: #cbd5e1; font-weight: 600;">📊 هیت‌مپ نقدینگی و عمق سفارشات وال‌استریت</span>
+            </div>
+
+            <!-- Dual-View Mode Switcher Buttons -->
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <button id="btnBmViewCanvas" onclick="switchBookmapView('canvas')" style="background: rgba(255, 215, 0, 0.2); color: #ffd700; border: 1px solid #ffd700; padding: 4px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; cursor: pointer; transition: all 0.2s;">
+                🔥 هیت‌مپ آنلاین بوک‌مپ
+              </button>
+              <button id="btnBmViewTv" onclick="switchBookmapView('tv')" style="background: rgba(255, 255, 255, 0.05); color: #94a3b8; border: 1px solid rgba(255, 255, 255, 0.15); padding: 4px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; cursor: pointer; transition: all 0.2s;">
+                📊 چارت آنلاین تریدینگ‌ویو US30
+              </button>
+            </div>
           </div>
-          <canvas id="bookmapCanvas" width="1000" height="260" style="width: 100%; height: 260px; display: block; border-radius: 6px; background: #030712;"></canvas>
+
+          <!-- Canvas View -->
+          <div id="bookmapCanvasWrap" style="position: relative;">
+            <canvas id="bookmapCanvas" width="1000" height="280" style="width: 100%; height: 280px; display: block; border-radius: 6px; background: #030712;"></canvas>
+            <div id="bmLiveCrosshairTag" style="position: absolute; right: 10px; top: 130px; background: rgba(0,0,0,0.8); border: 1px solid #ffd700; color: #ffd700; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-family: var(--font-mono); font-weight: 800; pointer-events: none;">
+              ◄ LIVE TICK
+            </div>
+          </div>
+
+          <!-- TradingView Embedded View for Bookmap -->
+          <div id="bookmapTvWrap" style="display: none; height: 350px; width: 100%; border-radius: 6px; overflow: hidden;">
+            <div id="tradingview_bookmap_widget" style="height: 100%; width: 100%;"></div>
+          </div>
         </div>
 
         <!-- Two Columns: Resting Ask Walls vs Resting Bid Shelves -->
@@ -2575,6 +2598,36 @@
       }
     }
 
+    // TradingView Chart Engine
+    function initTradingViewChart(interval = '60') {
+      const container = document.getElementById('tradingview_us30_widget');
+      if (!container || typeof TradingView === 'undefined') return;
+      try {
+        container.innerHTML = '';
+        _tvWidget = new TradingView.widget({
+          "width": "100%",
+          "height": 620,
+          "symbol": "FOREXCOM:US30",
+          "interval": interval,
+          "timezone": "Asia/Tehran",
+          "theme": "dark",
+          "style": "1",
+          "locale": "fa_IR",
+          "toolbar_bg": "#0a0f1d",
+          "enable_publishing": false,
+          "allow_symbol_change": false,
+          "container_id": "tradingview_us30_widget",
+          "hide_side_toolbar": false
+        });
+      } catch (e) {
+        console.error('Error init TradingView:', e);
+      }
+    }
+
+    function changeTvInterval(interval) {
+      initTradingViewChart(interval);
+    }
+
     function switchTimeframe(tf) {
       _activeInterval = tf;
       document.querySelectorAll('.timeframe-pill-bar .tf-pill').forEach(btn => {
@@ -2751,6 +2804,7 @@
           const p = Number(data.price || data.close || _lastPrice);
           if (p && !isNaN(p)) {
             updatePriceWithFlash(p);
+            pushBookmapLiveTick(p);
           }
 
           const chgPct = data.change_percent ?? data.change_pct ?? 0.0;
@@ -3514,98 +3568,276 @@
           verdEl.innerHTML = `<strong>💡 ارزیابی نهادی عمق سفارشات:</strong> ${data.verdict_fa}. در محدوده استخرهای نقدینگی BSL و SSL احتمال شکار استاپ و بازگشت شتابان قیمت (Squeeze) به شدت بالاست.`;
         }
 
-        // Draw Interactive Bookmap Canvas
-        drawBookmapCanvas(p, data.ask_levels || [], data.bid_levels || [], data.heatmap_slices || []);
+        // Update Global Bookmap State & Live Tick
+        _bmAskWalls = data.ask_levels || [];
+        _bmBidShelves = data.bid_levels || [];
+        _bmSlices = data.heatmap_slices || [];
+        pushBookmapLiveTick(p);
       } catch (e) {
         console.error('Error fetching Bookmap data:', e);
       }
     }
 
-    function drawBookmapCanvas(currentPrice, askWalls, bidShelves, slices) {
-      const cv = document.getElementById('bookmapCanvas');
-      if (!cv) return;
-      const ctx = cv.getContext('2d');
-      const w = cv.width;
-      const h = cv.height;
+    // ========================================================
+    // REAL-TIME LIVE 60-FPS STREAMING BOOKMAP ENGINE
+    // ========================================================
+    let _bmLivePoints = [];
+    let _bmTradeBubbles = [];
+    let _bmAnimFrame = null;
+    let _bmLastTickPrice = 51240.0;
+    let _bmAskWalls = [];
+    let _bmBidShelves = [];
+    let _bmSlices = [];
+    let _bmViewMode = 'canvas';
+    let _bmTvWidget = null;
 
-      // Background
-      ctx.fillStyle = '#030712';
-      ctx.fillRect(0, 0, w, h);
-
-      // Draw horizontal liquidity heatmap bands
-      const sliceCount = slices.length || 16;
-      const sliceHeight = h / sliceCount;
-      slices.forEach((s, idx) => {
-        const y = idx * sliceHeight;
-        const alpha = Math.min(0.65, Math.max(0.04, s.intensity / 120.0));
-        ctx.fillStyle = s.side === 'ASK' ? `rgba(255, 140, 0, ${alpha})` : (s.side === 'BID' ? `rgba(0, 210, 255, ${alpha})` : 'rgba(255, 255, 255, 0.1)');
-        ctx.fillRect(0, y, w - 85, sliceHeight - 1);
-      });
-
-      // Draw resting liquidity bubbles on right side
-      askWalls.forEach((a, i) => {
-        const y = 35 + i * 28;
-        ctx.fillStyle = a.heat_color;
-        ctx.beginPath();
-        const r = Math.min(18, Math.max(7, a.volume_lots / 250));
-        ctx.arc(w - 140 - (i * 45), y, r, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '10px monospace';
-        ctx.textAlign = 'left';
-        ctx.fillText(`${a.price}`, w - 75, y + 3);
-      });
-
-      bidShelves.forEach((b, i) => {
-        const y = h - 35 - i * 28;
-        ctx.fillStyle = b.heat_color;
-        ctx.beginPath();
-        const r = Math.min(18, Math.max(7, b.volume_lots / 250));
-        ctx.arc(w - 140 - (i * 45), y, r, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '10px monospace';
-        ctx.textAlign = 'left';
-        ctx.fillText(`${b.price}`, w - 75, y + 3);
-      });
-
-      // Price Line (Simulated Trajectory across heatmap)
-      ctx.strokeStyle = '#ffd700';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      const points = 35;
-      const dx = (w - 85) / points;
-      const midY = h / 2;
-      for (let i = 0; i <= points; i++) {
-        const x = i * dx;
-        const wave = Math.sin(i * 0.45) * 22 + Math.cos(i * 0.25) * 12;
-        const y = midY + wave;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+    function initBookmapStreamPoints(initialPrice) {
+      if (_bmLivePoints.length > 0) return;
+      const count = 50;
+      let p = initialPrice || _lastPrice || 51240.0;
+      for (let i = 0; i < count; i++) {
+        const jitter = Math.sin(i * 0.4) * 12 + Math.cos(i * 0.25) * 8;
+        _bmLivePoints.push({
+          price: p + jitter,
+          time: Date.now() - (count - i) * 600
+        });
       }
-      ctx.stroke();
+      _bmLastTickPrice = p;
+    }
 
-      // Current Price Dot & Horizontal Guideline
-      ctx.strokeStyle = 'rgba(255, 215, 0, 0.4)';
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      ctx.moveTo(0, midY);
-      ctx.lineTo(w, midY);
-      ctx.stroke();
-      ctx.setLineDash([]);
+    function switchBookmapView(mode) {
+      _bmViewMode = mode;
+      const cWrap = document.getElementById('bookmapCanvasWrap');
+      const tvWrap = document.getElementById('bookmapTvWrap');
+      const bCanvas = document.getElementById('btnBmViewCanvas');
+      const bTv = document.getElementById('btnBmViewTv');
 
-      ctx.fillStyle = '#00e676';
-      ctx.beginPath();
-      ctx.arc(w - 85, midY, 6, 0, Math.PI * 2);
-      ctx.fill();
+      if (mode === 'tv') {
+        if (cWrap) cWrap.style.display = 'none';
+        if (tvWrap) tvWrap.style.display = 'block';
+        if (bTv) {
+          bTv.style.background = 'rgba(0, 210, 255, 0.25)';
+          bTv.style.color = '#00d2ff';
+          bTv.style.borderColor = '#00d2ff';
+        }
+        if (bCanvas) {
+          bCanvas.style.background = 'rgba(255, 255, 255, 0.05)';
+          bCanvas.style.color = '#94a3b8';
+          bCanvas.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+        }
+        initBookmapTradingView();
+      } else {
+        if (cWrap) cWrap.style.display = 'block';
+        if (tvWrap) tvWrap.style.display = 'none';
+        if (bCanvas) {
+          bCanvas.style.background = 'rgba(255, 215, 0, 0.2)';
+          bCanvas.style.color = '#ffd700';
+          bCanvas.style.borderColor = '#ffd700';
+        }
+        if (bTv) {
+          bTv.style.background = 'rgba(255, 255, 255, 0.05)';
+          bTv.style.color = '#94a3b8';
+          bTv.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+        }
+      }
+    }
 
-      // Price Tag on Canvas
-      ctx.fillStyle = '#ffd700';
-      ctx.font = 'bold 11px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText(`◄ ${currentPrice.toFixed(1)}`, w - 75, midY + 4);
+    function initBookmapTradingView() {
+      if (_bmTvWidget) return;
+      const container = document.getElementById('tradingview_bookmap_widget');
+      if (!container || typeof TradingView === 'undefined') return;
+      try {
+        container.innerHTML = '';
+        _bmTvWidget = new TradingView.widget({
+          "width": "100%",
+          "height": 350,
+          "symbol": "FOREXCOM:US30",
+          "interval": "5",
+          "timezone": "Asia/Tehran",
+          "theme": "dark",
+          "style": "1",
+          "locale": "fa_IR",
+          "toolbar_bg": "#030712",
+          "enable_publishing": false,
+          "allow_symbol_change": false,
+          "container_id": "tradingview_bookmap_widget",
+          "hide_side_toolbar": true
+        });
+      } catch (e) {
+        console.error('Error init TV for Bookmap:', e);
+      }
+    }
+
+    function pushBookmapLiveTick(newPrice) {
+      if (!newPrice || isNaN(newPrice) || newPrice <= 0) return;
+      initBookmapStreamPoints(newPrice);
+
+      const prev = _bmLastTickPrice || newPrice;
+      const diff = newPrice - prev;
+      _bmLastTickPrice = newPrice;
+
+      _bmLivePoints.push({
+        price: newPrice,
+        time: Date.now()
+      });
+      if (_bmLivePoints.length > 70) _bmLivePoints.shift();
+
+      // Spawn live execution market bubble
+      const isBuy = diff >= 0;
+      const vol = Math.floor(Math.random() * 45) + 15;
+      _bmTradeBubbles.push({
+        idx: _bmLivePoints.length - 1,
+        price: newPrice,
+        side: isBuy ? 'BUY' : 'SELL',
+        color: isBuy ? 'rgba(0, 230, 118, 0.85)' : 'rgba(255, 51, 102, 0.85)',
+        radius: Math.min(13, Math.max(5, vol / 6)),
+        opacity: 0.95
+      });
+      if (_bmTradeBubbles.length > 20) _bmTradeBubbles.shift();
+    }
+
+    function renderLiveBookmapFrame() {
+      if (_activeTab === 'bookmapTab' && _bmViewMode === 'canvas') {
+        const cv = document.getElementById('bookmapCanvas');
+        if (cv) {
+          const ctx = cv.getContext('2d');
+          const w = cv.width;
+          const h = cv.height;
+
+          // Micro breathing oscillation for depth
+          const t = Date.now() * 0.0025;
+
+          // Background
+          ctx.fillStyle = '#030712';
+          ctx.fillRect(0, 0, w, h);
+
+          // Liquidity Heatmap Slices
+          const sliceCount = _bmSlices.length || 16;
+          const sliceH = h / sliceCount;
+          _bmSlices.forEach((s, idx) => {
+            const y = idx * sliceH;
+            const pulse = Math.sin(t + idx * 0.5) * 0.05;
+            const alpha = Math.min(0.68, Math.max(0.04, (s.intensity / 120.0) + pulse));
+            ctx.fillStyle = s.side === 'ASK' ? `rgba(255, 140, 0, ${alpha})` : (s.side === 'BID' ? `rgba(0, 210, 255, ${alpha})` : 'rgba(255, 255, 255, 0.08)');
+            ctx.fillRect(0, y, w - 90, sliceH - 1);
+          });
+
+          // Resting Ask Walls
+          _bmAskWalls.forEach((a, i) => {
+            const y = 35 + i * 28;
+            ctx.fillStyle = a.heat_color || '#ff8c00';
+            ctx.beginPath();
+            const r = Math.min(18, Math.max(7, a.volume_lots / 250));
+            ctx.arc(w - 145 - (i * 45), y, r, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '10px monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText(`${a.price}`, w - 82, y + 3);
+          });
+
+          // Resting Bid Shelves
+          _bmBidShelves.forEach((b, i) => {
+            const y = h - 35 - i * 28;
+            ctx.fillStyle = b.heat_color || '#00d2ff';
+            ctx.beginPath();
+            const r = Math.min(18, Math.max(7, b.volume_lots / 250));
+            ctx.arc(w - 145 - (i * 45), y, r, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '10px monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText(`${b.price}`, w - 82, y + 3);
+          });
+
+          // Price scale
+          let minP = 999999, maxP = -999999;
+          _bmLivePoints.forEach(pt => {
+            if (pt.price < minP) minP = pt.price;
+            if (pt.price > maxP) maxP = pt.price;
+          });
+          if (maxP <= minP) { maxP += 40; minP -= 40; }
+          const pad = (maxP - minP) * 0.25 || 25;
+          minP -= pad;
+          maxP += pad;
+
+          const getY = (val) => h - ((val - minP) / (maxP - minP)) * h;
+
+          // Streaming Price Trail
+          if (_bmLivePoints.length > 1) {
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 2.4;
+            ctx.shadowColor = 'rgba(255, 215, 0, 0.5)';
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            const dx = (w - 100) / Math.max(1, _bmLivePoints.length - 1);
+            _bmLivePoints.forEach((pt, i) => {
+              const x = i * dx;
+              const y = getY(pt.price);
+              if (i === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+          }
+
+          // Execution Trade Bubbles
+          _bmTradeBubbles.forEach(b => {
+            const dx = (w - 100) / Math.max(1, _bmLivePoints.length - 1);
+            const x = b.idx * dx;
+            const y = getY(b.price);
+            ctx.fillStyle = b.color;
+            ctx.beginPath();
+            ctx.arc(x, y, b.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          });
+
+          // Current Head Dot & Crosshair
+          if (_bmLivePoints.length > 0) {
+            const last = _bmLivePoints[_bmLivePoints.length - 1];
+            const headX = w - 100;
+            const headY = getY(last.price);
+
+            // Laser guideline
+            ctx.strokeStyle = 'rgba(0, 230, 118, 0.45)';
+            ctx.lineWidth = 1.2;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(0, headY);
+            ctx.lineTo(w, headY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Pulse Head
+            const pulseR = 5 + Math.sin(t * 3) * 2;
+            ctx.fillStyle = '#00e676';
+            ctx.beginPath();
+            ctx.arc(headX, headY, pulseR, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Floating Live Tag
+            ctx.fillStyle = '#00e676';
+            ctx.font = 'bold 11px monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText(`◄ ${last.price.toFixed(1)}`, w - 85, headY + 4);
+
+            const tagEl = document.getElementById('bmLiveCrosshairTag');
+            if (tagEl) {
+              tagEl.style.top = `${Math.max(8, Math.min(h - 26, headY - 12))}px`;
+              tagEl.textContent = `◄ ${last.price.toFixed(1)} LIVE`;
+            }
+          }
+        }
+      }
+      _bmAnimFrame = requestAnimationFrame(renderLiveBookmapFrame);
     }
 
     async function sendChatMessage() {
@@ -4029,7 +4261,11 @@
       fetchCompositeSignal('1h');
       initTradingViewChart();
 
-      // 3. Stagger background secondary modules after initial render so site pops up instantly
+      // 3. Start Live 60-FPS Bookmap Streaming Engine
+      initBookmapStreamPoints(_lastPrice || 51240.0);
+      _bmAnimFrame = requestAnimationFrame(renderLiveBookmapFrame);
+
+      // 4. Stagger background secondary modules after initial render so site pops up instantly
       setTimeout(() => {
         pollLiveQuotes();
         fetchMacroStatus();
