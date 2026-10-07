@@ -3106,20 +3106,22 @@
 
     // 15. INITIALIZATION ON LOAD
     window.addEventListener('DOMContentLoaded', () => {
+      // 1. Instant zero-latency rendering of clock & session bars
       updateLiveClocksAndCountdowns();
+
+      // 2. Load the PRIMARY hero view immediately (< 200ms)
       fetchCompositeSignal('1h');
-      pollLiveQuotes();
-      fetchEliteModules();
-      fetchRadarLeaders();
-      fetchMacroStatus();
-      fetchBankCoalition();
-      fetchAlphaMatrix();
-      fetchAnalysis360();
-      fetchCrossAsset();
-      fetchOptionsAnalytics();
-      fetchExecutionGuard();
-      loadTelegramConfig();
       initTradingViewChart();
+
+      // 3. Stagger background secondary modules after initial render so site pops up instantly
+      setTimeout(() => {
+        pollLiveQuotes();
+        fetchMacroStatus();
+        fetchBankCoalition();
+        fetchCotReportLive();
+        loadTelegramConfig();
+      }, 1000);
+      // Secondary tabs (Analysis360, CrossAsset, Options, Guard, Alpha) are lazy-loaded on-demand when clicked!
     });
   </script>
 </body>

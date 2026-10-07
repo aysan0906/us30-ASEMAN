@@ -134,7 +134,7 @@ def ticker(interval: str = Query("1h", description="5m, 15m, 30m, 1h, 1d")):
     try:
         now_ts = time.time()
         cached = _ticker_cache.get(interval)
-        if cached and (now_ts - cached["time"] < 3.0):
+        if cached and (now_ts - cached["time"] < 10.0):
             return cached["data"]
         data = engine.ticker(interval)
         _ticker_cache[interval] = {"time": now_ts, "data": data}
@@ -405,12 +405,20 @@ async def universal_chat_endpoint(request: Request, q: str = Query(""), interval
         err_msg = f"پاسخ مشاور هوشمند داوجونز: شاخص در فاز تثبیت قرار دارد."
         return {"ok": True, "answer": err_msg, "reply": err_msg, "response": err_msg}
 
+_coalition_cache: Dict[str, Any] = {}
+
 @app.get("/api/dow/coalition")
 def dow_coalition_endpoint():
+    now_ts = time.time()
+    if _coalition_cache and (now_ts - _coalition_cache.get("time", 0) < 30.0):
+        return _coalition_cache["data"]
     try:
         import smart_money
         c = smart_money.bank_coalition(asset="US30")
-        return {"ok": True, "coalition": c}
+        res = {"ok": True, "coalition": c}
+        _coalition_cache["time"] = now_ts
+        _coalition_cache["data"] = res
+        return res
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
@@ -867,8 +875,15 @@ def journal_live():
 
 
 
+_composite_signal_cache: Dict[str, Dict[str, Any]] = {}
+
 @app.get("/api/dow/composite-signal")
 def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 1h, 4h, 1d")):
+    now_ts = time.time()
+    cached = _composite_signal_cache.get(interval)
+    if cached and (now_ts - cached["time"] < 15.0):
+        return cached["data"]
+
     # 1. Fetch live price strictly from FOREXCOM:US30
     try:
         t_data = engine.ticker(interval)
@@ -1135,7 +1150,7 @@ def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 
         {"name": "همگرایی چندزمانه و سنتیمنت (Multi-TF Alignment)", "status": mod5_stat, "detail": mod5_desc, "badge": mod5_badge}
     ]
 
-    return {
+    response_payload = {
         "ok": True,
         "action": action,
         "action_fa": action_fa,
@@ -1165,6 +1180,8 @@ def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 
         "triggers": triggers,
         "updated_at": time.strftime("%Y-%m-%d %H:%M:%S UTC")
     }
+    _composite_signal_cache[interval] = {"time": now_ts, "data": response_payload}
+    return response_payload
 
 @app.get("/api/dow/leaders")
 def dow_leaders():
