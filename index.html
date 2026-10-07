@@ -658,7 +658,84 @@
       line-height: 1.5;
       color: #94a3b8;
     }
-</style>
+
+    /* EDUCATION MODAL STYLING */
+    .edu-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 7, 18, 0.88);
+      backdrop-filter: blur(10px);
+      z-index: 99999;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .edu-modal-container {
+      background: #090e1a;
+      border: 1px solid rgba(255, 215, 0, 0.45);
+      border-radius: 16px;
+      max-width: 950px;
+      width: 100%;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(255, 215, 0, 0.2);
+      overflow: hidden;
+      animation: modalFadeIn 0.25s ease-out;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .edu-modal-header {
+      padding: 16px 22px;
+      background: linear-gradient(135deg, rgba(255, 215, 0, 0.12), rgba(0, 210, 255, 0.08));
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .edu-nav-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 10px 20px;
+      background: rgba(0, 0, 0, 0.45);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      overflow-x: auto;
+    }
+    .edu-tab-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .edu-tab-btn.active, .edu-tab-btn:hover {
+      background: rgba(255, 215, 0, 0.15);
+      color: #ffd700;
+      border-color: #ffd700;
+    }
+    .edu-tab-content {
+      padding: 22px;
+      overflow-y: auto;
+      flex: 1;
+      font-size: 0.85rem;
+      line-height: 1.8;
+      color: #cbd5e1;
+    }
+    .edu-pane {
+      display: none;
+    }
+    .edu-pane.active {
+      display: block;
+    }
+  </style>
 </head>
 <body>
 
@@ -675,6 +752,9 @@
 
       <!-- Live Heartbeat & Quote Ticker -->
       <div class="live-ticker-box">
+        <button onclick="openEducationModal()" style="background: linear-gradient(135deg, #ffd700, #ffb300); color: #000; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 800; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(255, 215, 0, 0.35); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+          <span>🎓</span> حالت آموزش و مدرسه داوجونز
+        </button>
         <div class="ticker-item">
           <span class="ticker-label">نماد و منبع زنده</span>
           <span class="ticker-val" style="color: #00d2ff; font-size: 0.95rem;">FOREXCOM:US30</span>
@@ -710,6 +790,9 @@
         <div>🇮🇷 تهران: <span id="clockTehran" style="color: #00d2ff; font-weight: 800;">15:42:00</span></div>
         <div>🇺🇸 نیویورک: <span id="clockNY" style="color: #ffd166; font-weight: 800;">08:12:00</span></div>
         <div>⏳ زنگ وال‌استریت: <span id="sessionCountdown" style="color: #00e676; font-weight: 800;">01:17:40</span></div>
+        <button onclick="openEducationModal()" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1px solid #ffd700; border-radius: 6px; padding: 4px 10px; font-size: 0.76rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+          <span>🎓</span> راهنمای مبتدی
+        </button>
         <div style="font-size: 0.72rem; color: #94a3b8; font-family: 'Vazirmatn';">⏱️ بازخوانی: <span id="lastRefreshSecs" style="color: #38bdf8; font-family: var(--font-mono);">۰s پیش</span></div>
       </div>
     </div>
@@ -1784,14 +1867,14 @@
 
         <!-- Quick Prompt Pills -->
         <div class="chat-quick-prompts">
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('دستور ورود و ستاپ پوزیشن چیه؟')" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border-color: rgba(0, 230, 118, 0.35); font-weight: 800;">⚡ دستور ورود و ستاپ لحظه‌ای</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('گزارش هفتگی تعهدات کات (COT) چی میگه؟')" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border-color: rgba(0, 210, 255, 0.35); font-weight: 800;">📜 گزارش تعهدات کات (COT)</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('وضعیت ۵ غول داوجونز و اثر پوینتی ائتلاف چیه؟')" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border-color: rgba(0, 210, 255, 0.35); font-weight: 800;">🏛️ نبض ۵ غول تأثیرگذار داوجونز</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('توضیح کامل ۱۵ ماژول سایت رو برام بگو برای فرد مبتدی')" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border-color: rgba(255, 215, 0, 0.4); font-weight: 800;">🎓 راهنمای ۱۵ ماژول سایت برای مبتدیان</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('بوک مپ چی میگه الان و چطوری باهاش ترید کنم؟')" style="background: rgba(255, 140, 0, 0.15); color: #fb923c; border-color: rgba(255, 140, 0, 0.4); font-weight: 800;">🔥 بوک‌مپ، دیوارهای لیمیت و اوردرهای کوه یخ</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('گزارش ۶ روزه و ۶ هفته ای تعهدات cot چی میگه؟')" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border-color: rgba(0, 210, 255, 0.35); font-weight: 800;">📜 پایش ۶ روزه و ۶ هفته‌ای تعهدات COT</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('دستور ورود و ستاپ پوزیشن چیه؟')" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border-color: rgba(0, 230, 118, 0.35); font-weight: 800;">⚡ ستاپ همگام‌شده ۱۵ ماژول (ورود/SL/TP)</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('استراتژی معامله داوجونز با وین ریت ۸۰ درصد چطوریه؟')" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.35); font-weight: 800;">🏆 استراتژی معاملاتی با وین‌ریت ۸۰٪</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('داوجونز چیست و فرمول مقسوم علیه چیه؟')" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.35); font-weight: 800;">🏛️ داوجونز چیست و فرمول محاسبه شاخص</button>
           <button class="chat-prompt-pill" onclick="sendQuickPrompt('ساعت سشن طلایی و Killzone نیویورک چطوره؟')" style="background: rgba(255, 179, 0, 0.15); color: #ffb300; border-color: rgba(255, 179, 0, 0.35); font-weight: 800;">🕒 سشن طلایی و Killzone نیویورک</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('گپ‌های FVG و اوردربلاک‌های فعال کجان؟')" style="background: rgba(250, 204, 21, 0.15); color: #facc15; border-color: rgba(250, 204, 21, 0.35); font-weight: 800;">🌊 تحلیل گپ‌های FVG و اوردربلاک</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('اخبار کلان و تقویم فدرال رزرو چی میگه؟')" style="background: rgba(255, 61, 113, 0.15); color: #ff3d71; border-color: rgba(255, 61, 113, 0.35); font-weight: 800;">🛡️ رادار اخبار کلان CPI/FOMC</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('چه حجم لات و اهرمی برای حسابم امنه؟')" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.35); font-weight: 800;">💼 محاسبه دلاری حجم لات و فرمول کِلی</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('همبستگی طلا، نفت و دلار DXY چطوره؟')">🌐 همبستگی طلا، نفت و شاخص دلار</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('چه حجم لات و اهرمی برای حسابم امنه؟')" style="background: rgba(250, 204, 21, 0.15); color: #facc15; border-color: rgba(250, 204, 21, 0.35); font-weight: 800;">💼 محاسبه دقیق حجم لات (کِلی)</button>
         </div>
 
         <!-- Chat Messages Container -->
@@ -2092,13 +2175,231 @@
             </div>
           </div>
         </div>
+
+        <!-- DETAILED STEP-BY-STEP PERSIAN BOOKMAP GUIDE FOR TRADERS -->
+        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px dashed rgba(255, 215, 0, 0.25);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.2rem;">🎓</span>
+              <h4 style="font-size: 1.02rem; font-weight: 800; color: #ffd700;">
+                راهنمای جامع و آسان درک بوک‌مپ برای افراد مبتدی (چگونه با بوک‌مپ سود کنیم؟)
+              </h4>
+            </div>
+            <button onclick="sendQuickPrompt('بوک مپ چی میگه الان و چطوری باهاش ترید کنم؟'); switchTab('chatTab', document.getElementById('btnNavChat'));" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border: 1px solid #00d2ff; padding: 4px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 800; cursor: pointer;">
+              💬 تحلیل لایو بوک‌مپ در چت هوشمند
+            </button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 16px;">
+            <!-- Card 1: Colors -->
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px;">
+              <div style="font-weight: 800; color: #38bdf8; font-size: 0.85rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <span>🎨</span> ۱. معنی رنگ‌های هیت‌مپ
+              </div>
+              <p style="font-size: 0.78rem; line-height: 1.7; color: #cbd5e1;">
+                • <strong>سرمه‌ای و تیره:</strong> سفارش لیمیت ناچیز؛ قیمت به راحتی از آن عبور می‌کند.<br>
+                • <strong>نارنجی:</strong> سفارشات لیمیت متراکم متوسط.<br>
+                • <strong>زرد و طلایی درخشان:</strong> <strong>دیوار بتنی سنگین بانک‌ها</strong>؛ حجم سفارشات بسیار بالاست و قیمت معمولاً با برخورد به آن پس می‌زند!
+              </p>
+            </div>
+
+            <!-- Card 2: Ask vs Bid Walls -->
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px;">
+              <div style="font-weight: 800; color: #ff3366; font-size: 0.85rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <span>🧱</span> ۲. دیوارهای فروش و کف‌های خرید
+              </div>
+              <p style="font-size: 0.78rem; line-height: 1.7; color: #cbd5e1;">
+                • <strong>دیوارهای قرمز (Ask Walls):</strong> سفارشات فروش خوابیده بالای قیمت. هج‌فاندها اجازه عبور آسان به قیمت نمی‌دهند.<br>
+                • <strong>کف‌های سبز (Bid Shelves):</strong> سفارشات خرید خوابیده زیر قیمت. تشک نجات بازار که مانع ریزش شارپ می‌شود.
+              </p>
+            </div>
+
+            <!-- Card 3: Iceberg Orders -->
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px;">
+              <div style="font-weight: 800; color: #ffd166; font-size: 0.85rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <span>🧊</span> ۳. سفارشات پنهان کوه یخ (Iceberg)
+              </div>
+              <p style="font-size: 0.78rem; line-height: 1.7; color: #cbd5e1;">
+                بانک‌ها وقتی قصد دارند ۳,۰۰۰ لات بخرند، هرگز تمام آن را روی تابلو قرار نمی‌دهند تا بازار گران نشود! فقط ۵۰ لات را آشکار می‌کنند و به محض پر شدن، رباتشان بلافاصله ۵۰ لات دیگر شارژ می‌کند. این ماژول این کوه‌های یخ مخفی را برای شما آشکار می‌سازد.
+              </p>
+            </div>
+
+            <!-- Card 4: Stop Hunts BSL / SSL -->
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px;">
+              <div style="font-weight: 800; color: #a855f7; font-size: 0.85rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <span>🧲</span> ۴. استخرهای نقدینگی و استاپ‌هانتینگ
+              </div>
+              <p style="font-size: 0.78rem; line-height: 1.7; color: #cbd5e1;">
+                • <strong>BSL (Buy-Side Liquidity):</strong> بالای سقف‌ها قرار دارد؛ جایی که استاپ‌لاس فروشندگان جمع شده و قیمت مثل آهنربا جذب آن می‌شود تا نقدینگی را ببلعد.<br>
+                • <strong>SSL (Sell-Side Liquidity):</strong> زیر کف‌ها قرار دارد و استاپ خریداران را هدف قرار می‌دهد.
+              </p>
+            </div>
+          </div>
+
+          <!-- Strategy Rule Box -->
+          <div style="background: linear-gradient(135deg, rgba(0, 230, 118, 0.08), rgba(0, 210, 255, 0.05)); border: 1px solid rgba(0, 230, 118, 0.3); border-radius: 8px; padding: 14px; font-size: 0.82rem; line-height: 1.8;">
+            <strong style="color: #00e676; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+              <span>🏆</span> استراتژی ۳ گام معامله با بوک‌مپ برای سود حداکثری:
+            </strong>
+            <strong>گام ۱:</strong> به نشانگر «تراز دلتا» نگاه کنید؛ اگر مثبت بود یعنی قدرت در دست خریداران است.<br>
+            <strong>گام ۲:</strong> نقطه ورود خرید خود را نزدیک به نزدیک‌ترین «کف بتنی خرید (Bid Shelf)» بگذارید و حد ضرر را ۲ تا ۵ پوینت زیر آن مخفی کنید.<br>
+            <strong>گام ۳:</strong> حد سود (TP) خود را دقیقاً ۲ تا ۵ پوینت قبل از اولین «دیوار سنگین فروش (Ask Wall)» قرار دهید تا دقیقاً پیش از واکنش و برگشت قیمت، با سود کامل خارج شوید!
+          </div>
+        </div>
       </div>
     </div>
 
   </div>
 
+  <!-- ==================== INTERACTIVE EDUCATIONAL MODE MODAL ==================== -->
+  <div id="educationModal" class="edu-modal-overlay">
+    <div class="edu-modal-container">
+      <div class="edu-modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.4rem;">🎓</span>
+          <div>
+            <h3 style="font-size: 1.1rem; font-weight: 800; color: #ffd700; margin: 0;">مدرسه تخصصی داوجونز وال‌استریت (راهنمای صفر تا صد تریدرها)</h3>
+            <div style="font-size: 0.75rem; color: #94a3b8;">آموزش تصویری ۱۵ ماژول، بوک‌مپ نقدینگی، استراتژی ۸۰٪ و فرهنگ لغت وال‌استریت</div>
+          </div>
+        </div>
+        <button onclick="closeEducationModal()" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center;">✕</button>
+      </div>
+
+      <div class="edu-nav-tabs">
+        <button class="edu-tab-btn active" onclick="switchEduTab('eduTab1', this)">🏛️ ۱. داوجونز چیست؟</button>
+        <button class="edu-tab-btn" onclick="switchEduTab('eduTab2', this)">⚡ ۲. راهنمای ۱۵ ماژول سایت</button>
+        <button class="edu-tab-btn" onclick="switchEduTab('eduTab3', this)">🔥 ۳. آموزش تخصصی بوک‌مپ</button>
+        <button class="edu-tab-btn" onclick="switchEduTab('eduTab4', this)">🏆 ۴. استراتژی ۸۰٪ وین‌ریت</button>
+        <button class="edu-tab-btn" onclick="switchEduTab('eduTab5', this)">📖 ۵. دیکشنری اصطلاحات</button>
+      </div>
+
+      <div class="edu-tab-content">
+        <!-- PANE 1: WHAT IS DOW -->
+        <div id="eduTab1" class="edu-pane active">
+          <h4 style="color: #00d2ff; font-size: 1rem; margin-bottom: 8px;">🏛️ آشنایی با شاخص داو جونز (Dow Jones Industrial Average - US30)</h4>
+          <p>
+            شاخص داوجونز، قدیمی‌ترین و شاخص‌ترین دماسنج سلامت اقتصادی آمریکا و جهان است. این شاخص در سال ۱۸۹۶ توسط «چارلز داو» پایه‌گذاری شد و هم‌اکنون از ۳۰ شرکت پیشران و اثرگذار ایالات متحده (از جمله گلدمن ساکس، مایکروسافت، کاترپیلار، اپل، بوئینگ و جی‌پی مورگان) تشکیل شده است.
+          </p>
+          <div style="background: rgba(0, 210, 255, 0.06); border-right: 4px solid #00d2ff; padding: 12px 14px; border-radius: 6px; margin: 14px 0;">
+            <strong style="color: #00d2ff;">🧮 تفاوت بنیادین با شاخص‌های دیگر (محاسبه قیمت‌محور - Price-Weighted):</strong><br>
+            برخلاف اس‌اند‌پی ۵۰۰ یا نزدک که بر اساس ارزش بازار (مارکت کپ) شرکت‌ها وزن‌دهی می‌شوند، شاخص داوجونز بر مبنای <strong>«قیمت دلاری هر سهم»</strong> محاسبه می‌شود!<br>
+            <code>فرمول: مجموع قیمت ۳۰ سهم ÷ مقسوم‌علیه داو (Divisor = 0.1517)</code><br>
+            این فرمول یعنی: هر ۱ دلار بالا رفتن سهم گلدمن ساکس (GS)، ۶.۵۹ پوینت کل شاخص داوجونز را بالا می‌کشد! به همین خاطر سهم‌های با قیمت بالا (۵ غول اصلی) فرمان داوجونز را در دست دارند.
+          </div>
+        </div>
+
+        <!-- PANE 2: 15 MODULES EXPLAINED -->
+        <div id="eduTab2" class="edu-pane">
+          <h4 style="color: #ffd700; font-size: 1rem; margin-bottom: 8px;">⚡ راهنمای فهم سریع هر ۱۵ ماژول برای افراد مبتدی</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px;">
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+              <strong style="color: #38bdf8;">۱. لیدرهای داو ۳۰:</strong> رصد ۱۲ سهم پرنفوذ داوجونز و اثر پوینتی هر یک در لحظه.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+              <strong style="color: #38bdf8;">۲. نمودار تریدینگ‌ویو:</strong> چارت زنده FOREXCOM:US30 برای تحلیل خطوط روند و سطوح.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+              <strong style="color: #00e676;">۳. ائتلاف غول‌های بانکی & COT:</strong> پایش جهت خرید بانک‌ها و گزارش ۶ روزه و ۶ هفته‌ای تعهدات نهادی.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+              <strong style="color: #00e676;">۴. جریان سفارشات & FVG:</strong> ردیاب شکاف ارزش منصفانه (خلأ نقدینگی) و اوردربلاک‌های بانکی.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+              <strong style="color: #fb923c;">۵. تقویم کلان & FedWatch:</strong> سپر خودکار در برابر اخبار CPI و احتمال تغییر نرخ بهره فدرال رزرو.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+              <strong style="color: #c084fc;">۶. مشاور هوشمند AI:</strong> چت زنده تحلیل‌گر وال‌استریت برای پاسخگویی به هر سوال معاملاتی.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+              <strong style="color: #c084fc;">۷. تحلیل ۳۶۰ درجه SMC:</strong> ساختار پرایس‌اکشن، خطوط شکست BOS و چرخش ساختار CHoCH.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+              <strong style="color: #facc15;">۸. همبستگی دارایی‌ها:</strong> همسویی شاخص دلار DXY، بازده اوراق ۱۰ ساله و طلا با داو.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+              <strong style="color: #facc15;">۹. ماتریس آلفای سکتورها:</strong> مقایسه بازدهی سکتورهای مالی، تکنولوژی، صنعتی و انرژی.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+              <strong style="color: #ff3366;">۱۰. آپشن و گاما:</strong> کف بتنی (پوت‌وال) و سقف بتنی (کال‌وال) بازارسازان اختیار معامله.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+              <strong style="color: #38bdf8;">۱۱. مدیریت ریسک کِلی:</strong> محاسبه دقیق حجم لات متناسب با موجودی تا اکانت نسوزد.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+              <strong style="color: #38bdf8;">۱۲. ژورنال معاملات:</strong> ثبت اتوماتیک سوابق و درصد برنده شدن (وین‌ریت) تاریخی سیستم.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+              <strong style="color: #00d2ff;">۱۳. دیده‌بان تلگرام:</strong> مخابره اتوماتیک سیگنال‌های درجه A+ به ربات و کانال تلگرام.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+              <strong style="color: #00e676;">۱۴. گارد محافظ معامله:</strong> پایش اسپرد بروکرها و جلوگیری از ضرر ناشی از اسلیپیج پنهان.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+              <strong style="color: #ffd700;">۱۵. بوک‌مپ نقدینگی:</strong> رادیولوژی عمق سفارشات لیمیت، دیوارهای پنهان و ردیاب کوه یخ.
+            </div>
+          </div>
+        </div>
+
+        <!-- PANE 3: BOOKMAP DETAILED TUTORIAL -->
+        <div id="eduTab3" class="edu-pane">
+          <h4 style="color: #ffd700; font-size: 1rem; margin-bottom: 8px;">🔥 آموزش بوک‌مپ نقدینگی (دیدن دست‌های پشت‌پرده وال‌استریت)</h4>
+          <p>
+            نمودارهای معمولی کندل‌استیک فقط قیمت‌های گذشته را نشان می‌دهند؛ اما <strong>بوک‌مپ (Bookmap)</strong> به شما نشان می‌دهد نهنگ‌ها در آینده روی چه قیمت‌هایی سفارش‌های خرید و فروش سنگین گذاشته‌اند!
+          </p>
+          <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 14px; margin: 12px 0;">
+            <strong style="color: #ffd700;">چگونه بوک‌مپ را مثل یک حرفه‌ای بخوانیم؟</strong>
+            <ul style="padding-right: 20px; margin-top: 6px; line-height: 1.8;">
+              <li><strong>رنگ طلایی هیت‌مپ:</strong> حجم سفارشات لیمیت به قدری سنگین است که مانند یک دیوار عمل می‌کند و قیمت را بازمی‌گرداند.</li>
+              <li><strong>کف‌های خرید (Bid Shelves):</strong> سنگرهای دفاعی خریداران؛ نقطه ورود عالی برای لانگ با حد ضرر بسیار کوتاه.</li>
+              <li><strong>دیوارهای فروش (Ask Walls):</strong> سقف‌های عرضه؛ بهترین مکان برای بستن معامله و خارج کردن سود.</li>
+              <li><strong>اوردرهای کوه یخ (Iceberg):</strong> سفارشات مخفی هج‌فاندها که در کندل‌های معمولی دیده نمی‌شوند اما در بوک‌مپ شکار می‌گردند.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- PANE 4: 80% WIN RATE PLAYBOOK -->
+        <div id="eduTab4" class="edu-pane">
+          <h4 style="color: #00e676; font-size: 1rem; margin-bottom: 8px;">🏆 استراتژی طلایی معامله داوجونز با وین‌ریت ۸۰٪ (Smart Money Playbook)</h4>
+          <p>برای موفقیت مستمر در داوجونز، کافی است این ۵ گام ساده را در هر روز رعایت کنید:</p>
+          <ol style="padding-right: 20px; line-height: 2;">
+            <li><strong>فقط در سشن طلایی نیویورک ترید کنید:</strong> ساعات ۱۷:۰۰ الی ۱۹:۳۰ به وقت ایران؛ در ساعات کم‌حجم شبانه معامله نکنید.</li>
+            <li><strong>چک کردن فیوز اخبار:</strong> به ماژول ۵ نگاه کنید؛ اگر فیوز قرمز است هیچ پوزیشنی باز نکنید.</li>
+            <li><strong>همسویی ائتلاف و بوک‌مپ:</strong> اطمینان حاصل کنید ماژول ۳ (بانک‌ها) و ماژول ۱۵ (بوک‌مپ) هر دو هم‌جهت هستند.</li>
+            <li><strong>ورود در FVG یا کف‌های بوک‌مپ:</strong> هرگز در سقف نخرید؛ منتظر پولبک به باکس ارزش منصفانه بمانید.</li>
+            <li><strong>سیو سود در تارگت اول:</strong> به محض رسیدن قیمت به TP1، نصف حجم را ببندید و استاپ را روی نقطه ورود قرار دهید (ریسک صفر).</li>
+          </ol>
+        </div>
+
+        <!-- PANE 5: GLOSSARY -->
+        <div id="eduTab5" class="edu-pane">
+          <h4 style="color: #c084fc; font-size: 1rem; margin-bottom: 8px;">📖 دیکشنری و فرهنگ لغت اصطلاحات وال‌استریت و SMC</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px;">
+            <div><strong>SMC:</strong> مفاهیم معامله‌گری پول هوشمند و بانک‌ها.</div>
+            <div><strong>BOS:</strong> شکست معتبر ساختار روند (ادامه مسیر).</div>
+            <div><strong>CHoCH:</strong> تغییر کاراکتر و چرخش ساختار بازار.</div>
+            <div><strong>FVG:</strong> شکاف ارزش منصفانه (خلأ نقدینگی ناشی از ورود تهاجمی).</div>
+            <div><strong>BSL:</strong> استخر نقدینگی بالای سقف‌ها (استاپ فروشنده‌ها).</div>
+            <div><strong>SSL:</strong> استخر نقدینگی زیر کف‌ها (استاپ خریدارها).</div>
+            <div><strong>Iceberg:</strong> سفارش سنگین خردشده که بخش اعظم آن مخفی است.</div>
+            <div><strong>COT:</strong> گزارش رسمی هفتگی تعهدات معامله‌گران کمیسیون CFTC آمریکا.</div>
+            <div><strong>Killzone:</strong> بازه زمانی اوج حجم و نقدینگی سازمانی سشن.</div>
+            <div><strong>ATR:</strong> میانگین دامنه نوسان واقعی قیمت در یک تایم‌فریم مشخص.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding: 12px 22px; background: rgba(0,0,0,0.3); border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <span style="font-size: 0.78rem; color: #94a3b8;">💡 سوال خاصی دارید؟ مشاور هوشمند ۲۴ ساعته در تب ۶ آماده است!</span>
+        <button onclick="closeEducationModal(); switchTab('chatTab', document.getElementById('btnNavChat'));" style="background: linear-gradient(135deg, #00d2ff, #0077ff); color: #fff; border: none; padding: 6px 16px; border-radius: 6px; font-weight: 700; font-size: 0.78rem; cursor: pointer;">
+          💬 باز کردن چت هوشمند
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- TradingView Library -->
   <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+
 
   <script>
     // State variables
@@ -2214,6 +2515,30 @@
 
     // Run clock loop every 1 second
     setInterval(updateLiveClocksAndCountdowns, 1000);
+
+    // Educational Mode Modal Handlers
+    function openEducationModal() {
+      const modal = document.getElementById('educationModal');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeEducationModal() {
+      const modal = document.getElementById('educationModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function switchEduTab(tabId, btn) {
+      document.querySelectorAll('.edu-pane').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.edu-tab-btn').forEach(b => b.classList.remove('active'));
+      const target = document.getElementById(tabId);
+      if (target) target.classList.add('active');
+      if (btn) btn.classList.add('active');
+    }
+
+    window.addEventListener('click', (e) => {
+      const modal = document.getElementById('educationModal');
+      if (e.target === modal) closeEducationModal();
+    });
 
     // 2. TIMEFRAME SWITCHER
     function switchTab(tabId, btn) {
