@@ -1,29 +1,58 @@
-name: زنده نگه داشتن زمان بندی
-
-# ⚠️ چرا این فایل لازم است؟
-# گیت هاب در ریپوی «پابلیک» زمان بندی را بعد از ۶۰ روز بی فعالیتی
-# بی سر و صدا خاموش می کند. این ورک فلو ماهی یک بار یک کامیت
-# بی ضرر می زند تا ساعت ۶۰ روزه صفر شود.
-# عبارت [skip render] جلوی دیپلوی مجدد Render را می گیرد.
+name: Render US30 24/7 Keep-Alive & Ultra-Fast Ping
 
 on:
   schedule:
-    - cron: "17 5 1 * *"        # اول هر ماه، ساعت ۰۵:۱۷ UTC
+    # اجرا هر ۱۰ دقیقه یک‌بار جهت جلوگیری قطعی از اسلیپ شدن سرور رندر بعد از ۱۵ دقیقه بی‌کاری
+    - cron: '*/10 * * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  touch:
+  keepalive:
+    name: Ping Render US30 & Keep Active
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+
     steps:
-      - uses: actions/checkout@v4
-      - name: زدن مهر زمان
+      - name: Ping Render US30 Service
         run: |
+          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          TARGET_URL="${{ secrets.RENDER_APP_URL || 'https://us30-aseman-1.onrender.com' }}/healthz"
+          echo "[$TIMESTAMP] Starting Keep-Alive ping to: $TARGET_URL"
+
+          HTTP_CODE=$(curl -s -o /tmp/health_response.json -w "%{http_code}" \
+            --connect-timeout 15 \
+            --max-time 40 \
+            --retry 3 \
+            --retry-delay 5 \
+            "$TARGET_URL")
+
+          echo "Response HTTP Code: $HTTP_CODE"
+          if [ -f /tmp/health_response.json ]; then
+            echo "Response Body: $(cat /tmp/health_response.json)"
+          fi
+
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "✅ Render US30 service is awake and ultra-fast!"
+          else
+            echo "⚠️ Fallback pinging root URL..."
+            ROOT_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              --connect-timeout 20 \
+              --max-time 60 \
+              "${{ secrets.RENDER_APP_URL || 'https://us30-aseman-1.onrender.com' }}/")
+            echo "Root URL HTTP Code: $ROOT_CODE"
+          fi
+
+      - uses: actions/checkout@v4
+
+      - name: Update GitHub Activity Clock
+        run: |
+          mkdir -p .github
           date -u +"%Y-%m-%d %H:%M UTC" > .github/last-keepalive.txt
-          git config user.name  "github-actions[bot]"
+          git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .github/last-keepalive.txt
-          git commit -m "زنده نگه داشتن زمان بندی [skip render]" || exit 0
+          git commit -m "chore: keepalive heartbeat [skip render]" || exit 0
           git push
