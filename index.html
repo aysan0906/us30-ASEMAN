@@ -2072,6 +2072,8 @@
         fetchRadarLeaders();
       } else if (tabId === 'coalitionTab') {
         fetchBankCoalition();
+      } else if (tabId === 'orderflowTab') {
+        fetchOrderflow();
       } else if (tabId === 'macroTab') {
         fetchMacroStatus();
       }
@@ -2410,6 +2412,58 @@
     }
 
     // ========================================================
+    // MODULE 4: ORDERFLOW & FVG ANATOMY
+    // ========================================================
+    async function fetchOrderflow(interval = _activeInterval) {
+      const lbl = document.getElementById('ofIntervalLabel');
+      if (lbl) lbl.textContent = interval;
+      try {
+        const res = await fetch(`/api/dow/orderflow?interval=${interval}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.ok) return;
+
+        const bullList = document.getElementById('bullishFvgList');
+        if (bullList && data.bullish_fvgs) {
+          bullList.innerHTML = data.bullish_fvgs.map(f => `
+            <div style="background: rgba(0, 230, 118, 0.08); border-right: 3px solid #00e676; border-radius: 6px; padding: 10px 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span class="mono" style="color: #00e676; font-weight: 800; font-size: 0.95rem;">${Number(f.bottom).toLocaleString()} ➔ ${Number(f.top).toLocaleString()}</span>
+                <span style="font-size: 0.72rem; background: rgba(0, 230, 118, 0.2); color: #00e676; padding: 2px 8px; border-radius: 4px;">${f.status}</span>
+              </div>
+              <div style="font-size: 0.76rem; color: #94a3b8; display: flex; justify-content: space-between;">
+                <span>پهنای گپ: <strong class="mono" style="color: #fff;">${f.size} pts</strong> | میانه ۵۰٪: <strong class="mono" style="color: #ffd166;">${Number(f.ce).toLocaleString()}</strong></span>
+              </div>
+              <div style="font-size: 0.74rem; color: #00e676; margin-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 4px;">
+                💡 ${f.entry_rule}
+              </div>
+            </div>
+          `).join('');
+        }
+
+        const bearList = document.getElementById('bearishFvgList');
+        if (bearList && data.bearish_fvgs) {
+          bearList.innerHTML = data.bearish_fvgs.map(f => `
+            <div style="background: rgba(255, 51, 102, 0.08); border-right: 3px solid #ff3366; border-radius: 6px; padding: 10px 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span class="mono" style="color: #ff3366; font-weight: 800; font-size: 0.95rem;">${Number(f.bottom).toLocaleString()} ➔ ${Number(f.top).toLocaleString()}</span>
+                <span style="font-size: 0.72rem; background: rgba(255, 51, 102, 0.2); color: #ff3366; padding: 2px 8px; border-radius: 4px;">${f.status}</span>
+              </div>
+              <div style="font-size: 0.76rem; color: #94a3b8; display: flex; justify-content: space-between;">
+                <span>پهنای گپ: <strong class="mono" style="color: #fff;">${f.size} pts</strong> | میانه ۵۰٪: <strong class="mono" style="color: #ffd166;">${Number(f.ce).toLocaleString()}</strong></span>
+              </div>
+              <div style="font-size: 0.74rem; color: #ff3366; margin-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 4px;">
+                💡 ${f.entry_rule}
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (e) {
+        console.error('Orderflow fetch error:', e);
+      }
+    }
+
+    // ========================================================
     // MODULE 7: 360 MARKET STRUCTURE & LIQUIDITY
     // ========================================================
     async function fetchAnalysis360(interval = _activeInterval) {
@@ -2581,15 +2635,24 @@
       const box = document.getElementById('optionsAnalyticsContent');
       if (!box) return;
       try {
-        const res = await fetch('/api/aseman/options?symbol=DIA');
-        if (!res.ok) return;
-        const data = await res.json();
+        const [optRes, sentRes] = await Promise.all([
+          fetch('/api/aseman/options?symbol=DIA'),
+          fetch('/api/dow/sentiment')
+        ]);
+        const data = optRes.ok ? await optRes.json() : {};
+        const sData = sentRes.ok ? await sentRes.json() : {};
 
         const pcr = data.pcr_ratio || 0.82;
         const pcrSent = data.pcr_sentiment || 'کال‌ها غالب‌اند؛ تمایل ریسک‌پذیر وال‌استریت';
         const maxPain = data.max_pain_us30_proxy || 51210;
         const callWalls = data.top_call_walls || [];
         const putWalls = data.top_put_walls || [];
+
+        const fg = sData.fear_greed || {};
+        const fgScore = fg.score !== undefined ? fg.score : 45;
+        const fgState = fg.state || 'ترس متعادل';
+        const stw = sData.stocktwits || {};
+        const bullPct = stw.bull_pct !== undefined ? stw.bull_pct : 68;
 
         let callsHtml = callWalls.map(c => `
           <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.78rem;">
@@ -2606,6 +2669,28 @@
         `).join('');
 
         box.innerHTML = `
+          <!-- Sentiment Top Row: Fear & Greed + Retail Sentiment -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 16px;">
+            <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px;">
+              <div style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 6px;">شاخص احساسات و ترس و طمع وال‌استریت (CNN Fear & Greed):</div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="font-size: 1.35rem; font-family: var(--font-mono); color: ${fgScore >= 50 ? '#00e676' : '#ff3366'};">${fgScore} / 100</strong>
+                <span style="font-size: 0.8rem; background: ${fgScore >= 50 ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255, 51, 102, 0.15)'}; color: ${fgScore >= 50 ? '#00e676' : '#ff3366'}; padding: 4px 10px; border-radius: 6px; font-weight: 700;">${fgState}</span>
+              </div>
+              <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 6px;">پایش روانشناسی بازار سهام آمریکا و جریان پول بین اوراق و شاخص</div>
+            </div>
+
+            <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px;">
+              <div style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 6px;">احساسات معامله‌گران خرد داوجونز (StockTwits Retail):</div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="font-size: 1.35rem; font-family: var(--font-mono); color: #00d2ff;">${bullPct}٪ صعودی (Bullish)</strong>
+                <span style="font-size: 0.8rem; background: rgba(0, 210, 255, 0.15); color: #00d2ff; padding: 4px 10px; border-radius: 6px; font-weight: 700;">${stw.state || 'خوش‌بین'}</span>
+              </div>
+              <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 6px;">شاخص معکوس (Contrarian Sentiment) جهت تشخیص تله‌های بازار</div>
+            </div>
+          </div>
+
+          <!-- Options Row: PCR + Max Pain -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 16px;">
             <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px;">
               <div style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 6px;">شاخص نسبت پوت به کال (Put/Call Ratio):</div>
@@ -2616,7 +2701,7 @@
             <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px;">
               <div style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 6px;">سطح درد حداکثری (Max Pain Strike):</div>
               <strong style="font-size: 1.25rem; font-family: var(--font-mono); color: #ffd166;">$${Number(maxPain).toLocaleString()}</strong>
-              <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 6px;">تراز جذب قیمت در انقضای روز جمعه وال‌استریت</div>
+              <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 6px;">تراز جذب قیمت در انقضای قراردادهای هفتگی وال‌استریت</div>
             </div>
           </div>
 

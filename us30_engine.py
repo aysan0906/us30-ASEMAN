@@ -676,7 +676,7 @@ _TICKER_LAST_TIME: float = 0.0
 def ticker(interval: str = "1h") -> Dict[str, Any]:
     global _TICKER_CACHE, _TICKER_LAST_TIME
     now = time.time()
-    if _TICKER_CACHE and (now - _TICKER_LAST_TIME < 3.0):
+    if _TICKER_CACHE and (now - _TICKER_LAST_TIME < 5.0):
         return _TICKER_CACHE
 
     live = _live_dow_cash()

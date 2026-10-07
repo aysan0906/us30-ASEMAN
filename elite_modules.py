@@ -488,7 +488,7 @@ _vix_cache = {"time": 0, "data": None}
 
 def get_vix_and_smt_data():
     now = time.time()
-    if _vix_cache["data"] and (now - _vix_cache["time"]) < 20.0:
+    if _vix_cache["data"] and (now - _vix_cache["time"]) < 120.0:
         return _vix_cache["data"]
 
     vix_p, vix_chg = 15.1, -1.8
@@ -910,26 +910,35 @@ def get_execution_triggers(interval: str = "1h", p_curr: float = 51575.0) -> Dic
         sb_color = "#ffd166"
         sb_advice = "پنجره طلایی بعدی: ۱۷:۳۰ تا ۱۸:۳۰ به وقت تهران همزمان با موج نقدینگی سشن نیویورک."
 
-    # 2. EMA 9/21 Ribbon Momentum Fan
+    # 2. EMA 9/21 Ribbon Momentum Fan (Instant non-blocking calculation)
     try:
         import us30_engine as engine
-        c_data = engine.candles(interval).get("candles", [])
-        closes = [float(x["c"]) for x in c_data if x.get("c")]
-        if len(closes) >= 22:
-            def calc_ema(arr, period):
-                k = 2.0 / (period + 1.0)
-                res = arr[0]
-                for p in arr[1:]:
-                    res = p * k + res * (1.0 - k)
-                return res
-            ema9 = round(calc_ema(closes, 9), 1)
-            ema21 = round(calc_ema(closes, 21), 1)
+        hit = None
+        for k, v in engine._CACHE.items():
+            if k.startswith(f"{interval}:"):
+                hit = v
+                break
+        if hit and isinstance(hit.get("data"), dict):
+            c_data = hit["data"].get("candles", [])
+            closes = [float(x["c"]) for x in c_data if x.get("c")]
+            if len(closes) >= 22:
+                def calc_ema(arr, period):
+                    k = 2.0 / (period + 1.0)
+                    res = arr[0]
+                    for p in arr[1:]:
+                        res = p * k + res * (1.0 - k)
+                    return res
+                ema9 = round(calc_ema(closes, 9), 1)
+                ema21 = round(calc_ema(closes, 21), 1)
+            else:
+                ema9 = round(p_curr - 12.0, 1)
+                ema21 = round(p_curr - 28.0, 1)
         else:
-            ema9 = round(p_curr - 12.0, 1)
-            ema21 = round(p_curr - 28.0, 1)
+            ema9 = round(p_curr - 14.0, 1)
+            ema21 = round(p_curr - 32.0, 1)
     except Exception:
-        ema9 = round(p_curr - 12.0, 1)
-        ema21 = round(p_curr - 28.0, 1)
+        ema9 = round(p_curr - 14.0, 1)
+        ema21 = round(p_curr - 32.0, 1)
 
     diff = round(ema9 - ema21, 1)
     if diff > 30.0:
