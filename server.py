@@ -1692,6 +1692,62 @@ def dow_bookmap_endpoint():
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
+@app.get("/api/dow/ninjatrader")
+def dow_ninjatrader_endpoint():
+    try:
+        import ninja_atas_quant_engine as naq
+        p = 51240.0
+        try:
+            cash = dowres.cash()
+            p = float(cash.get("price", 51240.0) or 51240.0)
+        except Exception:
+            pass
+        return naq.get_ninjatrader_live(p)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+@app.get("/api/dow/atas")
+def dow_atas_endpoint():
+    try:
+        import ninja_atas_quant_engine as naq
+        p = 51240.0
+        try:
+            cash = dowres.cash()
+            p = float(cash.get("price", 51240.0) or 51240.0)
+        except Exception:
+            pass
+        return naq.get_atas_live(p)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+@app.get("/api/dow/quantower")
+def dow_quantower_endpoint():
+    try:
+        import ninja_atas_quant_engine as naq
+        p = 51240.0
+        try:
+            cash = dowres.cash()
+            p = float(cash.get("price", 51240.0) or 51240.0)
+        except Exception:
+            pass
+        return naq.get_quantower_live(p)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+@app.get("/api/dow/geopolitics")
+def dow_geopolitics_endpoint():
+    try:
+        import ninja_atas_quant_engine as naq
+        p = 51240.0
+        try:
+            cash = dowres.cash()
+            p = float(cash.get("price", 51240.0) or 51240.0)
+        except Exception:
+            pass
+        return naq.get_geopolitical_live(p)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
 @app.get("/api/dow/killzone")
 def dow_killzone():
     try:

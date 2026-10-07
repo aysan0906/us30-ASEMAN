@@ -1278,6 +1278,30 @@
         <div class="tab-card-name">۱۵. بوک‌مپ نقدینگی</div>
         <div class="tab-card-sub">هیت‌مپ عمق سفارشات و دیوارهای لیمیت</div>
       </button>
+
+      <button class="tab-card-btn" id="btnNavNinja" onclick="switchTab('ninjatraderTab', this)">
+        <div class="tab-card-icon">🎯</div>
+        <div class="tab-card-name">۱۶. نینجاتریدر آنلاین</div>
+        <div class="tab-card-sub">SuperDOM، فوت‌پرینت و CVD</div>
+      </button>
+
+      <button class="tab-card-btn" id="btnNavAtas" onclick="switchTab('atasTab', this)">
+        <div class="tab-card-icon">⚡</div>
+        <div class="tab-card-name">۱۷. اتاس آنلاین (ATAS)</div>
+        <div class="tab-card-sub">معاملات بزرگ و نوار سرعت</div>
+      </button>
+
+      <button class="tab-card-btn" id="btnNavQuant" onclick="switchTab('quantowerTab', this)">
+        <div class="tab-card-icon">🏛️</div>
+        <div class="tab-card-name">۱۸. کوانت‌تاور آنلاین</div>
+        <div class="tab-card-sub">TPO مارکت پروفایل و نودها</div>
+      </button>
+
+      <button class="tab-card-btn" id="btnNavGeo" onclick="switchTab('geopoliticsTab', this)">
+        <div class="tab-card-icon">🌐</div>
+        <div class="tab-card-name">۱۹. فاندامنتال & ژئوپلیتیک</div>
+        <div class="tab-card-sub">ریسک جهانی GPR و سود ۳۰ سهم</div>
+      </button>
     </div>
 
     <!-- ==================== TAB 1: RADAR (DOW 30 LEADERS) ==================== -->
@@ -1867,14 +1891,17 @@
 
         <!-- Quick Prompt Pills -->
         <div class="chat-quick-prompts">
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('توضیح کامل ۱۵ ماژول سایت رو برام بگو برای فرد مبتدی')" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border-color: rgba(255, 215, 0, 0.4); font-weight: 800;">🎓 راهنمای ۱۵ ماژول سایت برای مبتدیان</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('بوک مپ چی میگه الان و چطوری باهاش ترید کنم؟')" style="background: rgba(255, 140, 0, 0.15); color: #fb923c; border-color: rgba(255, 140, 0, 0.4); font-weight: 800;">🔥 بوک‌مپ، دیوارهای لیمیت و اوردرهای کوه یخ</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('گزارش ۶ روزه و ۶ هفته ای تعهدات cot چی میگه؟')" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border-color: rgba(0, 210, 255, 0.35); font-weight: 800;">📜 پایش ۶ روزه و ۶ هفته‌ای تعهدات COT</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('دستور ورود و ستاپ پوزیشن چیه؟')" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border-color: rgba(0, 230, 118, 0.35); font-weight: 800;">⚡ ستاپ همگام‌شده ۱۵ ماژول (ورود/SL/TP)</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('استراتژی معامله داوجونز با وین ریت ۸۰ درصد چطوریه؟')" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.35); font-weight: 800;">🏆 استراتژی معاملاتی با وین‌ریت ۸۰٪</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('داوجونز چیست و فرمول مقسوم علیه چیه؟')" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.35); font-weight: 800;">🏛️ داوجونز چیست و فرمول محاسبه شاخص</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('ساعت سشن طلایی و Killzone نیویورک چطوره؟')" style="background: rgba(255, 179, 0, 0.15); color: #ffb300; border-color: rgba(255, 179, 0, 0.35); font-weight: 800;">🕒 سشن طلایی و Killzone نیویورک</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('چه حجم لات و اهرمی برای حسابم امنه؟')" style="background: rgba(250, 204, 21, 0.15); color: #facc15; border-color: rgba(250, 204, 21, 0.35); font-weight: 800;">💼 محاسبه دقیق حجم لات (کِلی)</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('توضیح کامل ۱۵ ماژول سایت رو برام بگو برای فرد مبتدی')" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border-color: rgba(255, 215, 0, 0.4); font-weight: 800;">🎓 راهنمای ماژول‌های سایت برای مبتدیان</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('نینجاتریدر و فوت پرینت کلاسترها چی میگه؟')" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border-color: rgba(0, 210, 255, 0.4); font-weight: 800;">🎯 نینجاتریدر و فوت‌پرینت</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('اتاس و معاملات بزرگ نهادی بالای ۵۰ لات چی میگه؟')" style="background: rgba(255, 140, 0, 0.15); color: #fb923c; border-color: rgba(255, 140, 0, 0.4); font-weight: 800;">⚡ اتاس و معاملات بزرگ</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('کوانت تاور و مارکت پروفایل TPO و نودها چیه؟')" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.4); font-weight: 800;">🏛️ کوانت‌تاور و مارکت پروفایل</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('ریسک ژئوپلیتیک و فاندامنتال ۳۰ سهم داو چطوره؟')" style="background: rgba(255, 51, 102, 0.15); color: #ff3366; border-color: rgba(255, 51, 102, 0.4); font-weight: 800;">🌐 ژئوپلیتیک و فاندامنتال</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('بوک مپ چی میگه الان و چطوری باهاش ترید کنم؟')" style="background: rgba(255, 140, 0, 0.15); color: #fb923c; border-color: rgba(255, 140, 0, 0.4); font-weight: 800;">🔥 بوک‌مپ و اوردرهای کوه یخ</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('گزارش ۶ روزه و ۶ هفته ای تعهدات cot چی میگه؟')" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border-color: rgba(0, 210, 255, 0.35); font-weight: 800;">📜 تعهدات COT وال‌استریت</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('دستور ورود و ستاپ پوزیشن چیه؟')" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border-color: rgba(0, 230, 118, 0.35); font-weight: 800;">⚡ ستاپ همگام ورود/SL/TP</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('استراتژی معامله داوجونز با وین ریت ۸۰ درصد چطوریه؟')" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.35); font-weight: 800;">🏆 استراتژی وین‌ریت ۸۰٪</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('ساعت سشن طلایی و Killzone نیویورک چطوره؟')" style="background: rgba(255, 179, 0, 0.15); color: #ffb300; border-color: rgba(255, 179, 0, 0.35); font-weight: 800;">🕒 سشن طلایی NY Killzone</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('چه حجم لات و اهرمی برای حسابم امنه؟')" style="background: rgba(250, 204, 21, 0.15); color: #facc15; border-color: rgba(250, 204, 21, 0.35); font-weight: 800;">💼 محاسبه حجم لات کِلی</button>
         </div>
 
         <!-- Chat Messages Container -->
@@ -2272,6 +2299,245 @@
       </div>
     </div>
 
+    <!-- ==================== TAB 16: NINJATRADER 8 LIVE SUITE ==================== -->
+    <div id="ninjatraderTab" class="tab-pane">
+      <div class="content-card" style="border: 1px solid rgba(0, 210, 255, 0.35); background: rgba(10, 15, 30, 0.95); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <div class="card-header-flex">
+          <div>
+            <h3 class="card-title" style="display: flex; align-items: center; gap: 8px;">
+              <span>🎯</span> ترمینال آنلاین نینجاتریدر داوجونز (NinjaTrader 8 Order Flow & SuperDOM)
+            </h3>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">
+              نمایش بلادرنگ ماتریس عمق سفارشات تیک‌به‌تیک (SuperDOM)، چارت فوت‌پرینت کلاستری (Footprint Clusters)، تراز دلتای تجمیعی (CVD) و باندهای انحراف معیار VWAP
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <span id="ntCvdBadge" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 4px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 800;">
+              CVD: در حال محاسبه...
+            </span>
+            <span id="ntPriceBadge" class="mono" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border: 1px solid #00d2ff; padding: 4px 12px; border-radius: 6px; font-size: 0.82rem; font-weight: 800;">
+              US30: ---
+            </span>
+          </div>
+        </div>
+
+        <!-- NinjaTrader Grid: SuperDOM on Left, Footprint Clusters on Right -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin-bottom: 18px;">
+          <!-- SuperDOM Window -->
+          <div style="background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-size: 0.85rem; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+                <span>🏢</span> عمق سفارشات سوپردام (SuperDOM L2 Depth)
+              </span>
+              <span style="font-size: 0.72rem; color: #94a3b8;">تیک ۵ پوینتی</span>
+            </div>
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.76rem; text-align: center; font-family: var(--font-mono);">
+                <thead>
+                  <tr style="background: rgba(255,255,255,0.04); color: #94a3b8; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                    <th style="padding: 6px;">حجم خرید (Bid)</th>
+                    <th style="padding: 6px;">نرخ داوجونز</th>
+                    <th style="padding: 6px;">حجم فروش (Ask)</th>
+                  </tr>
+                </thead>
+                <tbody id="ntSuperDomBody">
+                  <tr><td colspan="3" style="padding: 20px; color: #94a3b8;">در حال استعلام عمق تیک نینجاتریدر...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Footprint Candles -->
+          <div style="background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-size: 0.85rem; font-weight: 800; color: #00e676; display: flex; align-items: center; gap: 6px;">
+                <span>📊</span> چارت فوت‌پرینت کلاستری (Footprint Bid x Ask)
+              </span>
+              <span style="font-size: 0.72rem; color: #ffd700;">کندل‌های ۱۰ دقیقه‌ای</span>
+            </div>
+            <div id="ntFootprintContainer" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px;">
+              <!-- Dynamic Footprint Candles -->
+            </div>
+          </div>
+        </div>
+
+        <!-- VWAP & CVD Analytics Row -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px;">
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px; font-size: 0.8rem; line-height: 1.8;">
+            <strong style="color: #ffd700;">📐 باندهای انحراف استاندارد سشن VWAP:</strong><br>
+            • خط مرکزی VWAP: <span id="ntVwapMid" class="mono" style="color: #00d2ff;">---</span><br>
+            • باند مقاومتی +1 SD: <span id="ntVwapUp1" class="mono" style="color: #ff3366;">---</span> | باند +2 SD: <span id="ntVwapUp2" class="mono" style="color: #ff3366;">---</span><br>
+            • باند حمایتی -1 SD: <span id="ntVwapDn1" class="mono" style="color: #00e676;">---</span> | باند -2 SD: <span id="ntVwapDn2" class="mono" style="color: #00e676;">---</span>
+          </div>
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px; font-size: 0.8rem; line-height: 1.8;">
+            <strong style="color: #38bdf8;">🧭 جمع‌بندی جریان سفارشات نینجاتریدر:</strong>
+            <div id="ntVerdictText" style="color: #cbd5e1; margin-top: 4px;">
+              در حال ارزیابی برآیند معاملات فوت‌پرینت و دلتای تجمیعی...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 17: ATAS LIVE PLATFORM ==================== -->
+    <div id="atasTab" class="tab-pane">
+      <div class="content-card" style="border: 1px solid rgba(255, 140, 0, 0.35); background: rgba(14, 10, 24, 0.95); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <div class="card-header-flex">
+          <div>
+            <h3 class="card-title" style="display: flex; align-items: center; gap: 8px;">
+              <span>⚡</span> ترمینال آنلاین اتاس داوجونز (ATAS Advanced Time & Sales)
+            </h3>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">
+              ردیاب زنده معاملات بزرگ نهادی بالای ۵۰ لات (Big Trades)، سرعت نوار تراکنش‌های وال‌استریت (Speed of Tape) و عدم تعادل‌های قطری ۳۰۰٪ (Diagonal Imbalances)
+            </div>
+          </div>
+          <span id="atasTapeSpeedBadge" style="background: rgba(255, 140, 0, 0.15); color: #fb923c; border: 1px solid #fb923c; padding: 4px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 800;">
+            سرعت نوار: در حال پایش...
+          </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 18px;">
+          <!-- Big Trades Tape -->
+          <div style="background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span style="font-size: 0.88rem; font-weight: 800; color: #ffd166; display: flex; align-items: center; gap: 6px;">
+                <span>🐋</span> ردیاب بلاک‌تریدها و سفارشات نهادی بزرگ (Big Trades > 50 Lots)
+              </span>
+              <span style="font-size: 0.72rem; color: #94a3b8;">سشن جاری</span>
+            </div>
+            <div id="atasBigTradesList" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Dynamic Big Trades -->
+            </div>
+          </div>
+
+          <!-- Diagonal Imbalances -->
+          <div style="background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span style="font-size: 0.88rem; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+                <span>⚖️</span> عدم تعادل‌های قطری ۳۰۰٪ کلاسترها (Diagonal Imbalances)
+              </span>
+              <span style="font-size: 0.72rem; color: #94a3b8;">سطوح کلیدی</span>
+            </div>
+            <div id="atasImbalanceList" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Dynamic Imbalances -->
+            </div>
+          </div>
+        </div>
+
+        <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 14px; font-size: 0.82rem; line-height: 1.8;">
+          <strong style="color: #fb923c;">🧭 ارزیابی شتاب معاملات اتاس:</strong>
+          <span id="atasVerdictText" style="color: #cbd5e1; margin-right: 6px;">در حال پردازش داده‌های نوار سفارشات...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 18: QUANTOWER TPO & DOM SURFACE ==================== -->
+    <div id="quantowerTab" class="tab-pane">
+      <div class="content-card" style="border: 1px solid rgba(168, 85, 247, 0.35); background: rgba(12, 10, 25, 0.95); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <div class="card-header-flex">
+          <div>
+            <h3 class="card-title" style="display: flex; align-items: center; gap: 8px;">
+              <span>🏛️</span> ترمینال نهادی کوانت‌تاور داوجونز (Quantower TPO & DOM Surface)
+            </h3>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">
+              تحلیل زمان-قیمت مارکت پروفایل (TPO)، ناحیه ارزش ۷۰٪ (Value Area)، نودهای پرحجم (HVN/LVN) و اسپرد سنتتیک داوجونز در برابر S&P 500
+            </div>
+          </div>
+          <span id="qtRegimeBadge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid #c084fc; padding: 4px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 800;">
+            رژیم: حراج متوازن
+          </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 18px;">
+          <!-- TPO Market Profile Box -->
+          <div style="background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 14px;">
+            <div style="font-size: 0.88rem; font-weight: 800; color: #c084fc; margin-bottom: 10px;">
+              📊 سطوح حیاتی TPO Market Profile
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.8rem;">
+              <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(255, 51, 102, 0.08); border-radius: 6px;">
+                <span>سقف ناحیه ارزش (VAH):</span>
+                <strong id="qtVahPrice" class="mono" style="color: #ff3366;">---</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(255, 215, 0, 0.12); border-radius: 6px;">
+                <span>نقطه کنترل حجم (VPOC):</span>
+                <strong id="qtPocPrice" class="mono" style="color: #ffd700;">---</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 6px 10px; background: rgba(0, 230, 118, 0.08); border-radius: 6px;">
+                <span>کف ناحیه ارزش (VAL):</span>
+                <strong id="qtValPrice" class="mono" style="color: #00e676;">---</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Volume Nodes & Synthetic Spreads -->
+          <div style="background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 14px;">
+            <div style="font-size: 0.88rem; font-weight: 800; color: #38bdf8; margin-bottom: 10px;">
+              🌐 گره‌های پرحجم و اسپرد سنتتیک داوجونز
+            </div>
+            <div id="qtNodesList" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.78rem;">
+              <!-- Dynamic HVN/LVN -->
+            </div>
+            <div id="qtSpreadText" style="margin-top: 10px; font-size: 0.76rem; color: #00e676; background: rgba(0,230,118,0.06); padding: 6px 10px; border-radius: 6px;">
+              در حال پایش اسپرد سنتتیک داو...
+            </div>
+          </div>
+        </div>
+
+        <div id="qtVerdictText" style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px; font-size: 0.8rem; line-height: 1.8; color: #cbd5e1;">
+          در حال ارزیابی جریان حراج کوانت‌تاور...
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 19: GEOPOLITICAL & FUNDAMENTALS ==================== -->
+    <div id="geopoliticsTab" class="tab-pane">
+      <div class="content-card" style="border: 1px solid rgba(255, 61, 113, 0.35); background: rgba(18, 10, 15, 0.95); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <div class="card-header-flex">
+          <div>
+            <h3 class="card-title" style="display: flex; align-items: center; gap: 8px;">
+              <span>🌐</span> رادار آنلاین فاندامنتال و ریسک‌های ژئوپلیتیک وال‌استریت (Geopolitical & Fundamentals)
+            </h3>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">
+              سنجش زنده شاخص ریسک ژئوپلیتیک جهانی (GPR Index)، کانون‌های بحران خاورمیانه و تایوان، جریان پناهگاه امن (طلا و نفت) و سلامت سودآوری ۳۰ شرکت داوجونز
+            </div>
+          </div>
+          <span id="geoGprBadge" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 4px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 800;">
+            GPR: نرمال و پایدار
+          </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 18px;">
+          <!-- Hotspots -->
+          <div style="background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 14px;">
+            <div style="font-size: 0.88rem; font-weight: 800; color: #ff3366; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+              <span>🌍</span> کانون‌های تنش ژئوپلیتیک و سناریوی اثرگذاری روی داوجونز
+            </div>
+            <div id="geoHotspotsList" style="display: flex; flex-direction: column; gap: 8px; font-size: 0.78rem;">
+              <!-- Dynamic Hotspots -->
+            </div>
+          </div>
+
+          <!-- Safe Haven & Fundamentals -->
+          <div style="background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 14px;">
+            <div style="font-size: 0.88rem; font-weight: 800; color: #ffd700; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+              <span>💵</span> جریان پناهگاه امن و فاندامنتال ۳۰ غول داوجونز
+            </div>
+            <div id="geoSafeHavenBox" style="font-size: 0.8rem; line-height: 1.8; margin-bottom: 10px;">
+              در حال دریافت وضعیت طلا، نفت و دلار...
+            </div>
+            <div id="geoFundamentalsBox" style="font-size: 0.8rem; line-height: 1.8; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px;">
+              در حال محاسبه نسبت P/E و بازده سود نقدی داو...
+            </div>
+          </div>
+        </div>
+
+        <div id="geoShockwaveText" style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px; font-size: 0.82rem; line-height: 1.8; color: #cbd5e1;">
+          در حال ارزیابی احتمال شوک‌های غیرمنتظره به وال‌استریت...
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- ==================== INTERACTIVE EDUCATIONAL MODE MODAL ==================== -->
@@ -2359,6 +2625,18 @@
             </div>
             <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
               <strong style="color: #ffd700;">۱۵. بوک‌مپ نقدینگی:</strong> رادیولوژی عمق سفارشات لیمیت، دیوارهای پنهان و ردیاب کوه یخ.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+              <strong style="color: #38bdf8;">۱۶. نینجاتریدر آنلاین:</strong> چارت فوت‌پرینت کلاستری، سوپردام تیک‌به‌تیک و دلتای تجمیعی (CVD).
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+              <strong style="color: #fb923c;">۱۷. اتاس آنلاین (ATAS):</strong> ردیاب معاملات بزرگ نهادی بالای ۵۰ لات و نوار سرعت تراکنش‌ها.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+              <strong style="color: #c084fc;">۱۸. کوانت‌تاور آنلاین:</strong> تحلیل زمان-قیمت TPO مارکت پروفایل و نودهای پرحجم HVN/LVN.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+              <strong style="color: #ff3366;">۱۹. فاندامنتال & ژئوپلیتیک:</strong> دماسنج ریسک جهانی GPR، کانون‌های بحران و سلامت ۳۰ شرکت داو.
             </div>
           </div>
         </div>
@@ -2595,6 +2873,14 @@
         fetchOrderflow();
       } else if (tabId === 'macroTab') {
         fetchMacroStatus();
+      } else if (tabId === 'ninjatraderTab') {
+        fetchNinjaTraderData();
+      } else if (tabId === 'atasTab') {
+        fetchAtasData();
+      } else if (tabId === 'quantowerTab') {
+        fetchQuantowerData();
+      } else if (tabId === 'geopoliticsTab') {
+        fetchGeopoliticsData();
       }
     }
 
@@ -4243,12 +4529,285 @@
       }
     }
 
+    // ========================================================
+    // MODULE 16: NINJATRADER 8 LIVE TERMINAL
+    // ========================================================
+    async function fetchNinjaTraderData() {
+      try {
+        const res = await fetch('/api/dow/ninjatrader');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.ok) return;
+
+        const cvdEl = document.getElementById('ntCvdBadge');
+        if (cvdEl && data.cvd) {
+          cvdEl.textContent = `CVD: ${data.cvd.value >= 0 ? '+' : ''}${data.cvd.value.toLocaleString()} لات (${data.cvd.verdict_fa})`;
+          cvdEl.style.color = data.cvd.value >= 0 ? '#00e676' : '#ff3366';
+          cvdEl.style.borderColor = data.cvd.value >= 0 ? '#00e676' : '#ff3366';
+        }
+
+        const priceEl = document.getElementById('ntPriceBadge');
+        if (priceEl && data.current_price) {
+          priceEl.textContent = `US30: ${Number(data.current_price).toLocaleString()}`;
+        }
+
+        // SuperDOM Body
+        const domBody = document.getElementById('ntSuperDomBody');
+        if (domBody && data.super_dom) {
+          domBody.innerHTML = data.super_dom.map(row => {
+            const isCur = row.is_current;
+            const bg = isCur ? 'rgba(0, 210, 255, 0.18)' : 'rgba(255,255,255,0.02)';
+            const borderStyle = isCur ? 'border-top: 1px solid #00d2ff; border-bottom: 1px solid #00d2ff;' : 'border-bottom: 1px solid rgba(255,255,255,0.04);';
+            return `
+              <tr style="background: ${bg}; ${borderStyle}">
+                <td style="padding: 6px; text-align: right; position: relative;">
+                  <div style="position: absolute; right: 0; top: 2px; bottom: 2px; width: ${row.bid_bar_pct}%; background: rgba(0, 230, 118, 0.25); border-radius: 3px;"></div>
+                  <span style="position: relative; z-index: 1; color: #00e676; font-weight: 700;">${row.bid_vol > 0 ? row.bid_vol.toLocaleString() : '-'}</span>
+                </td>
+                <td style="padding: 6px; font-weight: 800; color: ${isCur ? '#ffd700' : '#fff'}; background: ${isCur ? 'rgba(0, 210, 255, 0.25)' : 'transparent'};">
+                  ${Number(row.price).toLocaleString()} ${isCur ? '◄' : ''}
+                </td>
+                <td style="padding: 6px; text-align: left; position: relative;">
+                  <div style="position: absolute; left: 0; top: 2px; bottom: 2px; width: ${row.ask_bar_pct}%; background: rgba(255, 51, 102, 0.25); border-radius: 3px;"></div>
+                  <span style="position: relative; z-index: 1; color: #ff3366; font-weight: 700;">${row.ask_vol > 0 ? row.ask_vol.toLocaleString() : '-'}</span>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        // Footprint Candles
+        const fpCont = document.getElementById('ntFootprintContainer');
+        if (fpCont && data.footprint_candles) {
+          fpCont.innerHTML = data.footprint_candles.map(c => `
+            <div style="min-width: 130px; background: rgba(0,0,0,0.4); border: 1px solid ${c.is_bullish ? 'rgba(0,230,118,0.3)' : 'rgba(255,51,102,0.3)'}; border-radius: 6px; padding: 6px; font-size: 0.72rem; font-family: var(--font-mono);">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-weight: 700; color: ${c.is_bullish ? '#00e676' : '#ff3366'};">
+                <span>${c.time}</span>
+                <span>${c.delta >= 0 ? '+' : ''}${c.delta} Δ</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                ${c.clusters.map(cl => `
+                  <div style="display: flex; justify-content: space-between; padding: 1px 3px; background: ${cl.is_poc ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255,255,255,0.02)'}; border: ${cl.is_poc ? '1px solid #ffd700' : 'none'}; border-radius: 2px;">
+                    <span style="color: #00e676;">${cl.bid_vol}</span>
+                    <span style="color: ${cl.is_poc ? '#ffd700' : '#94a3b8'}; font-weight: ${cl.is_poc ? '800' : 'normal'};">${Number(cl.price).toLocaleString()}</span>
+                    <span style="color: #ff3366;">${cl.ask_vol}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // VWAP Bands
+        if (data.vwap) {
+          const v = data.vwap;
+          const setT = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = Number(val).toLocaleString(); };
+          setT('ntVwapMid', v.mid);
+          setT('ntVwapUp1', v.upper_1sd);
+          setT('ntVwapUp2', v.upper_2sd);
+          setT('ntVwapDn1', v.lower_1sd);
+          setT('ntVwapDn2', v.lower_2sd);
+        }
+
+        const verdEl = document.getElementById('ntVerdictText');
+        if (verdEl && data.summary_fa) {
+          verdEl.innerHTML = `<strong>💡 ارزیابی نینجاتریدر:</strong> ${data.summary_fa}`;
+        }
+      } catch (e) {
+        console.error('Error fetching NinjaTrader data:', e);
+      }
+    }
+
+    // ========================================================
+    // MODULE 17: ATAS ADVANCED TIME & SALES
+    // ========================================================
+    async function fetchAtasData() {
+      try {
+        const res = await fetch('/api/dow/atas');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.ok) return;
+
+        const spEl = document.getElementById('atasTapeSpeedBadge');
+        if (spEl && data.speed_of_tape) {
+          spEl.textContent = `سرعت نوار: ${data.speed_of_tape.ticks_per_sec} تیک/ثانیه (${data.speed_of_tape.pace_fa})`;
+        }
+
+        // Big Trades
+        const btList = document.getElementById('atasBigTradesList');
+        if (btList && data.big_trades) {
+          btList.innerHTML = data.big_trades.map(t => `
+            <div style="background: rgba(255,255,255,0.03); border-right: 3px solid ${t.color}; border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
+              <div>
+                <span class="mono" style="color: #fff; font-weight: 800;">${Number(t.price).toLocaleString()}</span>
+                <span style="color: ${t.color}; margin-right: 6px; font-weight: 700;">${t.side_fa}</span>
+                <span style="color: #94a3b8; font-size: 0.7rem;">(${t.time})</span>
+              </div>
+              <div>
+                <span class="mono" style="background: ${t.color}22; color: ${t.color}; padding: 2px 8px; border-radius: 4px; font-weight: 800;">${t.size_lots} لات</span>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // Diagonal Imbalances
+        const imbList = document.getElementById('atasImbalanceList');
+        if (imbList && data.diagonal_imbalances) {
+          imbList.innerHTML = data.diagonal_imbalances.map(imb => {
+            const isBuy = imb.imbalance_side === 'buy';
+            const color = isBuy ? '#00e676' : '#ff3366';
+            return `
+              <div style="background: rgba(255,255,255,0.03); border: 1px solid ${color}44; border-radius: 6px; padding: 8px 10px; font-size: 0.78rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                  <span class="mono" style="color: ${color}; font-weight: 800;">${Number(imb.price).toLocaleString()}</span>
+                  <span style="color: #ffd700; font-weight: 700;">عدم تعادل: ${imb.imbalance_ratio}x (${isBuy ? 'خرید تهاجمی' : 'فروش تهاجمی'})</span>
+                </div>
+                <div style="color: #94a3b8; font-size: 0.72rem;">
+                  حجم: <span class="mono" style="color: #00e676;">${imb.bid_vol} خرید</span> در برابر <span class="mono" style="color: #ff3366;">${imb.ask_vol} فروش</span>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        const verdEl = document.getElementById('atasVerdictText');
+        if (verdEl && data.verdict_fa) {
+          verdEl.innerHTML = data.verdict_fa;
+        }
+      } catch (e) {
+        console.error('Error fetching ATAS data:', e);
+      }
+    }
+
+    // ========================================================
+    // MODULE 18: QUANTOWER TPO & DOM SURFACE
+    // ========================================================
+    async function fetchQuantowerData() {
+      try {
+        const res = await fetch('/api/dow/quantower');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.ok) return;
+
+        const regEl = document.getElementById('qtRegimeBadge');
+        if (regEl && data.market_profile) {
+          regEl.textContent = `رژیم: ${data.market_profile.auction_regime_fa || 'حراج متوازن'}`;
+        }
+
+        if (data.market_profile) {
+          const mp = data.market_profile;
+          const vahEl = document.getElementById('qtVahPrice');
+          if (vahEl) vahEl.textContent = Number(mp.vah).toLocaleString();
+          const pocEl = document.getElementById('qtPocPrice');
+          if (pocEl) pocEl.textContent = Number(mp.poc).toLocaleString();
+          const valEl = document.getElementById('qtValPrice');
+          if (valEl) valEl.textContent = Number(mp.val).toLocaleString();
+        }
+
+        // Volume Nodes
+        const nodesList = document.getElementById('qtNodesList');
+        if (nodesList && data.volume_nodes) {
+          nodesList.innerHTML = data.volume_nodes.map(n => `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; background: rgba(255,255,255,0.03); border-right: 3px solid ${n.color}; border-radius: 4px;">
+              <span class="mono" style="color: ${n.color}; font-weight: 800;">${Number(n.price).toLocaleString()}</span>
+              <span style="color: #cbd5e1; font-size: 0.74rem;">${n.description_fa}</span>
+            </div>
+          `).join('');
+        }
+
+        // Synthetic Spreads
+        const spEl = document.getElementById('qtSpreadText');
+        if (spEl && data.synthetic_spreads) {
+          const sp = data.synthetic_spreads;
+          spEl.innerHTML = `<strong>همبستگی سنتتیک:</strong> نسبت داو/اس‌اندپی: <span class="mono" style="color: #fff;">${sp.dow_sp500_ratio}</span> | نسبت داو/نزدک: <span class="mono" style="color: #fff;">${sp.dow_nasdaq_ratio}</span><br>💡 ${sp.divergence_fa}`;
+        }
+
+        const verdEl = document.getElementById('qtVerdictText');
+        if (verdEl && data.verdict_fa) {
+          verdEl.innerHTML = `<strong>💡 ارزیابی کوانت‌تاور:</strong> ${data.verdict_fa}`;
+        }
+      } catch (e) {
+        console.error('Error fetching Quantower data:', e);
+      }
+    }
+
+    // ========================================================
+    // MODULE 19: GEOPOLITICAL & FUNDAMENTALS RADAR
+    // ========================================================
+    async function fetchGeopoliticsData() {
+      try {
+        const res = await fetch('/api/dow/geopolitics');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.ok) return;
+
+        const gprEl = document.getElementById('geoGprBadge');
+        if (gprEl && data.gpr_index) {
+          const gpr = data.gpr_index;
+          gprEl.textContent = `GPR: ${gpr.score} (${gpr.level_fa})`;
+          gprEl.style.color = gpr.color;
+          gprEl.style.borderColor = gpr.color;
+          gprEl.style.background = `${gpr.color}22`;
+        }
+
+        // Hotspots
+        const hsList = document.getElementById('geoHotspotsList');
+        if (hsList && data.hotspots) {
+          hsList.innerHTML = data.hotspots.map(h => `
+            <div style="background: rgba(255,255,255,0.03); border-right: 3px solid ${h.color}; border-radius: 6px; padding: 8px 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <strong style="color: #fff;">${h.name_fa}</strong>
+                <span style="color: ${h.color}; font-size: 0.72rem; font-weight: 700;">امتیاز تنش: ${h.tension_score}/100 (${h.status_fa})</span>
+              </div>
+              <div style="color: #94a3b8; font-size: 0.74rem;">
+                اثر روی داوجونز: <span style="color: #cbd5e1;">${h.dow_impact_scenario_fa}</span>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // Safe Haven Flows
+        const shBox = document.getElementById('geoSafeHavenBox');
+        if (shBox && data.safe_haven_flows) {
+          const sh = data.safe_haven_flows;
+          shBox.innerHTML = `
+            <strong>🧭 وضعیت دارایی‌های امن:</strong> ${sh.regime_fa}<br>
+            • طلا: <span style="color: ${sh.gold_flow.includes('صعودی') ? '#ffd700' : '#00e676'};">${sh.gold_flow}</span><br>
+            • شاخص دلار DXY: <span style="color: #00d2ff;">${sh.dxy_flow}</span> | اوراق ۱۰ ساله: <span style="color: #38bdf8;">${sh.us10y_flow}</span>
+          `;
+        }
+
+        // Fundamentals 30 Dow Giants
+        const fundBox = document.getElementById('geoFundamentalsBox');
+        if (fundBox && data.fundamentals_dow30) {
+          const f = data.fundamentals_dow30;
+          fundBox.innerHTML = `
+            <strong>🏛️ ارزیابی بنیادین ۳۰ غول داوجونز:</strong><br>
+            • نسبت P/E کل شاخص: <span class="mono" style="color: #00d2ff; font-weight: 800;">${f.pe_ratio_dow}</span> (میانگین تاریخی)<br>
+            • بازده سود نقدی (Dividend): <span class="mono" style="color: #00e676; font-weight: 800;">${f.dividend_yield_pct}%</span> | رشد سودآوری: <span class="mono" style="color: #ffd700;">+${f.earnings_growth_est_pct}%</span><br>
+            • مقسوم‌علیه داو (Dow Divisor): <span class="mono" style="color: #ff3366;">${f.dow_divisor}</span> | وضعیت: <span style="color: #00e676; font-weight: 700;">${f.valuation_fa}</span>
+          `;
+        }
+
+        const shockEl = document.getElementById('geoShockwaveText');
+        if (shockEl && data.shockwave_risk) {
+          shockEl.innerHTML = `<strong>⚠️ ریسک شوک‌های غیرمنتظره و قوی سیاه (Black Swan):</strong> ${data.shockwave_risk}`;
+        }
+      } catch (e) {
+        console.error('Error fetching Geopolitics data:', e);
+      }
+    }
+
     // Refresh Elite Modules every 20 seconds
     setInterval(fetchEliteModules, 20000);
 
-    // Refresh Bookmap data if active
+    // Refresh Bookmap & Active Trading Terminals
     setInterval(() => {
       if (_activeTab === 'bookmapTab') fetchBookmapData();
+      else if (_activeTab === 'ninjatraderTab') fetchNinjaTraderData();
+      else if (_activeTab === 'atasTab') fetchAtasData();
+      else if (_activeTab === 'quantowerTab') fetchQuantowerData();
+      else if (_activeTab === 'geopoliticsTab') fetchGeopoliticsData();
     }, 5000);
 
 
