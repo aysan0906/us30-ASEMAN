@@ -2072,6 +2072,7 @@
         fetchRadarLeaders();
       } else if (tabId === 'coalitionTab') {
         fetchBankCoalition();
+        fetchCotReportLive();
       } else if (tabId === 'orderflowTab') {
         fetchOrderflow();
       } else if (tabId === 'macroTab') {
@@ -2086,6 +2087,10 @@
       });
       // Fetch fresh composite signal for this timeframe
       fetchCompositeSignal(tf);
+      // Synchronize active tab
+      if (_activeTab === 'analysisTab') fetchAnalysis360(tf);
+      if (_activeTab === 'orderflowTab') fetchOrderflow(tf);
+      if (_activeTab === 'guardTab') fetchExecutionGuard();
       // Sync TradingView interval
       const tvIntervalMap = { '5m': '5', '15m': '15', '30m': '30', '1h': '60', '4h': '240', '1d': 'D' };
       changeTvInterval(tvIntervalMap[tf] || '60');
@@ -2408,6 +2413,79 @@
         el.style.display = 'none';
         if (icon) icon.textContent = '▼';
         if (txt) txt.textContent = 'باز کردن کشو ۶ ماژول طلایی';
+      }
+    }
+
+    // ========================================================
+    // MODULE 3.5: CFTC COT WEEKLY INSTITUTIONAL REPORT
+    // ========================================================
+    async function fetchCotReportLive() {
+      try {
+        const res = await fetch('/api/dow/cot');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.ok) return;
+
+        const badge = document.getElementById('cotBadgeHeader');
+        if (badge) {
+          badge.textContent = '✅ گزارش رسمی CFTC به‌روز است';
+          badge.style.color = '#00e676';
+          badge.style.borderColor = '#00e676';
+        }
+
+        const totalOi = document.getElementById('cotTotalOi');
+        if (totalOi && data.open_interest) {
+          totalOi.textContent = Number(data.open_interest).toLocaleString() + ' قرارداد';
+        }
+
+        const repDate = document.getElementById('cotReportDate');
+        if (repDate && data.report_date) {
+          repDate.textContent = 'تاریخ انتشار رسمی CFTC: ' + data.report_date;
+        }
+
+        // Speculators
+        const spec = data.speculators || {};
+        const specNet = document.getElementById('cotSpecNet');
+        if (specNet) {
+          specNet.textContent = `${spec.net >= 0 ? '+' : ''}${Number(spec.net).toLocaleString()} لانگ`;
+          specNet.style.color = spec.net >= 0 ? '#00e676' : '#ff3366';
+        }
+        const specDet = document.getElementById('cotSpecDetails');
+        if (specDet) {
+          specDet.textContent = `خرید: ${Number(spec.long).toLocaleString()} | فروش: ${Number(spec.short).toLocaleString()} (${spec.bias_fa || 'برتری خرید'})`;
+        }
+
+        // Commercials
+        const comm = data.commercials || {};
+        const commNet = document.getElementById('cotCommNet');
+        if (commNet) {
+          commNet.textContent = `${Number(comm.net).toLocaleString()} شورت`;
+          commNet.style.color = '#00d2ff';
+        }
+        const commDet = document.getElementById('cotCommDetails');
+        if (commDet) {
+          commDet.textContent = 'پوشش ریسک تجاری بانک‌ها (هجینگ فروش سهام)';
+        }
+
+        // Retail
+        const ret = data.non_reportable || {};
+        const retNet = document.getElementById('cotRetNet');
+        if (retNet) {
+          retNet.textContent = `${ret.net >= 0 ? '+' : ''}${Number(ret.net).toLocaleString()} قرارداد`;
+          retNet.style.color = '#ffd166';
+        }
+        const retDet = document.getElementById('cotRetDetails');
+        if (retDet) {
+          retDet.textContent = `خرید خرد: ${Number(ret.long).toLocaleString()} | فروش خرد: ${Number(ret.short).toLocaleString()}`;
+        }
+
+        // Verdict
+        const verd = document.getElementById('cotVerdictText');
+        if (verd) {
+          verd.innerHTML = `<strong>💡 نتیجه‌گیری هوشمند تعهدات معامله‌گران:</strong><br>${data.verdict_fa || 'صندوق‌های بزرگ سرمایه‌گذاری در بازار فیوچرز شیکاگو (CBOT) موقعیت‌های خرید خود را حفظ کرده‌اند که نشان‌دهنده چشم‌انداز میان‌مدت مثبت وال‌استریت است.'}`;
+        }
+      } catch (e) {
+        console.error('Error fetching COT:', e);
       }
     }
 
