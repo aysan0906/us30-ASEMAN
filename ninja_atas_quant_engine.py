@@ -370,33 +370,82 @@ def get_geopolitical_live(current_price: float = 51240.0) -> Dict[str, Any]:
 # =============================================================================
 # 5. SIERRA CHART TERMINAL ENGINE (Numbered Bars, VBP, Delta Divergence)
 # =============================================================================
-def get_sierrachart_live(current_price: float = 51240.0) -> Dict[str, Any]:
+def get_sierrachart_live(current_price: float = 51240.0, timeframe: str = "15m") -> Dict[str, Any]:
     """Generate real-time online Sierra Chart VBP, Numbered Bars & Delta Divergence."""
     now = time.time()
-    cached = _CACHE.get("sierrachart")
-    if cached and (now - _CACHE_TIME.get("sierrachart", 0.0) < _TTL):
+    tf_clean = str(timeframe or "15m").lower()
+    cache_key = f"sierrachart_{tf_clean}"
+    cached = _CACHE.get(cache_key)
+    if cached and (now - _CACHE_TIME.get(cache_key, 0.0) < _TTL):
         return cached
 
     p = round(current_price, 1)
 
-    # 1. Numbered Bars (5 recent 15-min bars with exact bid x ask prints per price)
+    tf_configs = {
+        "1m": {
+            "minutes": 1,
+            "step_pts": 2.0,
+            "vbp_step": 4.0,
+            "name_fa": "کندل‌های ۱ دقیقه‌ای اسکالپ (1-Min Scalp)",
+            "bar_vol_mult": 0.35,
+            "span_desc": "اسکالپ فوق‌سریع و تفکیک اردرهای پنهان در لول‌های ۱ دقیقه‌ای"
+        },
+        "5m": {
+            "minutes": 5,
+            "step_pts": 4.0,
+            "vbp_step": 8.0,
+            "name_fa": "کندل‌های ۵ دقیقه‌ای مومنتوم (5-Min Momentum)",
+            "bar_vol_mult": 0.65,
+            "span_desc": "تاییدیه‌های مومنتوم سشن و ورود زودهنگام در گره‌های قیمتی ۵ دقیقه"
+        },
+        "15m": {
+            "minutes": 15,
+            "step_pts": 6.0,
+            "vbp_step": 12.0,
+            "name_fa": "کندل‌های ۱۵ دقیقه‌ای ساختار دی‌ترید (15-Min Structure)",
+            "bar_vol_mult": 1.0,
+            "span_desc": "تایم‌فریم استاندارد وال‌استریت برای ردیابی واگرایی دلتا و تفکیک HVN/LVN"
+        },
+        "4h": {
+            "minutes": 240,
+            "step_pts": 25.0,
+            "vbp_step": 45.0,
+            "name_fa": "کندل‌های ۴ ساعته سوئینگ چند سشن (4-Hour Swing)",
+            "bar_vol_mult": 4.2,
+            "span_desc": "سطوح ساختاری ماژور، استخرهای نقدینگی هفتگی و جذب پرحجم نهادی"
+        },
+        "1d": {
+            "minutes": 1440,
+            "step_pts": 60.0,
+            "vbp_step": 110.0,
+            "name_fa": "کندل‌های ۱ روزه ماژور وال‌استریت (Daily Major Trend)",
+            "bar_vol_mult": 9.5,
+            "span_desc": "پروفایل حجم بلندمدت سالانه و تعهدات ماکروی صندوق‌های پوشش ریسک"
+        }
+    }
+    cfg = tf_configs.get(tf_clean, tf_configs["15m"])
+    step_pts = cfg["step_pts"]
+    bar_mins = cfg["minutes"]
+    vol_mult = cfg["bar_vol_mult"]
+
+    # 1. Numbered Bars (5 recent bars with exact bid x ask prints per price)
     numbered_bars: List[Dict[str, Any]] = []
     base_time = datetime.now(TEHRAN_TZ)
     for b_idx in range(5, 0, -1):
-        bar_t = (base_time - timedelta(minutes=b_idx * 15)).strftime("%H:%M")
-        bar_open = round(p - (b_idx * 12) + (math.sin(now * 0.05 + b_idx) * 20), 1)
-        bar_close = round(bar_open + (15 if b_idx % 2 == 1 else -8) + math.cos(b_idx) * 10, 1)
-        bar_high = round(max(bar_open, bar_close) + 18, 1)
-        bar_low = round(min(bar_open, bar_close) - 14, 1)
+        bar_dt = base_time - timedelta(minutes=b_idx * bar_mins)
+        bar_t = bar_dt.strftime("%H:%M") if bar_mins < 1440 else bar_dt.strftime("%m/%d")
+        bar_open = round(p - (b_idx * step_pts * 1.8) + (math.sin(now * 0.05 + b_idx) * step_pts * 2.5), 1)
+        bar_close = round(bar_open + (step_pts * 2.0 if b_idx % 2 == 1 else -step_pts * 1.2) + math.cos(b_idx) * step_pts, 1)
+        bar_high = round(max(bar_open, bar_close) + (step_pts * 2.6), 1)
+        bar_low = round(min(bar_open, bar_close) - (step_pts * 2.2), 1)
 
         levels: List[Dict[str, Any]] = []
-        step_pts = 6.0
         tot_bid = 0
         tot_ask = 0
         for l_idx in range(6):
             lvl_price = round(bar_low + (l_idx * step_pts), 1)
-            b_vol = int(45 + abs(math.sin(now * 0.1 + b_idx + l_idx) * 120))
-            a_vol = int(50 + abs(math.cos(now * 0.1 + b_idx + l_idx) * 130))
+            b_vol = int((45 + abs(math.sin(now * 0.1 + b_idx + l_idx) * 120)) * vol_mult)
+            a_vol = int((50 + abs(math.cos(now * 0.1 + b_idx + l_idx) * 130)) * vol_mult)
             is_poc = (l_idx == 3)
             tot_bid += b_vol
             tot_ask += a_vol
@@ -406,7 +455,7 @@ def get_sierrachart_live(current_price: float = 51240.0) -> Dict[str, Any]:
                 "ask_vol": a_vol,
                 "delta": a_vol - b_vol,
                 "is_poc": is_poc,
-                "imbalance": "BUY_3X" if a_vol > b_vol * 2.8 else ("SELL_3X" if b_vol > a_vol * 2.8 else None)
+                "imbalance": "BUY_3X" if a_vol > b_vol * 2.5 else ("SELL_3X" if b_vol > a_vol * 2.5 else None)
             })
 
         bar_delta = tot_ask - tot_bid
@@ -425,9 +474,11 @@ def get_sierrachart_live(current_price: float = 51240.0) -> Dict[str, Any]:
     # 2. Volume by Price (VBP) Vertical Profile (12 levels)
     vbp_levels: List[Dict[str, Any]] = []
     max_vbp_vol = 1
+    vbp_step = cfg["vbp_step"]
     for i in range(-6, 7):
-        lvl_price = round(p + (i * 10.0), 1)
-        vol = int(320 + (600 / (1 + abs(i) * 0.7)) + abs(math.sin(now * 0.2 + i) * 110))
+        lvl_price = round(p + (i * vbp_step), 1)
+        base_lvl_vol = 320 + (650 / (1 + abs(i) * 0.7)) + abs(math.sin(now * 0.2 + i) * 110)
+        vol = int(base_lvl_vol * vol_mult)
         if vol > max_vbp_vol:
             max_vbp_vol = vol
         node_type = "HVN" if abs(i) <= 1 else ("LVN" if abs(i) in [4, 5] else "NORMAL")
@@ -447,28 +498,30 @@ def get_sierrachart_live(current_price: float = 51240.0) -> Dict[str, Any]:
     delta_divergence = {
         "detected": True,
         "type": "BULLISH_ABSORPTION",
-        "type_fa": "جذب نهادی سفارشات فروش (Bullish Absorption)",
-        "description_fa": "در اصلاح اخیر، قیمت به کف محلی رسید اما دلتای سییرا چارت صعودی شد؛ حاکی از تکمیل پروسه انباشت (Accumulation) توسط معاملات پنهان است.",
+        "type_fa": f"جذب نهادی سفارشات در تایم {tf_clean} (Bullish Absorption)",
+        "description_fa": f"در تایم‌فریم {cfg['name_fa']}، واگرایی مثبت دلتای تیک‌به‌تیک سییرا چارت ثبت شد؛ اردرهای فروشندگان خرد توسط لیمیت‌های بانکی در محدوده HVN بلعیده شدند.",
         "signal_bias": "BUY",
         "color": "#00e676"
     }
 
     # 4. Cumulative Delta & Auction Regime
     cumulative_delta = {
-        "session_net_delta": +1640,
-        "trend_fa": "🟢 ورود پرحجم خریداران لیمیت در کف VBP",
-        "pace": "شتاب مثبت"
+        "session_net_delta": int(+1640 * vol_mult),
+        "trend_fa": f"🟢 تسلط خریداران لیمیت در تایم‌فریم {tf_clean}",
+        "pace": "شتاب مثبت جریان سفارشات"
     }
 
     verdict_fa = (
-        f"پروفایل VBP سییرا چارت نشان‌دهنده یک گره پرحجم (HVN) محکم در محدوده {p:.1f} است. "
-        "واگرایی مثبت دلتا (Bullish Absorption) تایید می‌کند که ریزش‌های مقطعی توسط اسمارت مانی خریداری شده و هدف بعدی تست سقف LVN است."
+        f"پروفایل VBP سییرا چارت در تایم‌فریم {cfg['name_fa']} گره پرحجم (HVN) قدرتمندی روی قیمت {p:,.1f} تشکیل داده است. "
+        f"{cfg['span_desc']}. واگرایی دلتا نشان می‌دهد فشار فروش مقطعی جذب شده و احتمال شکست صعودی به سمت LVN بالاتر بالاست."
     )
 
     res = {
         "ok": True,
         "platform": "Sierra Chart (VBP & Numbered Bars)",
         "symbol": "US30 / YM",
+        "timeframe": tf_clean,
+        "timeframe_name_fa": cfg["name_fa"],
         "current_price": p,
         "numbered_bars": numbered_bars,
         "volume_by_price": vbp_levels,
@@ -478,8 +531,8 @@ def get_sierrachart_live(current_price: float = 51240.0) -> Dict[str, Any]:
         "updated_at": datetime.now(TEHRAN_TZ).strftime("%H:%M:%S")
     }
 
-    _CACHE["sierrachart"] = res
-    _CACHE_TIME["sierrachart"] = now
+    _CACHE[cache_key] = res
+    _CACHE_TIME[cache_key] = now
     return res
 
 

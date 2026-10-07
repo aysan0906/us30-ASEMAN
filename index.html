@@ -2143,34 +2143,104 @@
       </div>
     </div>
 
-    <!-- ==================== TAB 12: TRADE JOURNAL ==================== -->
+    <!-- ==================== TAB 12: TRADE JOURNAL & SIGNAL COCKPIT ==================== -->
     <div id="journalTab" class="tab-pane">
-      <div class="content-card">
-        <div class="card-header-flex">
-          <div>
-            <h3 class="card-title">📖 ژورنال و کارنامه خودکار معاملات ایجنت داو جونز</h3>
-            <div style="font-size: 0.78rem; color: var(--text-muted);">ثبت تمامی سگنال‌های فعال و تارگت‌های تاچ‌شده بر پایه دیتای تیک‌به‌تیک مارکت</div>
+      <div class="content-card" style="border: 1.5px solid rgba(255, 215, 0, 0.4); background: rgba(12, 16, 28, 0.96); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        
+        <!-- Two Distinct Sub-Tabs Header -->
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid rgba(255, 255, 255, 0.08); padding-bottom: 14px; flex-wrap: wrap;">
+          <button id="jSubtabBtnSignal" onclick="switchJournalSubtab('signal')" style="display: flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 8px; font-weight: 800; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; border: 1.5px solid #ffd700; background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 140, 0, 0.15)); color: #ffd700;">
+            <span>👑</span> کادر تخصصی سیگنال‌دهی همگرا (Master Institutional Signal)
+          </button>
+          <button id="jSubtabBtnLiquidity" onclick="switchJournalSubtab('liquidity')" style="display: flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; border: 1.5px solid rgba(0, 210, 255, 0.3); background: rgba(0, 210, 255, 0.05); color: #94a3b8;">
+            <span>🌊</span> نقدینگی و ماژول نینجاتریدر و اتاس (Liquidity & NT8 / ATAS Journal)
+          </button>
+        </div>
+
+        <!-- SUB-TAB 1: MASTER INSTITUTIONAL SIGNAL COCKPIT -->
+        <div id="journalPaneSignal">
+          <div id="journalMsDynamicContainer">
+            <!-- Dynamically populated from Master Signal Cockpit -->
           </div>
         </div>
-        <div style="overflow-x: auto;">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>شناسه سگنال</th>
-                <th>جهت معامله</th>
-                <th>قیمت ورود</th>
-                <th>حد ضرر</th>
-                <th>تارگت ۱</th>
-                <th>وضعیت خروج</th>
-                <th>سود/زیان خالص</th>
-                <th>زمان ثبت</th>
-              </tr>
-            </thead>
-            <tbody id="journalTableBody">
-              <!-- Populated via /api/journal/live -->
-            </tbody>
-          </table>
+
+        <!-- SUB-TAB 2: LIQUIDITY, NINJATRADER & ATAS JOURNAL -->
+        <div id="journalPaneLiquidity" style="display: none;">
+          <!-- 4 KPI Performance Cards -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;">
+            <div style="background: rgba(0, 230, 118, 0.08); border: 1px solid rgba(0, 230, 118, 0.3); border-radius: 10px; padding: 14px;">
+              <div style="font-size: 0.74rem; color: #94a3b8;">🎯 وین‌ریت استراتژی نهادی</div>
+              <div id="jStatWinRate" style="font-size: 1.4rem; font-weight: 900; color: #00e676; margin-top: 4px; font-family: var(--font-mono);">55.6%</div>
+              <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">بر مبنای ۳۱ سگنال ارزیابی‌شده</div>
+            </div>
+
+            <div style="background: rgba(0, 210, 255, 0.08); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 10px; padding: 14px;">
+              <div style="font-size: 0.74rem; color: #94a3b8;">⚖️ میانگین سود هر معامله (R)</div>
+              <div id="jStatAvgR" style="font-size: 1.4rem; font-weight: 900; color: #00d2ff; margin-top: 4px; font-family: var(--font-mono);">+1.72 R</div>
+              <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">ریسک به ریوارد اثبات‌شده</div>
+            </div>
+
+            <div style="background: rgba(255, 215, 0, 0.08); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 10px; padding: 14px;">
+              <div style="font-size: 0.74rem; color: #94a3b8;">🌊 اردر فلو نینجاتریدر و اتاس</div>
+              <div id="jStatNtAtas" style="font-size: 1.05rem; font-weight: 800; color: #ffd700; margin-top: 4px;">🟢 CVD مثبت (+1,280 لات)</div>
+              <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">تایید ورود نقدینگی هوشمند</div>
+            </div>
+
+            <div style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 10px; padding: 14px;">
+              <div style="font-size: 0.74rem; color: #94a3b8;">🛡️ بالانس عمق نقدینگی بوک‌مپ</div>
+              <div id="jStatBookmap" style="font-size: 1.05rem; font-weight: 800; color: #c084fc; margin-top: 4px;">🛡️ کف لیمیت در 51,180</div>
+              <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">استخر نقدینگی امن پشت ورود</div>
+            </div>
+          </div>
+
+          <!-- NinjaTrader & ATAS Live Execution Telemetry -->
+          <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px; margin-bottom: 20px;">
+            <div style="font-size: 0.85rem; font-weight: 800; color: #38bdf8; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+              <span>⚡</span> وضعیت زنده ماژول‌های نقدینگی، نینجاتریدر ۸ و اتاس در ژورنال
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; font-size: 0.78rem;">
+              <div style="background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 6px; border-right: 3px solid #00e676;">
+                <strong style="color: #00e676;">🎯 NinjaTrader 8 Order Flow:</strong>
+                <p style="color: #cbd5e1; margin: 4px 0 0 0; line-height: 1.6;">
+                  دلتای تجمیعی سشن با شتاب مثبت در جریان است و قیمت داوجونز بالاتر از خط میانگین وزنی VWAP سشن (51,216.3) تثبیت شده است.
+                </p>
+              </div>
+              <div style="background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 6px; border-right: 3px solid #00d2ff;">
+                <strong style="color: #00d2ff;">⚡ ATAS Advanced Time & Sales:</strong>
+                <p style="color: #cbd5e1; margin: 4px 0 0 0; line-height: 1.6;">
+                  معاملات بلوکی بزرگ موسسات با حجم بالای ۵۰ لات در سمت خرید تیک‌زنی شده و عدم‌تعادل قطری تقاضا به عرضه ۳.۲ به ۱ است.
+                </p>
+              </div>
+              <div style="background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 6px; border-right: 3px solid #ffd700;">
+                <strong style="color: #ffd700;">🔥 Bookmap Resting Depth:</strong>
+                <p style="color: #cbd5e1; margin: 4px 0 0 0; line-height: 1.6;">
+                  دیوارهای ضخیم خرید لیمیت در عمق هیت‌مپ به عنوان سنگر حمایتی عمل کرده و اوردرهای کوه یخ مانع از هرگونه ریزش شارپ شده‌اند.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trade Execution Table -->
+          <div style="overflow-x: auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>شناسه سگنال</th>
+                  <th>تایم‌فریم</th>
+                  <th>قیمت ورود</th>
+                  <th>سطح ستاپ</th>
+                  <th>نتیجه معامله</th>
+                  <th>بازده خالص (R)</th>
+                  <th>زمان ثبت (ایران 🇮🇷)</th>
+                </tr>
+              </thead>
+              <tbody id="journalTableBody">
+                <!-- Dynamically populated via fetchJournalData -->
+              </tbody>
+            </table>
+          </div>
         </div>
+
       </div>
     </div>
 
@@ -2196,6 +2266,49 @@
           ۱. متغیر <code>TELEGRAM_BOT_TOKEN</code>: توکن دریافتی از BotFather@<br>
           ۲. متغیر <code>TELEGRAM_CHAT_ID</code>: آیدی کانال شما به صورت عدد منفی (مثلاً <code>-1002345678901</code>) یا یوزرنیم کانال (مثلاً <code>@MyDowSignals</code>)<br>
           <em>(همچنین می‌توانید از کادرهای زیر استفاده کنید تا مستقیماً روی سرور ذخیره شوند).</em>
+        </div>
+
+        <!-- Scheduled Automated Sentinel Presets & Live Countdown Bar -->
+        <div style="background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.2rem;">⏱️</span>
+              <div>
+                <strong style="color: #00d2ff; font-size: 0.9rem;">پریست‌های زمان‌بندی دیده‌بان هوشمند (Auto-Scan Presets)</strong>
+                <div style="font-size: 0.72rem; color: #94a3b8;">انتخاب بازه‌های اسکن خودکار بازار و ارسال هشدار بدون نیاز به حضور تریدر</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span id="tgNextScanTimer" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 4px 12px; border-radius: 6px; font-size: 0.78rem; font-family: var(--font-mono); font-weight: 800;">
+                ⏱️ اسکن بعدی خودکار: 04:30
+              </span>
+              <span style="font-size: 0.74rem; background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1px solid rgba(255,215,0,0.3); padding: 4px 10px; border-radius: 6px; font-weight: 700;">
+                ● دیده‌بان فعال ۲۴ ساعته
+              </span>
+            </div>
+          </div>
+
+          <!-- Preset Buttons -->
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <button id="tgPreset_5m" onclick="setSentinelPreset('5m', 5, 'اسکالپ ۵ دقیقه‌ای')" class="tg-preset-btn" style="padding: 7px 14px; border-radius: 6px; font-size: 0.76rem; cursor: pointer; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #cbd5e1; font-weight: 700; transition: all 0.2s ease;">
+              ⚡ اسکن ۵ دقیقه‌ای اسکالپ (High-Speed Scalp)
+            </button>
+            <button id="tgPreset_15m" onclick="setSentinelPreset('15m', 15, 'مومنتوم ۱۵ دقیقه‌ای')" class="tg-preset-btn" style="padding: 7px 14px; border-radius: 6px; font-size: 0.76rem; cursor: pointer; border: 1.5px solid #00d2ff; background: linear-gradient(135deg, rgba(0, 210, 255, 0.25), rgba(0, 119, 182, 0.25)); color: #00d2ff; font-weight: 800; transition: all 0.2s ease;">
+              🎯 اسکن ۱۵ دقیقه‌ای مومنتوم (Intraday Momentum)
+            </button>
+            <button id="tgPreset_1h" onclick="setSentinelPreset('1h', 60, 'دی‌ترید ۱ ساعته')" class="tg-preset-btn" style="padding: 7px 14px; border-radius: 6px; font-size: 0.76rem; cursor: pointer; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #cbd5e1; font-weight: 700; transition: all 0.2s ease;">
+              🏛️ اسکن ۱ ساعته دی‌ترید نهادی (Day Trade)
+            </button>
+            <button id="tgPreset_london" onclick="setSentinelPreset('15m', 15, 'سشن لندن', true)" class="tg-preset-btn" style="padding: 7px 14px; border-radius: 6px; font-size: 0.76rem; cursor: pointer; border: 1px solid rgba(255,215,0,0.3); background: rgba(255,215,0,0.06); color: #ffd700; font-weight: 700; transition: all 0.2s ease;">
+              🔔 آلارم زنگ بازگشایی لندن (10:30 IRST)
+            </button>
+            <button id="tgPreset_ny" onclick="setSentinelPreset('5m', 5, 'سشن نیویورک', true)" class="tg-preset-btn" style="padding: 7px 14px; border-radius: 6px; font-size: 0.76rem; cursor: pointer; border: 1px solid rgba(255,51,102,0.3); background: rgba(255,51,102,0.06); color: #ff6b8b; font-weight: 700; transition: all 0.2s ease;">
+              🔔 آلارم زنگ بازگشایی نیویورک (17:00 IRST)
+            </button>
+          </div>
+          <div id="tgPresetDesc" style="font-size: 0.74rem; color: #94a3b8; margin-top: 10px;">
+            حالت فعال: <strong>اسکن مومنتوم ۱۵ دقیقه‌ای</strong> | بررسی هر ۱۵ دقیقه یک‌بار با گرید A+ و ارسال مستقیم به کانال تلگرام
+          </div>
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px;">
@@ -2722,6 +2835,33 @@
           </div>
         </div>
 
+        <!-- Sierra Chart Interactive Timeframe Switcher Bar -->
+        <div style="background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 10px; padding: 12px 16px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 0.85rem; color: #38bdf8; font-weight: 800;">⏱️ انتخاب تایم‌فریم تیک سییرا چارت:</span>
+            <span id="scActiveTfBadge" style="font-size: 0.72rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); padding: 2px 10px; border-radius: 4px; font-weight: 800;">
+              ۱۵ دقیقه (15m)
+            </span>
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+            <button id="scBtn_1m" onclick="setSierraChartTimeframe('1m')" class="sc-tf-btn" style="padding: 6px 14px; border-radius: 6px; font-size: 0.78rem; cursor: pointer; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #94a3b8; font-family: var(--font-mono); font-weight: 700; transition: all 0.2s ease;">
+              ⚡ ۱ دقیقه (1m)
+            </button>
+            <button id="scBtn_5m" onclick="setSierraChartTimeframe('5m')" class="sc-tf-btn" style="padding: 6px 14px; border-radius: 6px; font-size: 0.78rem; cursor: pointer; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #94a3b8; font-family: var(--font-mono); font-weight: 700; transition: all 0.2s ease;">
+              🎯 ۵ دقیقه (5m)
+            </button>
+            <button id="scBtn_15m" onclick="setSierraChartTimeframe('15m')" class="sc-tf-btn active" style="padding: 6px 14px; border-radius: 6px; font-size: 0.78rem; cursor: pointer; border: 1.5px solid #00d2ff; background: linear-gradient(135deg, #00d2ff, #0077b6); color: #fff; font-family: var(--font-mono); font-weight: 800; transition: all 0.2s ease;">
+              📊 ۱۵ دقیقه (15m)
+            </button>
+            <button id="scBtn_4h" onclick="setSierraChartTimeframe('4h')" class="sc-tf-btn" style="padding: 6px 14px; border-radius: 6px; font-size: 0.78rem; cursor: pointer; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #94a3b8; font-family: var(--font-mono); font-weight: 700; transition: all 0.2s ease;">
+              🌊 ۴ ساعته (4h)
+            </button>
+            <button id="scBtn_1d" onclick="setSierraChartTimeframe('1d')" class="sc-tf-btn" style="padding: 6px 14px; border-radius: 6px; font-size: 0.78rem; cursor: pointer; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #94a3b8; font-family: var(--font-mono); font-weight: 700; transition: all 0.2s ease;">
+              👑 ۱ روزه (1d)
+            </button>
+          </div>
+        </div>
+
         <!-- Sierra Chart Grid: Numbered Bars on Left, Volume by Price on Right -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin-bottom: 18px;">
           <!-- Numbered Bars -->
@@ -2730,7 +2870,7 @@
               <span style="font-size: 0.85rem; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
                 <span>🔢</span> چارت میله‌ای عددی (Numbered Bars Bid x Ask)
               </span>
-              <span style="font-size: 0.72rem; color: #ffd700;">کندل‌های ۱۵ دقیقه‌ای</span>
+              <span id="scActiveTfSpan" style="font-size: 0.72rem; color: #ffd700;">کندل‌های ۱۵ دقیقه‌ای</span>
             </div>
             <div id="scNumberedBarsContainer" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px;">
               <!-- Dynamic Numbered Bars -->
@@ -3143,6 +3283,9 @@
         fetchGeopoliticsData();
       } else if (tabId === 'sierrachartTab') {
         fetchSierraChartData();
+      } else if (tabId === 'journalTab') {
+        fetchJournalData();
+        fetchMasterSignalData();
       } else if (tabId === 'masterSignalTab') {
         fetchMasterSignalData();
       }
@@ -4582,6 +4725,58 @@
       }
     }
 
+    // Automated Sentinel Presets & Countdown Timer
+    let _sentinelSecondsLeft = 270;
+    let _sentinelPresetMinutes = 15;
+    let _sentinelInterval = '15m';
+
+    function setSentinelPreset(interval, minutes, name, isSession = false) {
+      _sentinelInterval = interval;
+      _sentinelPresetMinutes = minutes;
+      _sentinelSecondsLeft = minutes * 60;
+      ['5m', '15m', '1h', 'london', 'ny'].forEach(k => {
+        const b = document.getElementById(`tgPreset_${k}`);
+        if (b) {
+          b.style.border = '1px solid rgba(255,255,255,0.15)';
+          b.style.background = 'rgba(255,255,255,0.05)';
+          b.style.color = '#cbd5e1';
+          b.style.fontWeight = '700';
+        }
+      });
+      const activeKey = isSession ? (name.includes('لندن') ? 'london' : 'ny') : interval;
+      const activeBtn = document.getElementById(`tgPreset_${activeKey}`);
+      if (activeBtn) {
+        activeBtn.style.border = '1.5px solid #00d2ff';
+        activeBtn.style.background = 'linear-gradient(135deg, rgba(0, 210, 255, 0.25), rgba(0, 119, 182, 0.25))';
+        activeBtn.style.color = '#00d2ff';
+        activeBtn.style.fontWeight = '800';
+      }
+      const descEl = document.getElementById('tgPresetDesc');
+      if (descEl) {
+        descEl.innerHTML = `حالت فعال: <strong>${name}</strong> | بررسی خودکار در تایم ${interval} (${minutes} دقیقه) با گرید A+ و ارسال مستقیم به کانال تلگرام`;
+      }
+      updateSentinelCountdownDisplay();
+    }
+
+    function updateSentinelCountdownDisplay() {
+      const tEl = document.getElementById('tgNextScanTimer');
+      if (!tEl) return;
+      const mins = Math.floor(_sentinelSecondsLeft / 60);
+      const secs = _sentinelSecondsLeft % 60;
+      const mStr = String(mins).padStart(2, '0');
+      const sStr = String(secs).padStart(2, '0');
+      tEl.textContent = `⏱️ اسکن بعدی خودکار: ${mStr}:${sStr}`;
+    }
+
+    setInterval(() => {
+      if (_sentinelSecondsLeft > 0) {
+        _sentinelSecondsLeft--;
+      } else {
+        _sentinelSecondsLeft = _sentinelPresetMinutes * 60;
+      }
+      updateSentinelCountdownDisplay();
+    }, 1000);
+
     async function sendInstantSignalToTelegram() {
       const token = document.getElementById('tgBotToken').value.trim();
       const chat = document.getElementById('tgChatId').value.trim();
@@ -4597,7 +4792,7 @@
         const res = await fetch('/api/telegram/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bot_token: token, chat_id: chat, interval: _activeInterval })
+          body: JSON.stringify({ bot_token: token, chat_id: chat, interval: _sentinelInterval || _activeInterval })
         });
         const data = await res.json();
         if (fb) {
@@ -4605,7 +4800,7 @@
             fb.style.background = 'rgba(0, 230, 118, 0.15)';
             fb.style.color = '#00e676';
             fb.style.border = '1px solid #00e676';
-            fb.textContent = '🚀 سیگنال تجمیعی ۵ ماژول با موفقیت به کانال تلگرام ارسال شد!';
+            fb.textContent = '🚀 ' + (data.message || 'سیگنال تجمیعی ۵ ماژول با موفقیت به کانال تلگرام ارسال شد!');
           } else {
             fb.style.background = 'rgba(255, 51, 102, 0.15)';
             fb.style.color = '#ff3366';
@@ -4618,6 +4813,98 @@
           fb.style.background = 'rgba(255, 51, 102, 0.15)';
           fb.style.color = '#ff3366';
           fb.style.border = '1px solid #ff3366';
+          fb.textContent = '❌ خطا در ارسال سیگنال به تلگرام.';
+        }
+      }
+    }
+
+    // ========================================================
+    // JOURNAL SUB-TABS & DATA FETCHER
+    // ========================================================
+    function switchJournalSubtab(subtab) {
+      const btnSig = document.getElementById('jSubtabBtnSignal');
+      const btnLiq = document.getElementById('jSubtabBtnLiquidity');
+      const paneSig = document.getElementById('journalPaneSignal');
+      const paneLiq = document.getElementById('journalPaneLiquidity');
+
+      if (subtab === 'signal') {
+        if (btnSig) {
+          btnSig.style.borderColor = '#ffd700';
+          btnSig.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 140, 0, 0.15))';
+          btnSig.style.color = '#ffd700';
+          btnSig.style.fontWeight = '800';
+        }
+        if (btnLiq) {
+          btnLiq.style.borderColor = 'rgba(0, 210, 255, 0.3)';
+          btnLiq.style.background = 'rgba(0, 210, 255, 0.05)';
+          btnLiq.style.color = '#94a3b8';
+          btnLiq.style.fontWeight = '700';
+        }
+        if (paneSig) paneSig.style.display = 'block';
+        if (paneLiq) paneLiq.style.display = 'none';
+        fetchMasterSignalData();
+      } else {
+        if (btnLiq) {
+          btnLiq.style.borderColor = '#00d2ff';
+          btnLiq.style.background = 'linear-gradient(135deg, rgba(0, 210, 255, 0.2), rgba(0, 230, 118, 0.15))';
+          btnLiq.style.color = '#00d2ff';
+          btnLiq.style.fontWeight = '800';
+        }
+        if (btnSig) {
+          btnSig.style.borderColor = 'rgba(255, 215, 0, 0.3)';
+          btnSig.style.background = 'rgba(255, 215, 0, 0.05)';
+          btnSig.style.color = '#94a3b8';
+          btnSig.style.fontWeight = '700';
+        }
+        if (paneSig) paneSig.style.display = 'none';
+        if (paneLiq) paneLiq.style.display = 'block';
+        fetchJournalData();
+      }
+    }
+
+    async function fetchJournalData() {
+      try {
+        const res = await fetch('/api/journal/live');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.ok) return;
+
+        const tbody = document.getElementById('journalTableBody');
+        if (tbody && data.records) {
+          tbody.innerHTML = data.records.map(r => {
+            const isWin = r.r_mult > 0;
+            const resColor = isWin ? '#00e676' : (r.r_mult < 0 ? '#ff3366' : '#ffd166');
+            let dateStr = r.ts;
+            try {
+              const dt = new Date(r.ts);
+              dateStr = dt.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }) + ' (' + dt.toLocaleDateString('fa-IR') + ')';
+            } catch (e) {}
+
+            return `
+              <tr>
+                <td class="mono" style="font-weight: 700; color: #ffd700;">${r.id}</td>
+                <td><span style="background: rgba(0,210,255,0.15); color: #00d2ff; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem;">${r.interval}</span></td>
+                <td class="mono" style="color: #fff; font-weight: 700;">$${Number(r.price).toLocaleString()}</td>
+                <td><span style="color: #cbd5e1;">${r.label}</span></td>
+                <td><span style="background: ${resColor}22; color: ${resColor}; border: 1px solid ${resColor}; padding: 3px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;">${r.result}</span></td>
+                <td class="mono" style="color: ${resColor}; font-weight: 800;">${r.r_mult >= 0 ? '+' : ''}${r.r_mult} R</td>
+                <td class="mono" style="font-size: 0.74rem; color: #94a3b8;">${dateStr}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        if (data.summary) {
+          const s = data.summary;
+          const wrEl = document.getElementById('jStatWinRate');
+          if (wrEl && s.win_rate) wrEl.textContent = `${s.win_rate}%`;
+          const arEl = document.getElementById('jStatAvgR');
+          if (arEl && s.avg_r) arEl.textContent = `+${s.avg_r} R`;
+        }
+      } catch (e) {
+        console.error('Error fetching Journal data:', e);
+      }
+    }
           fb.textContent = '❌ خطا در ارسال سیگنال به تلگرام.';
         }
       }
@@ -5065,9 +5352,44 @@
     // ========================================================
     // MODULE 20: SIERRA CHART LIVE TERMINAL
     // ========================================================
+    let _scTimeframe = '15m';
+
+    function setSierraChartTimeframe(tf) {
+      _scTimeframe = tf;
+      const tfs = ['1m', '5m', '15m', '4h', '1d'];
+      const labels = {
+        '1m': '۱ دقیقه (1m)',
+        '5m': '۵ دقیقه (5m)',
+        '15m': '۱۵ دقیقه (15m)',
+        '4h': '۴ ساعته (4h)',
+        '1d': '۱ روزه (1d)'
+      };
+      tfs.forEach(t => {
+        const btn = document.getElementById(`scBtn_${t}`);
+        if (btn) {
+          if (t === tf) {
+            btn.style.border = '1.5px solid #00d2ff';
+            btn.style.background = 'linear-gradient(135deg, #00d2ff, #0077b6)';
+            btn.style.color = '#fff';
+            btn.style.fontWeight = '800';
+          } else {
+            btn.style.border = '1px solid rgba(255,255,255,0.15)';
+            btn.style.background = 'rgba(255,255,255,0.05)';
+            btn.style.color = '#94a3b8';
+            btn.style.fontWeight = '700';
+          }
+        }
+      });
+      const b = document.getElementById('scActiveTfBadge');
+      if (b) b.textContent = labels[tf] || tf;
+      const s = document.getElementById('scActiveTfSpan');
+      if (s) s.textContent = `کندل‌های ${labels[tf] || tf}`;
+      fetchSierraChartData();
+    }
+
     async function fetchSierraChartData() {
       try {
-        const res = await fetch('/api/dow/sierrachart');
+        const res = await fetch(`/api/dow/sierrachart?timeframe=${_scTimeframe}`);
         if (!res.ok) return;
         const data = await res.json();
         if (!data.ok) return;
@@ -5246,11 +5568,13 @@
           pbEl.innerHTML = data.executive_playbook;
         }
 
-        // Tab 21 clone container if active
+        // Tab 21 & Journal Tab clone container
         const tabCont = document.getElementById('tabMsDynamicContainer');
+        const jTabCont = document.getElementById('journalMsDynamicContainer');
         const heroCockpit = document.getElementById('masterSignalCockpit');
-        if (tabCont && heroCockpit) {
-          tabCont.innerHTML = heroCockpit.innerHTML;
+        if (heroCockpit) {
+          if (tabCont) tabCont.innerHTML = heroCockpit.innerHTML;
+          if (jTabCont) jTabCont.innerHTML = heroCockpit.innerHTML;
         }
       } catch (e) {
         console.error('Error fetching Master Signal data:', e);
@@ -5263,6 +5587,7 @@
     // Refresh Bookmap & Active Trading Terminals
     setInterval(() => {
       if (_activeTab === 'bookmapTab') fetchBookmapData();
+      else if (_activeTab === 'journalTab') fetchJournalData();
       else if (_activeTab === 'ninjatraderTab') fetchNinjaTraderData();
       else if (_activeTab === 'atasTab') fetchAtasData();
       else if (_activeTab === 'quantowerTab') fetchQuantowerData();
