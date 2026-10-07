@@ -881,7 +881,7 @@ _composite_signal_cache: Dict[str, Dict[str, Any]] = {}
 def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 1h, 4h, 1d")):
     now_ts = time.time()
     cached = _composite_signal_cache.get(interval)
-    if cached and (now_ts - cached["time"] < 15.0):
+    if cached and (now_ts - cached["time"] < 30.0):
         return cached["data"]
 
     # 1. Fetch live price strictly from FOREXCOM:US30
@@ -890,9 +890,9 @@ def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 
         p_curr = float(t_data.get("price", 0.0) or 0.0)
         if p_curr <= 0:
             cash_info = dow_cash.freshest()
-            p_curr = float(cash_info.get("best", {}).get("index", 51570.0) or 51570.0)
+            p_curr = float(cash_info.get("best", {}).get("index", 51250.0) or 51250.0)
     except Exception:
-        p_curr = 51570.0
+        p_curr = 51250.0
 
     # 2. Bank Coalition
     try:
@@ -915,16 +915,16 @@ def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 
         is_frozen = False
         event_name = "CPI/FOMC"
 
-    # 4. Engine Analysis for this specific interval
+    # 4. Engine Analysis for this specific interval (with_coalition=False for ultra-fast response)
     try:
-        analysis = engine.build_analysis(interval)
-        eng_dir = int(analysis.get("direction", 0) or 0)
-        eng_score = float(analysis.get("score", 50.0) or 50.0)
-        eng_bias_fa = analysis.get("bias_fa", "خنثی")
-        orderflow = analysis.get("orderflow", {})
-        imbalance = float(orderflow.get("imbalance", 0.0) or 0.0)
-        htf = analysis.get("htf_daily", {})
-        htf_dir = int(htf.get("direction", 0) or 0)
+        analysis = engine.build_analysis(interval, with_coalition=False)
+        sig_block = analysis.get("signal", {}) or {}
+        eng_dir = int(sig_block.get("direction", 0) or 0)
+        eng_score = float(sig_block.get("score", 50.0) or 50.0)
+        eng_bias_fa = sig_block.get("action_fa", "خنثی")
+        flow_block = analysis.get("flow", {}) or {}
+        imbalance = float(flow_block.get("imbalance", 0.0) or 0.0)
+        htf_dir = int(sig_block.get("htf_direction", 0) or eng_dir)
     except Exception:
         eng_dir = 0
         eng_score = 50.0
@@ -1247,16 +1247,24 @@ def dow_leaders():
 
 import elite_modules as elite
 
+_elite_suite_cache: Dict[str, Any] = {}
+
 @app.get("/api/dow/elite-suite")
 def dow_elite_suite():
+    global _elite_suite_cache
+    now = time.time()
+    if _elite_suite_cache and (now - _elite_suite_cache.get("time", 0.0) < 10.0):
+        return _elite_suite_cache["data"]
     try:
         t_data = engine.ticker("1h")
-        p = float(t_data.get("price", 51570.0) or 51570.0)
+        p = float(t_data.get("price", 51250.0) or 51250.0)
         chg = float(t_data.get("change", 210.0) or 210.0)
     except Exception:
-        p = 51570.0
+        p = 51250.0
         chg = 210.0
-    return elite.get_all_elite_modules(p, chg)
+    data = elite.get_all_elite_modules(p, chg)
+    _elite_suite_cache = {"time": now, "data": data}
+    return data
 
 @app.get("/api/dow/triggers")
 def dow_triggers(interval: str = Query("1h")):
@@ -1398,6 +1406,17 @@ def us30_sentinel_auto_loop():
         except Exception as e:
             _us30_sentinel_stats["last_error"] = str(e)
         time.sleep(60)
+
+def prewarm_signals_in_background():
+    time.sleep(1)
+    for tf in ["1h", "15m", "5m", "30m", "4h", "1d"]:
+        try:
+            dow_composite_signal(tf)
+        except Exception:
+            pass
+
+# Pre-warm analytical signals in background on boot
+threading.Thread(target=prewarm_signals_in_background, daemon=True).start()
 
 # Start Sentinel auto-pilot thread on server boot
 threading.Thread(target=us30_sentinel_auto_loop, daemon=True).start()
