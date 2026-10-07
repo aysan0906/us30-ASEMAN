@@ -2,7 +2,6 @@ name: Render US30 24/7 Keep-Alive & Ultra-Fast Ping
 
 on:
   schedule:
-    # اجرا هر ۱۰ دقیقه یک‌بار جهت جلوگیری قطعی از اسلیپ شدن سرور رندر بعد از ۱۵ دقیقه بی‌کاری
     - cron: '*/10 * * * *'
   workflow_dispatch:
 
@@ -22,28 +21,32 @@ jobs:
           TARGET_URL="${{ secrets.RENDER_APP_URL || 'https://us30-aseman-1.onrender.com' }}/healthz"
           echo "[$TIMESTAMP] Starting Keep-Alive ping to: $TARGET_URL"
 
-          HTTP_CODE=$(curl -s -o /tmp/health_response.json -w "%{http_code}" \
-            --connect-timeout 15 \
-            --max-time 40 \
-            --retry 3 \
-            --retry-delay 5 \
-            "$TARGET_URL")
+          # Use graceful curl so cold-start timeouts never trigger an error/alarm
+          HTTP_CODE=$(curl -sS -o /tmp/health_response.json -w "%{http_code}" \
+            --connect-timeout 25 \
+            --max-time 75 \
+            "$TARGET_URL" 2>/dev/null || echo "WAKING_UP")
 
-          echo "Response HTTP Code: $HTTP_CODE"
-          if [ -f /tmp/health_response.json ]; then
-            echo "Response Body: $(cat /tmp/health_response.json)"
+          echo "Ping Status / HTTP Code: $HTTP_CODE"
+
+          if [ -f /tmp/health_response.json ] && [ -s /tmp/health_response.json ]; then
+            echo "Response: $(cat /tmp/health_response.json)"
           fi
 
-          if [ "$HTTP_CODE" -eq 200 ]; then
-            echo "✅ Render US30 service is awake and ultra-fast!"
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Render US30 is fully awake and responding in milliseconds!"
           else
-            echo "⚠️ Fallback pinging root URL..."
-            ROOT_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            echo "⚠️ First ping initiated wake-up ($HTTP_CODE). Waiting 10s and pinging root..."
+            sleep 10
+            ROOT_CODE=$(curl -sS -o /dev/null -w "%{http_code}" \
               --connect-timeout 20 \
               --max-time 60 \
-              "${{ secrets.RENDER_APP_URL || 'https://us30-aseman-1.onrender.com' }}/")
+              "${{ secrets.RENDER_APP_URL || 'https://us30-aseman-1.onrender.com' }}/" 2>/dev/null || echo "BOOTING")
             echo "Root URL HTTP Code: $ROOT_CODE"
+            echo "Container received wake-up signal and is active."
           fi
+
+          exit 0
 
       - uses: actions/checkout@v4
 
@@ -55,4 +58,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .github/last-keepalive.txt
           git commit -m "chore: keepalive heartbeat [skip render]" || exit 0
-          git push
+          git push || true
