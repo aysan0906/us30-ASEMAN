@@ -1548,6 +1548,14 @@ def dow_cot_report():
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
+@app.get("/api/dow/bookmap")
+def dow_bookmap_endpoint():
+    try:
+        import bookmap_engine
+        return bookmap_engine.get_us30_bookmap_data()
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
 @app.get("/api/dow/killzone")
 def dow_killzone():
     try:
