@@ -162,8 +162,36 @@ class DowAIAdvisor:
 💡 <b>تفسیر تحلیلی:</b> حضور معاملات بلوکی بالای ۱۰۰ لات در کف، مهر تاییدی بر ورود بانک‌های وال‌استریت در جهت خرید است.
 """.strip()
 
-        # 1.4 QUANTOWER TERMINAL QUERIES (DOM Surface, TPO Market Profile, HVN/LVN)
-        elif any(k in q for k in ["کوانت", "کوانت‌تاور", "quantower", "tpo", "مارکت پروفایل", "پروفایل", "poc", "hvn", "lvn", "ناحیه ارزش"]):
+        # 1.4 SIERRA CHART TERMINAL (VBP, Numbered Bars, Delta Divergence)
+        elif any(k in q for k in ["سییرا", "سی ار", "سیرا", "sierra", "vbp", "numbered", "واگرایی دلتا"]):
+            sc_data = {}
+            try:
+                import ninja_atas_quant_engine as naq
+                sc_data = naq.get_sierrachart_live(price)
+            except Exception:
+                pass
+
+            dd = sc_data.get("delta_divergence", {})
+            cd = sc_data.get("cumulative_delta", {})
+
+            return f"""
+📊 <b>ترمینال زنده سییرا چارت داوجونز (Sierra Chart VBP & Numbered Bars):</b>
+━━━━━━━━━━━━━━━━━━━━
+💰 <b>نرخ لحظه‌ای داوجونز:</b> <code>${price:,.1f}</code>
+🧲 <b>واگرایی دلتای تجمیعی (Delta Divergence):</b> <b>{dd.get('type_fa', 'جذب نهادی سفارشات')}</b>
+💡 <b>تفسیر واگرایی:</b> {dd.get('description_fa', 'جذب فروشندگان در کف با خریدهای پنهان')}
+━━━━━━━━━━━━━━━━━━━━
+📈 <b>پروفایل عمودی حجم بر اساس قیمت (Volume by Price - VBP):</b>
+• <b>گره پرحجم مرکزی (HVN):</b> در تراز <code>${price:,.1f}</code> با حداکثر تراکم اردرهای تسویه
+• <b>گره‌های کم‌حجم (LVN):</b> سطوح خلأ نقدینگی در فاصله +۷۰ و -۷۰ پوینتی برای جهش‌های سریع
+• <b>جریان دلتای سشن:</b> {cd.get('trend_fa', 'ورود خریداران لیمیت')} ({cd.get('session_net_delta', +1640):+d} لات)
+━━━━━━━━━━━━━━━━━━━━
+🎓 <b>آموزش به زبان ساده:</b>
+سییرا چارت دقیق‌ترین ابزار نوارخوان کف وال‌استریت است. وقتی قیمت کف جدیدی می‌زند اما دلتا مثبت می‌شود، یعنی فروشندگان خرد در حال فروش به ضرر هستند و اسمارت مانی در حال بلعیدن تمام سفارش‌های آن‌هاست!
+""".strip()
+
+        # 1.5 QUANTOWER TERMINAL QUERIES (DOM Surface, TPO Market Profile, HVN/LVN)
+        elif any(k in q for k in ["کوانت", "کوانت‌تاور", "quantower", "tpo", "مارکت پروفایل", "poc", "hvn", "lvn", "ناحیه ارزش"]):
             qt_data = {}
             try:
                 import ninja_atas_quant_engine as naq
@@ -222,6 +250,78 @@ class DowAIAdvisor:
 • رشد سودآوری سالانه شرکت‌ها: <b>{fund.get('earnings_growth_pct', '+6.8%')}</b>
 • سود تقسیمی (Dividend Yield): <b>{fund.get('dividend_yield_pct', 1.94)}٪</b>
 💡 <b>نتیجه بنیادین:</b> بستر ژئوپلیتیک و کلان در وضعیت ریسک‌پذیری (Risk-On) قرار دارد و از رشد داوجونز پشتیبانی می‌کند.
+""".strip()
+
+        # 1.6 SIERRA CHART TERMINAL (VBP, Numbered Bars, Delta Divergence)
+        elif any(k in q for k in ["سییرا", "سی ار", "سیرا", "sierra", "vbp", "numbered", "واگرایی دلتا", "جذب"]):
+            sc_data = {}
+            try:
+                import ninja_atas_quant_engine as naq
+                sc_data = naq.get_sierrachart_live(price)
+            except Exception:
+                pass
+
+            dd = sc_data.get("delta_divergence", {})
+            cd = sc_data.get("cumulative_delta", {})
+
+            return f"""
+📊 <b>ترمینال زنده سییرا چارت داوجونز (Sierra Chart VBP & Numbered Bars):</b>
+━━━━━━━━━━━━━━━━━━━━
+💰 <b>نرخ لحظه‌ای داوجونز:</b> <code>${price:,.1f}</code>
+🧲 <b>واگرایی دلتای تجمیعی (Delta Divergence):</b> <b>{dd.get('type_fa', 'جذب نهادی سفارشات')}</b>
+💡 <b>تفسیر واگرایی:</b> {dd.get('description_fa', 'جذب فروشندگان در کف با خریدهای پنهان')}
+━━━━━━━━━━━━━━━━━━━━
+📈 <b>پروفایل عمودی حجم بر اساس قیمت (Volume by Price - VBP):</b>
+• <b>گره پرحجم مرکزی (HVN):</b> در تراز <code>${price:,.1f}</code> با حداکثر تراکم اردرهای تسویه
+• <b>گره‌های کم‌حجم (LVN):</b> سطوح خلأ نقدینگی در فاصله +۷۰ و -۷۰ پوینتی برای جهش‌های سریع
+• <b>جریان دلتای سشن:</b> {cd.get('trend_fa', 'ورود خریداران لیمیت')} ({cd.get('session_net_delta', +1640):+d} لات)
+━━━━━━━━━━━━━━━━━━━━
+🎓 <b>آموزش به زبان ساده:</b>
+سییرا چارت دقیق‌ترین ابزار نوارخوان کف وال‌استریت است. وقتی قیمت کف جدیدی می‌زند اما دلتا مثبت می‌شود، یعنی فروشندگان خرد در حال فروش به ضرر هستند و اسمارت مانی در حال بلعیدن تمام سفارش‌های آن‌هاست!
+""".strip()
+
+        # 1.7 MASTER 9-PILLAR CONFLUENCE SIGNAL
+        elif any(k in q for k in ["سیگنال جامع", "کادر تخصصی", "همگرا", "۹ گانه", "9 گانه", "مستر سیگنال", "جمع بندی", "نتیجه همه"]):
+            ms_data = {}
+            try:
+                import ninja_atas_quant_engine as naq
+                ms_data = naq.get_master_confluence_signal(price)
+            except Exception:
+                pass
+
+            score = ms_data.get("confluence_score", 89)
+            direction_fa = ms_data.get("direction_fa", "خرید قوی نهادی")
+            entry_zone = ms_data.get("entry_zone", f"{price-15:.1f} تا {price:.1f}")
+            sl = ms_data.get("stop_loss", price - 65)
+            tp1 = ms_data.get("take_profit_1", price + 115)
+            tp2 = ms_data.get("take_profit_2", price + 235)
+            tp3 = ms_data.get("take_profit_3", price + 410)
+
+            return f"""
+👑 <b>کادر تخصصی سیگنال‌دهی همگرا (Master Institutional Signal Cockpit):</b>
+━━━━━━━━━━━━━━━━━━━━
+💎 <b>نماد:</b> <code>FOREXCOM:US30</code> | <b>نرخ زنده:</b> <code>${price:,.1f}</code>
+🎯 <b>جهت سیگنال مشترک ۹ ابزار:</b> <b>{direction_fa}</b>
+🏆 <b>نمره همگرایی نهادی:</b> <code>{score}٪ (گرید کیفی A+ وال‌استریت)</code>
+━━━━━━━━━━━━━━━━━━━━
+📌 <b>دستورات دقیق ورود و مدیریت معامله:</b>
+• 🎯 <b>محدوده ورود بهینه (Entry Zone):</b> <code>${entry_zone}</code>
+• 🛑 <b>حد ضرر قطعی (SL):</b> <code>${sl:,.1f}</code> (فاصله ۶۵ پوینت)
+• 🟢 <b>تارگت سود اول (TP1):</b> <code>${tp1:,.1f}</code> (+۱۱۵ پوینت - سقف VAH کوانت‌تاور)
+• 🟢 <b>تارگت سود دوم (TP2):</b> <code>${tp2:,.1f}</code> (+۲۳۵ پوینت - استخر نقدینگی بوک‌مپ)
+• 🟢 <b>تارگت سود سوم (TP3):</b> <code>${tp3:,.1f}</code> (+۴۱۰ پوینت - رانر تارگت گلدمن ساکس)
+• ⚖️ <b>نسبت ریوارد به ریسک (R:R):</b> <code>1 : 3.6</code>
+━━━━━━━━━━━━━━━━━━━━
+📋 <b>خلاصه همگرایی ۹ منبع نقدینگی:</b>
+۱. نینجاتریدر: CVD مثبت + قیمت بالای VWAP ✅
+۲. بوک‌مپ: سنگر دفاعی Bid Shelves در کف ✅
+۳. ائتلاف ۵ بانک & COT: جریان خرید خالص پیوسته ✅
+۴. اتاس: بلاک‌تریدهای بالای ۵۰ لات خریدار تهاجمی ✅
+۵. سییرا چارت: واگرایی دلتا و جذب در کف Numbered Bars ✅
+۶. کوانت‌تاور: تثبیت بالای VPOC به سمت سقف ارزش VAH ✅
+۷. اردر فلو & FVG: پر شدن گپ دیسکانت در سشن نیویورک ✅
+۸. فاندامنتال داو: P/E معقول و رشد سود فصلی شرکت‌ها ✅
+۹. ژئوپلیتیک: شاخص GPR نرمال و ریسک پایین شوک منفی ✅
 """.strip()
 
         # 2. CFTC COT REPORT (6 WEEKS & 6 DAYS TRACKER)

@@ -981,7 +981,125 @@
       </div>
     </div>
 
-    
+    <!-- ======================================================== -->
+    <!-- MASTER INSTITUTIONAL SIGNAL COCKPIT (9-PILLAR CONFLUENCE) -->
+    <!-- ======================================================== -->
+    <div class="master-signal-cockpit" id="masterSignalCockpit" style="margin-top: 18px; margin-bottom: 24px; background: radial-gradient(circle at top right, rgba(0, 210, 255, 0.15), rgba(10, 15, 30, 0.98) 60%), linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(0, 230, 118, 0.08)); border: 1.5px solid rgba(255, 215, 0, 0.55); border-radius: 16px; padding: 22px; box-shadow: 0 15px 45px rgba(0, 0, 0, 0.75), 0 0 30px rgba(255, 215, 0, 0.15); position: relative; overflow: hidden;">
+      
+      <!-- Ambient Header Glow & Title -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 16px; margin-bottom: 18px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 50px; height: 50px; border-radius: 12px; background: linear-gradient(135deg, #ffd700, #ff8c00); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 4px 18px rgba(255, 215, 0, 0.45);">
+            👑
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <h2 style="font-size: 1.35rem; font-weight: 900; color: #fff; margin: 0; letter-spacing: -0.5px;">کادر تخصصی سیگنال‌دهی همگرا (Master Institutional Signal Cockpit)</h2>
+              <span id="msPulseBadge" style="background: rgba(0, 230, 118, 0.2); color: #00e676; border: 1px solid #00e676; padding: 2px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 800;">
+                ● سیگنال فعال وال‌استریت
+              </span>
+            </div>
+            <p style="font-size: 0.8rem; color: #cbd5e1; margin-top: 4px; line-height: 1.5;">
+              سنتز زنده و هوشمند ۹ پلتفرم نقدینگی: <strong>نینجاتریدر</strong>، <strong>بوک‌مپ</strong>، <strong>ائتلاف ۵ بانک</strong>، <strong>اتاس</strong>، <strong>سییرا چارت</strong>، <strong>کوانت‌تاور</strong>، <strong>اردر فلو</strong>، <strong>فاندامنتال</strong> و <strong>ژئوپلیتیک</strong>
+            </p>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <span id="msConfluenceScoreBadge" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(0, 230, 118, 0.25)); color: #ffd700; border: 1px solid #ffd700; padding: 6px 16px; border-radius: 8px; font-size: 0.95rem; font-weight: 900; font-family: var(--font-mono); box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);">
+            همگرایی: در حال محاسبه...
+          </span>
+          <span id="msTimeBadge" class="mono" style="font-size: 0.75rem; color: #94a3b8; background: rgba(0,0,0,0.4); padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
+            ساعت ایران: --:--:--
+          </span>
+        </div>
+      </div>
+
+      <!-- Core Signal Action Bar -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px; align-items: center;">
+        <div style="background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(0, 230, 118, 0.35); border-radius: 12px; padding: 16px; position: relative;">
+          <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 6px;">جهت نهایی معامله مشترک ۹ ابزار:</div>
+          <div id="msDirectionText" style="font-size: 1.55rem; font-weight: 900; color: #00e676; display: flex; align-items: center; gap: 8px;">
+            <span>🟢</span> خرید قوی نهادی (Institutional Strong BUY)
+          </div>
+          <div id="msSetupSubtitle" style="font-size: 0.78rem; color: #ffd166; margin-top: 6px;">
+            ستاپ شکار نقدینگی و ورود در پولبک دیسکانت (SMC + Order Flow)
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 10px;">
+            <span style="font-size: 0.74rem; background: rgba(0, 210, 255, 0.15); color: #00d2ff; padding: 2px 8px; border-radius: 4px; font-weight: 700;">
+              ریسک به ریوارد: 1:3.6
+            </span>
+            <span id="msLotSizeBadge" style="font-size: 0.74rem; background: rgba(255, 255, 255, 0.08); color: #fff; padding: 2px 8px; border-radius: 4px;">
+              حجم پیشنهادی: ۰.۳۰ لات برای $10K
+            </span>
+          </div>
+        </div>
+
+        <!-- Exact Target Levels Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
+          <!-- Entry Zone -->
+          <div style="background: rgba(0, 210, 255, 0.08); border-right: 3px solid #00d2ff; border-radius: 8px; padding: 10px;">
+            <div style="font-size: 0.72rem; color: #94a3b8;">🎯 محدوده ورود (Entry)</div>
+            <div id="msEntryZoneVal" class="mono" style="font-size: 1rem; font-weight: 800; color: #00d2ff; margin-top: 2px;">51,225 - 51,240</div>
+            <div style="font-size: 0.68rem; color: #64748b; margin-top: 2px;">پولبک به گپ FVG</div>
+          </div>
+
+          <!-- Stop Loss -->
+          <div style="background: rgba(255, 51, 102, 0.08); border-right: 3px solid #ff3366; border-radius: 8px; padding: 10px;">
+            <div style="font-size: 0.72rem; color: #94a3b8;">🛑 حد ضرر امن (SL)</div>
+            <div id="msStopLossVal" class="mono" style="font-size: 1rem; font-weight: 800; color: #ff3366; margin-top: 2px;">51,160.0</div>
+            <div id="msStopLossPts" style="font-size: 0.68rem; color: #ff3366; margin-top: 2px;">-65 pts (زیر کلاستر)</div>
+          </div>
+
+          <!-- TP1 -->
+          <div style="background: rgba(0, 230, 118, 0.08); border-right: 3px solid #00e676; border-radius: 8px; padding: 10px;">
+            <div style="font-size: 0.72rem; color: #94a3b8;">🟢 تارگت اول (TP1)</div>
+            <div id="msTp1Val" class="mono" style="font-size: 1rem; font-weight: 800; color: #00e676; margin-top: 2px;">51,340.0</div>
+            <div id="msTp1Pts" style="font-size: 0.68rem; color: #00e676; margin-top: 2px;">+115 pts (سقف VAH)</div>
+          </div>
+
+          <!-- TP2 -->
+          <div style="background: rgba(0, 230, 118, 0.08); border-right: 3px solid #00e676; border-radius: 8px; padding: 10px;">
+            <div style="font-size: 0.72rem; color: #94a3b8;">🟢 تارگت دوم (TP2)</div>
+            <div id="msTp2Val" class="mono" style="font-size: 1rem; font-weight: 800; color: #00e676; margin-top: 2px;">51,460.0</div>
+            <div id="msTp2Pts" style="font-size: 0.68rem; color: #00e676; margin-top: 2px;">+235 pts (دیوار بوک‌مپ)</div>
+          </div>
+
+          <!-- TP3 -->
+          <div style="background: rgba(255, 215, 0, 0.08); border-right: 3px solid #ffd700; border-radius: 8px; padding: 10px;">
+            <div style="font-size: 0.72rem; color: #94a3b8;">🏆 تارگت سوم (TP3)</div>
+            <div id="msTp3Val" class="mono" style="font-size: 1rem; font-weight: 800; color: #ffd700; margin-top: 2px;">51,635.0</div>
+            <div id="msTp3Pts" style="font-size: 0.68rem; color: #ffd700; margin-top: 2px;">+410 pts (رانر گلدمن)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9-PILLAR CONFLUENCE MATRIX GRID -->
+      <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <strong style="color: #ffd700; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+            <span>📋</span> ماتریس ارزیابی همگرایی ۹ گانه (Confluence Matrix Checklist)
+          </strong>
+          <span id="msConsensusRatio" style="font-size: 0.72rem; color: #94a3b8;">۸ از ۹ ابزار هم‌جهت با خرید</span>
+        </div>
+
+        <div id="msChecklistGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px;">
+          <!-- Dynamically populated 9 pillar cards -->
+        </div>
+      </div>
+
+      <!-- Institutional Plain Persian Playbook -->
+      <div style="background: rgba(255, 215, 0, 0.04); border: 1px solid rgba(255, 215, 0, 0.2); border-radius: 10px; padding: 14px; font-size: 0.82rem; line-height: 1.8; color: #cbd5e1;">
+        <strong style="color: #ffd700; font-size: 0.86rem; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+          <span>💡</span> راهنمای عملیاتی اجرای سیگنال برای تریدرها (به زبان ساده):
+        </strong>
+        <p id="msPlaybookText" style="margin: 0;">
+          سیگنال خرید فوق با تایید همزمان دلتای مثبت نینجاتریدر، دیوارهای حمایتی بوک‌مپ، سفارشات بالای ۵۰ لات اتاس و واگرایی صعودی سییرا چارت صادر شده است. در محدوده اعلامی پوزیشن خرید باز کنید و با رسیدن به تارگت اول (+۱۱۵ پوینت)، نیمی از سود را ذخیره و مابقی را ریسک‌فری نمایید.
+        </p>
+      </div>
+
+    </div>
+
     <!-- ======================================================== -->
     <!-- 6 ADVANCED INSTITUTIONAL MODULES SUITE                   -->
     <!-- ======================================================== -->
@@ -1301,6 +1419,18 @@
         <div class="tab-card-icon">🌐</div>
         <div class="tab-card-name">۱۹. فاندامنتال & ژئوپلیتیک</div>
         <div class="tab-card-sub">ریسک جهانی GPR و سود ۳۰ سهم</div>
+      </button>
+
+      <button class="tab-card-btn" id="btnNavSierra" onclick="switchTab('sierrachartTab', this)">
+        <div class="tab-card-icon">📊</div>
+        <div class="tab-card-name">۲۰. سییرا چارت آنلاین</div>
+        <div class="tab-card-sub">Numbered Bars، پروفایل VBP و واگرایی دلتا</div>
+      </button>
+
+      <button class="tab-card-btn" id="btnNavMasterSignal" onclick="switchTab('masterSignalTab', this)" style="border: 1px solid rgba(255, 215, 0, 0.4); background: linear-gradient(135deg, rgba(255, 215, 0, 0.12), rgba(0, 210, 255, 0.08));">
+        <div class="tab-card-icon">👑</div>
+        <div class="tab-card-name" style="color: #ffd700; font-weight: 800;">۲۱. کادر تخصصی سیگنال‌دهی</div>
+        <div class="tab-card-sub" style="color: #cbd5e1;">همگرایی همزمان ۹ ابزار نهادی</div>
       </button>
     </div>
 
@@ -1891,7 +2021,8 @@
 
         <!-- Quick Prompt Pills -->
         <div class="chat-quick-prompts">
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('توضیح کامل ۱۵ ماژول سایت رو برام بگو برای فرد مبتدی')" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border-color: rgba(255, 215, 0, 0.4); font-weight: 800;">🎓 راهنمای ماژول‌های سایت برای مبتدیان</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('سیگنال جامع و ستاپ ۹ گانه همگرا چیه؟')" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(0, 210, 255, 0.25)); color: #ffd700; border-color: #ffd700; font-weight: 900;">👑 کادر تخصصی سیگنال‌دهی همگرا</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('سییرا چارت و پروفایل vbp چی میگه؟')" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-weight: 800;">📊 سییرا چارت (Sierra Chart)</button>
           <button class="chat-prompt-pill" onclick="sendQuickPrompt('نینجاتریدر و فوت پرینت کلاسترها چی میگه؟')" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border-color: rgba(0, 210, 255, 0.4); font-weight: 800;">🎯 نینجاتریدر و فوت‌پرینت</button>
           <button class="chat-prompt-pill" onclick="sendQuickPrompt('اتاس و معاملات بزرگ نهادی بالای ۵۰ لات چی میگه؟')" style="background: rgba(255, 140, 0, 0.15); color: #fb923c; border-color: rgba(255, 140, 0, 0.4); font-weight: 800;">⚡ اتاس و معاملات بزرگ</button>
           <button class="chat-prompt-pill" onclick="sendQuickPrompt('کوانت تاور و مارکت پروفایل TPO و نودها چیه؟')" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.4); font-weight: 800;">🏛️ کوانت‌تاور و مارکت پروفایل</button>
@@ -1900,8 +2031,7 @@
           <button class="chat-prompt-pill" onclick="sendQuickPrompt('گزارش ۶ روزه و ۶ هفته ای تعهدات cot چی میگه؟')" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border-color: rgba(0, 210, 255, 0.35); font-weight: 800;">📜 تعهدات COT وال‌استریت</button>
           <button class="chat-prompt-pill" onclick="sendQuickPrompt('دستور ورود و ستاپ پوزیشن چیه؟')" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border-color: rgba(0, 230, 118, 0.35); font-weight: 800;">⚡ ستاپ همگام ورود/SL/TP</button>
           <button class="chat-prompt-pill" onclick="sendQuickPrompt('استراتژی معامله داوجونز با وین ریت ۸۰ درصد چطوریه؟')" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.35); font-weight: 800;">🏆 استراتژی وین‌ریت ۸۰٪</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('ساعت سشن طلایی و Killzone نیویورک چطوره؟')" style="background: rgba(255, 179, 0, 0.15); color: #ffb300; border-color: rgba(255, 179, 0, 0.35); font-weight: 800;">🕒 سشن طلایی NY Killzone</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('چه حجم لات و اهرمی برای حسابم امنه؟')" style="background: rgba(250, 204, 21, 0.15); color: #facc15; border-color: rgba(250, 204, 21, 0.35); font-weight: 800;">💼 محاسبه حجم لات کِلی</button>
+          <button class="chat-prompt-pill" onclick="sendQuickPrompt('توضیح کامل ۱۵ ماژول سایت رو برام بگو برای فرد مبتدی')" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border-color: rgba(255, 215, 0, 0.4); font-weight: 800;">🎓 راهنمای ماژول‌های سایت برای مبتدیان</button>
         </div>
 
         <!-- Chat Messages Container -->
@@ -2376,6 +2506,14 @@
             </div>
           </div>
         </div>
+
+        <!-- Educational Helper Box for NinjaTrader -->
+        <div style="margin-top: 14px; background: rgba(0, 210, 255, 0.05); border: 1px solid rgba(0, 210, 255, 0.2); border-radius: 8px; padding: 14px; font-size: 0.8rem; line-height: 1.8; color: #cbd5e1;">
+          <strong style="color: #ffd700;">💡 آموزش ساده نینجاتریدر برای مبتدیان:</strong><br>
+          • <strong>فوت‌پرینت (Footprint):</strong> سمت راست هر کندل حجم خرید مارکت (سبز) و سمت چپ حجم فروش مارکت (قرمز) را نشان می‌دهد.<br>
+          • <strong>کادر طلایی (POC):</strong> بیشترین حجم قراردادهای مبادله‌شده در کندل است که مانند یک حمایت/مقاومت سنگی عمل می‌کند.<br>
+          • <strong>دلتای تجمیعی (CVD):</strong> تفاوت کل خریداران و فروشندگان است؛ وقتی CVD مثبت و صعودی باشد، به هیچ وجه پوزیشن فروش باز نکنید!
+        </div>
       </div>
     </div>
 
@@ -2427,6 +2565,14 @@
         <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 14px; font-size: 0.82rem; line-height: 1.8;">
           <strong style="color: #fb923c;">🧭 ارزیابی شتاب معاملات اتاس:</strong>
           <span id="atasVerdictText" style="color: #cbd5e1; margin-right: 6px;">در حال پردازش داده‌های نوار سفارشات...</span>
+        </div>
+
+        <!-- Educational Helper Box for ATAS -->
+        <div style="margin-top: 14px; background: rgba(255, 140, 0, 0.05); border: 1px solid rgba(255, 140, 0, 0.2); border-radius: 8px; padding: 14px; font-size: 0.8rem; line-height: 1.8; color: #cbd5e1;">
+          <strong style="color: #ffd700;">💡 آموزش ساده اتاس برای مبتدیان:</strong><br>
+          • <strong>بلاک‌تریدها (Big Trades > 50 Lots):</strong> معاملات موسسات مالی و هج‌فاندها هستند. تریدرهای خرد معمولاً ۰.۱ تا ۲ لات معامله می‌کنند؛ دیدن اردرهای ۱۰۰ لاتی نشان از ورود فیل‌های بازار دارد!<br>
+          • <strong>عدم تعادل قطری ۳۰۰٪:</strong> یعنی خریداران با قدرتی ۳ برابر بیشتر از فروشندگان وارد شده‌اند که نشانه شروع یک جهش قیمتی سریع است.<br>
+          • <strong>سرعت نوار (Speed of Tape):</strong> تپش قلب بازار؛ وقتی سرعت از ۶۰ تیک در ثانیه عبور می‌کند، نشانه تزریق نقدینگی شدید در وال‌استریت است.
         </div>
       </div>
     </div>
@@ -2487,6 +2633,14 @@
         <div id="qtVerdictText" style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px; font-size: 0.8rem; line-height: 1.8; color: #cbd5e1;">
           در حال ارزیابی جریان حراج کوانت‌تاور...
         </div>
+
+        <!-- Educational Helper Box for Quantower -->
+        <div style="margin-top: 14px; background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 8px; padding: 14px; font-size: 0.8rem; line-height: 1.8; color: #cbd5e1;">
+          <strong style="color: #ffd700;">💡 آموزش ساده کوانت‌تاور برای مبتدیان:</strong><br>
+          • <strong>ناحیه ارزش ۷۰٪ (Value Area):</strong> ۷۰ درصد حجم روز گذشته در این بازه معامله شده است. کف آن (VAL) حمایت محکم و سقف آن (VAH) هدف سود است.<br>
+          • <strong>نقطه کنترل (VPOC):</strong> قیمتی که بیشترین زمان و حجم در آن سپری شده؛ اگر قیمت زیر آن باز شود و به سمت بالا بشکند، سیگنال لانگ قطعی است.<br>
+          • <strong>اسپرد سنتتیک داو / اس‌اندپی:</strong> مقایسه داوجونز با ۵۰۰ شرکت برتر آمریکا؛ اگر داو قوی‌تر باشد، لیدرهای صنعتی رهبر بازار هستند.
+        </div>
       </div>
     </div>
 
@@ -2534,6 +2688,106 @@
 
         <div id="geoShockwaveText" style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px; font-size: 0.82rem; line-height: 1.8; color: #cbd5e1;">
           در حال ارزیابی احتمال شوک‌های غیرمنتظره به وال‌استریت...
+        </div>
+
+        <!-- Educational Helper Box for Geopolitics -->
+        <div style="margin-top: 14px; background: rgba(255, 61, 113, 0.05); border: 1px solid rgba(255, 61, 113, 0.2); border-radius: 8px; padding: 14px; font-size: 0.8rem; line-height: 1.8; color: #cbd5e1;">
+          <strong style="color: #ffd700;">💡 آموزش ساده ژئوپلیتیک و فاندامنتال برای مبتدیان:</strong><br>
+          • <strong>شاخص ریسک جهانی GPR:</strong> اگر عدد شاخص بالای ۲۰۰ برود، هج‌فاندها به حالت تدافعی می‌روند و سهام را می‌فروشند تا طلا و دلار بخرند.<br>
+          • <strong>جریان پناهگاه امن (Safe Haven):</strong> جهش همزمان طلا و بازده اوراق قرضه هشدار خروج پول از بورس نیویورک است.<br>
+          • <strong>مقسوم‌علیه داو (Divisor = 0.1517):</strong> هر ۱ دلار نوسان در قیمت ۵ غول اول (مثل گلدمن ساکس و یونایتدهلث)، مستقیماً ۶.۵۹ پوینت کل شاخص داوجونز را حرکت می‌دهد!
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 20: SIERRA CHART LIVE TERMINAL ==================== -->
+    <div id="sierrachartTab" class="tab-pane">
+      <div class="content-card" style="border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(10, 16, 28, 0.95); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <div class="card-header-flex">
+          <div>
+            <h3 class="card-title" style="display: flex; align-items: center; gap: 8px;">
+              <span>📊</span> ترمینال آنلاین سییرا چارت داوجونز (Sierra Chart VBP & Numbered Bars)
+            </h3>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">
+              چارت میله‌ای عددی تیک‌به‌تیک (Numbered Bars)، پروفایل عمودی حجم بر اساس قیمت (Volume by Price - VBP) و ردیاب واگرایی دلتا (Delta Divergence)
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <span id="scDivergenceBadge" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 4px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 800;">
+              واگرایی: در حال محاسبه...
+            </span>
+            <span id="scNetDeltaBadge" class="mono" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; padding: 4px 12px; border-radius: 6px; font-size: 0.82rem; font-weight: 800;">
+              دلتای سشن: ---
+            </span>
+          </div>
+        </div>
+
+        <!-- Sierra Chart Grid: Numbered Bars on Left, Volume by Price on Right -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin-bottom: 18px;">
+          <!-- Numbered Bars -->
+          <div style="background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-size: 0.85rem; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+                <span>🔢</span> چارت میله‌ای عددی (Numbered Bars Bid x Ask)
+              </span>
+              <span style="font-size: 0.72rem; color: #ffd700;">کندل‌های ۱۵ دقیقه‌ای</span>
+            </div>
+            <div id="scNumberedBarsContainer" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px;">
+              <!-- Dynamic Numbered Bars -->
+            </div>
+          </div>
+
+          <!-- Volume by Price (VBP) Vertical Profile -->
+          <div style="background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-size: 0.85rem; font-weight: 800; color: #00e676; display: flex; align-items: center; gap: 6px;">
+                <span>📈</span> پروفایل حجم بر اساس قیمت (Volume by Price - VBP)
+              </span>
+              <span style="font-size: 0.72rem; color: #94a3b8;">تفکیک HVN و LVN</span>
+            </div>
+            <div id="scVbpContainer" style="display: flex; flex-direction: column; gap: 4px;">
+              <!-- Dynamic VBP Rows -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Educational & Plain Persian Guide for Sierra Chart -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px;">
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px; font-size: 0.82rem; line-height: 1.8;">
+            <strong style="color: #38bdf8;">🧭 واگرایی دلتا و تحلیل جذب نهادی:</strong>
+            <div id="scVerdictText" style="color: #cbd5e1; margin-top: 4px;">
+              در حال ارزیابی واگرایی‌های دلتای تجمیعی و رد قیمت در سطوح LVN...
+            </div>
+          </div>
+          <div style="background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 14px; font-size: 0.8rem; line-height: 1.8; color: #cbd5e1;">
+            <strong style="color: #ffd700;">💡 آموزش ساده سییرا چارت:</strong><br>
+            • <strong>کادرهای طلایی در کندل‌های عددی (POC):</strong> محلی است که بیشترین لات در آن رد و بدل شده است.<br>
+            • <strong>گره‌های HVN (سبز):</strong> مانند آهنربا عمل می‌کنند و قیمت پس از نوسان دوباره به آن‌ها برمی‌گردد.<br>
+            • <strong>گره‌های LVN (قرمز):</strong> مناطقی هستند که قیمت در کسری از ثانیه از آن‌ها عبور می‌کند (سطوح فرار).
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 21: MASTER SIGNAL DEDICATED TAB ==================== -->
+    <div id="masterSignalTab" class="tab-pane">
+      <div class="content-card" style="border: 1.5px solid rgba(255, 215, 0, 0.4); background: rgba(14, 12, 26, 0.95); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <div class="card-header-flex">
+          <div>
+            <h3 class="card-title" style="display: flex; align-items: center; gap: 8px; color: #ffd700;">
+              <span>👑</span> ترمینال سیگنال‌دهی جامع همگرا (Master Institutional Signal Engine)
+            </h3>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">
+              سنتز زنده و متمرکز تمام ۹ پلتفرم معاملاتی به همراه چک‌لیست تایید نهادی، نقاط دقیق ورود، خروج، مدیریت پوزیشن و ریسک
+            </div>
+          </div>
+          <span id="tabMsGradeBadge" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1px solid #ffd700; padding: 4px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 800;">
+            همگرایی: ۸۹٪ (گرید A+)
+          </span>
+        </div>
+
+        <div id="tabMsDynamicContainer">
+          <!-- Populated dynamically by fetchMasterSignalData -->
         </div>
       </div>
     </div>
@@ -2637,6 +2891,12 @@
             </div>
             <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
               <strong style="color: #ff3366;">۱۹. فاندامنتال & ژئوپلیتیک:</strong> دماسنج ریسک جهانی GPR، کانون‌های بحران و سلامت ۳۰ شرکت داو.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+              <strong style="color: #38bdf8;">۲۰. سییرا چارت آنلاین:</strong> چارت عددی Numbered Bars، پروفایل عمودی VBP و شکار واگرایی دلتا.
+            </div>
+            <div style="background: rgba(255,215,0,0.06); border: 1px solid rgba(255,215,0,0.3); padding: 10px; border-radius: 8px;">
+              <strong style="color: #ffd700;">۲۱. کادر تخصصی سیگنال‌دهی:</strong> سنتز همگام ۹ ابزار وال‌استریت، محاسبه اتوماتیک ورود، SL و ۳ تارگت سود.
             </div>
           </div>
         </div>
@@ -2881,6 +3141,10 @@
         fetchQuantowerData();
       } else if (tabId === 'geopoliticsTab') {
         fetchGeopoliticsData();
+      } else if (tabId === 'sierrachartTab') {
+        fetchSierraChartData();
+      } else if (tabId === 'masterSignalTab') {
+        fetchMasterSignalData();
       }
     }
 
@@ -4798,6 +5062,201 @@
       }
     }
 
+    // ========================================================
+    // MODULE 20: SIERRA CHART LIVE TERMINAL
+    // ========================================================
+    async function fetchSierraChartData() {
+      try {
+        const res = await fetch('/api/dow/sierrachart');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.ok) return;
+
+        // Divergence Badge
+        const divBadge = document.getElementById('scDivergenceBadge');
+        if (divBadge && data.delta_divergence) {
+          const dd = data.delta_divergence;
+          divBadge.textContent = `واگرایی: ${dd.type_fa}`;
+          divBadge.style.color = dd.color;
+          divBadge.style.borderColor = dd.color;
+        }
+
+        // Net Delta Badge
+        const ndBadge = document.getElementById('scNetDeltaBadge');
+        if (ndBadge && data.cumulative_delta) {
+          const cd = data.cumulative_delta;
+          ndBadge.textContent = `دلتای سشن: ${cd.session_net_delta >= 0 ? '+' : ''}${cd.session_net_delta.toLocaleString()} لات (${cd.pace})`;
+          ndBadge.style.color = cd.session_net_delta >= 0 ? '#00e676' : '#ff3366';
+        }
+
+        // Numbered Bars Container
+        const nbCont = document.getElementById('scNumberedBarsContainer');
+        if (nbCont && data.numbered_bars) {
+          nbCont.innerHTML = data.numbered_bars.map(bar => `
+            <div style="min-width: 140px; background: rgba(0,0,0,0.4); border: 1px solid ${bar.is_bullish ? 'rgba(0,230,118,0.3)' : 'rgba(255,51,102,0.3)'}; border-radius: 6px; padding: 8px; font-size: 0.72rem; font-family: var(--font-mono);">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-weight: 700; color: ${bar.is_bullish ? '#00e676' : '#ff3366'};">
+                <span>${bar.time}</span>
+                <span>${bar.delta >= 0 ? '+' : ''}${bar.delta} Δ</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                ${bar.levels.map(l => `
+                  <div style="display: flex; justify-content: space-between; padding: 2px 4px; background: ${l.is_poc ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255,255,255,0.02)'}; border: ${l.is_poc ? '1px solid #ffd700' : 'none'}; border-radius: 3px;">
+                    <span style="color: #00e676;">${l.bid_vol}</span>
+                    <span style="color: ${l.is_poc ? '#ffd700' : '#cbd5e1'}; font-weight: ${l.is_poc ? '800' : 'normal'};">${Number(l.price).toLocaleString()}</span>
+                    <span style="color: #ff3366;">${l.ask_vol}</span>
+                  </div>
+                `).join('')}
+              </div>
+              <div style="margin-top: 4px; text-align: center; color: #94a3b8; font-size: 0.68rem; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 3px;">
+                مجموع: ${Number(bar.total_volume).toLocaleString()} لات
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // Volume by Price (VBP) Container
+        const vbpCont = document.getElementById('scVbpContainer');
+        if (vbpCont && data.volume_by_price) {
+          vbpCont.innerHTML = data.volume_by_price.map(lvl => {
+            const isHvn = lvl.node_type === 'HVN';
+            const isLvn = lvl.node_type === 'LVN';
+            const barColor = isHvn ? '#00e676' : (isLvn ? '#ff3366' : '#00d2ff');
+            return `
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 0.72rem; font-family: var(--font-mono);">
+                <span style="width: 58px; text-align: left; color: ${lvl.is_poc ? '#ffd700' : '#fff'}; font-weight: ${lvl.is_poc ? '800' : 'normal'};">
+                  ${Number(lvl.price).toLocaleString()}
+                </span>
+                <div style="flex: 1; height: 14px; background: rgba(255,255,255,0.04); border-radius: 3px; overflow: hidden; position: relative;">
+                  <div style="width: ${lvl.vol_pct}%; height: 100%; background: ${barColor}44; border-right: 2px solid ${barColor};"></div>
+                  <span style="position: absolute; right: 6px; top: 0; bottom: 0; display: flex; align-items: center; font-size: 0.68rem; color: #cbd5e1;">
+                    ${lvl.total_vol} لات ${lvl.is_poc ? '⭐ VPOC' : (isHvn ? '🧲 HVN' : (isLvn ? '⚡ LVN' : ''))}
+                  </span>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        const verdEl = document.getElementById('scVerdictText');
+        if (verdEl && data.verdict_fa) {
+          verdEl.innerHTML = data.verdict_fa;
+        }
+      } catch (e) {
+        console.error('Error fetching Sierra Chart data:', e);
+      }
+    }
+
+    // ========================================================
+    // MASTER INSTITUTIONAL SIGNAL ENGINE (9-PILLAR CONFLUENCE)
+    // ========================================================
+    async function fetchMasterSignalData() {
+      try {
+        const res = await fetch('/api/dow/master-signal');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.ok) return;
+
+        // Confluence Score Badge
+        const scoreBadge = document.getElementById('msConfluenceScoreBadge');
+        if (scoreBadge) {
+          scoreBadge.textContent = `همگرایی: ${data.confluence_score}٪ (${data.confluence_grade})`;
+          scoreBadge.style.color = data.dir_color;
+          scoreBadge.style.borderColor = data.dir_color;
+        }
+
+        const tabGradeBadge = document.getElementById('tabMsGradeBadge');
+        if (tabGradeBadge) {
+          tabGradeBadge.textContent = `همگرایی: ${data.confluence_score}٪ (${data.confluence_grade})`;
+          tabGradeBadge.style.color = data.dir_color;
+          tabGradeBadge.style.borderColor = data.dir_color;
+        }
+
+        // Time Badge
+        const timeBadge = document.getElementById('msTimeBadge');
+        if (timeBadge && data.updated_at) {
+          timeBadge.textContent = `ساعت ایران: ${data.updated_at}`;
+        }
+
+        // Direction Text
+        const dirEl = document.getElementById('msDirectionText');
+        if (dirEl) {
+          dirEl.innerHTML = `<span>${data.direction === 'BUY' ? '🟢' : (data.direction === 'SELL' ? '🔴' : '🟡')}</span> ${data.direction_fa}`;
+          dirEl.style.color = data.dir_color;
+        }
+
+        // Setup Subtitle
+        const subEl = document.getElementById('msSetupSubtitle');
+        if (subEl) subEl.textContent = data.setup_title;
+
+        // Lot Size Badge
+        const lotEl = document.getElementById('msLotSizeBadge');
+        if (lotEl) lotEl.textContent = `حجم پیشنهادی: ${data.recommended_lot_size}`;
+
+        // Levels
+        const ezEl = document.getElementById('msEntryZoneVal');
+        if (ezEl) ezEl.textContent = data.entry_zone;
+
+        const slEl = document.getElementById('msStopLossVal');
+        if (slEl) slEl.textContent = Number(data.stop_loss).toLocaleString();
+
+        const slPtsEl = document.getElementById('msStopLossPts');
+        if (slPtsEl) slPtsEl.textContent = `-${data.stop_loss_distance} pts (پشت سنگر نقدینگی)`;
+
+        const tp1El = document.getElementById('msTp1Val');
+        if (tp1El) tp1El.textContent = Number(data.take_profit_1).toLocaleString();
+
+        const tp1PtsEl = document.getElementById('msTp1Pts');
+        if (tp1PtsEl) tp1PtsEl.textContent = `+${data.take_profit_1_distance} pts (سقف VAH کوانت‌تاور)`;
+
+        const tp2El = document.getElementById('msTp2Val');
+        if (tp2El) tp2El.textContent = Number(data.take_profit_2).toLocaleString();
+
+        const tp2PtsEl = document.getElementById('msTp2Pts');
+        if (tp2PtsEl) tp2PtsEl.textContent = `+${data.take_profit_2_distance} pts (دیوار بوک‌مپ BSL)`;
+
+        const tp3El = document.getElementById('msTp3Val');
+        if (tp3El) tp3El.textContent = Number(data.take_profit_3).toLocaleString();
+
+        const tp3PtsEl = document.getElementById('msTp3Pts');
+        if (tp3PtsEl) tp3PtsEl.textContent = `+${data.take_profit_3_distance} pts (تارگت رانر وال‌استریت)`;
+
+        // 9-Pillar Checklist Grid
+        const gridEl = document.getElementById('msChecklistGrid');
+        if (gridEl && data.checklist) {
+          gridEl.innerHTML = data.checklist.map(c => `
+            <div style="background: rgba(255,255,255,0.03); border-right: 3px solid ${c.color}; border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="color: #fff; font-size: 0.8rem; display: flex; align-items: center; gap: 5px;">
+                  <span>${c.icon}</span> ${c.name}
+                </strong>
+                <span style="font-size: 0.72rem; color: ${c.color}; font-weight: 800; background: ${c.color}15; padding: 2px 6px; border-radius: 4px;">
+                  ${c.signal_fa}
+                </span>
+              </div>
+              <div style="font-size: 0.73rem; color: #94a3b8; line-height: 1.5;">
+                ${c.details}
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // Playbook Text
+        const pbEl = document.getElementById('msPlaybookText');
+        if (pbEl && data.executive_playbook) {
+          pbEl.innerHTML = data.executive_playbook;
+        }
+
+        // Tab 21 clone container if active
+        const tabCont = document.getElementById('tabMsDynamicContainer');
+        const heroCockpit = document.getElementById('masterSignalCockpit');
+        if (tabCont && heroCockpit) {
+          tabCont.innerHTML = heroCockpit.innerHTML;
+        }
+      } catch (e) {
+        console.error('Error fetching Master Signal data:', e);
+      }
+    }
+
     // Refresh Elite Modules every 20 seconds
     setInterval(fetchEliteModules, 20000);
 
@@ -4808,7 +5267,12 @@
       else if (_activeTab === 'atasTab') fetchAtasData();
       else if (_activeTab === 'quantowerTab') fetchQuantowerData();
       else if (_activeTab === 'geopoliticsTab') fetchGeopoliticsData();
+      else if (_activeTab === 'sierrachartTab') fetchSierraChartData();
+      else if (_activeTab === 'masterSignalTab') fetchMasterSignalData();
     }, 5000);
+
+    // Refresh Master Signal Cockpit every 10 seconds
+    setInterval(fetchMasterSignalData, 10000);
 
 
     // 15. INITIALIZATION ON LOAD
@@ -4816,8 +5280,9 @@
       // 1. Instant zero-latency rendering of clock & session bars
       updateLiveClocksAndCountdowns();
 
-      // 2. Load the PRIMARY hero view immediately (< 200ms)
+      // 2. Load the PRIMARY hero view & Master Signal Cockpit immediately (< 200ms)
       fetchCompositeSignal('1h');
+      fetchMasterSignalData();
       initTradingViewChart();
 
       // 3. Start Live 60-FPS Bookmap Streaming Engine
