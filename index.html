@@ -264,23 +264,24 @@
 
     .confluence-checklist {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 8px;
-      background: rgba(0, 0, 0, 0.35);
+      background: rgba(0, 0, 0, 0.4);
       padding: 12px;
-      border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      margin-top: 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 215, 0, 0.2);
+      margin-top: 8px;
     }
 
     .checklist-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 6px 10px;
+      padding: 7px 10px;
       border-radius: 6px;
-      background: rgba(255, 255, 255, 0.02);
-      font-size: 0.74rem;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.73rem;
     }
 
     .target-box {
@@ -811,24 +812,20 @@
         </div>
       </div>
 
-      <!-- 5-MODULE CONFLUENCE CHECKLIST -->
+      <!-- 15-MODULE INSTITUTIONAL CONFLUENCE MATRIX -->
+      <div style="margin-top: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <span style="font-size: 0.84rem; font-weight: 800; color: #ffd700; display: flex; align-items: center; gap: 6px;">
+          <span>⚡</span> ماتریس اجماع و همگرایی ۱۵ ماژول وال‌استریت (15-Pillar Confluence Matrix)
+        </span>
+        <span id="heroConfluenceScore" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1px solid #ffd700; padding: 3px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 800;">
+          ۱۵ ماژول در حال همگام‌سازی...
+        </span>
+      </div>
       <div class="confluence-checklist" id="heroConfluenceChecklist">
-        <div class="checklist-item">
-          <span>🏛️ ائتلاف بانک‌های وال‌استریت (GS, JPM, V):</span>
-          <strong id="chkMod1" style="color: #00e676;">🟢 تایید ائتلاف (+72%)</strong>
-        </div>
-        <div class="checklist-item">
-          <span>🌊 اردر فلو و شکاف ارزش FVG:</span>
-          <strong id="chkMod2" style="color: #00e676;">🟢 عدم تعادل خریداران</strong>
-        </div>
-        <div class="checklist-item">
-          <span>🛡️ سپر اخبار کلان و بازده اوراق:</span>
-          <strong id="chkMod3" style="color: #00e676;">🟢 فیوز سبز (بدون ریسک CPI)</strong>
-        </div>
-        <div class="checklist-item">
-          <span>📈 پرایس اکشن و شکست ساختار BOS:</span>
-          <strong id="chkMod4" style="color: #00e676;">🟢 شکست ساختار CHoCH</strong>
-        </div>
+        <div class="checklist-item"><span>🏛️ ائتلاف بانک‌های وال‌استریت:</span><strong style="color: #00e676;">🟢 تایید ائتلاف</strong></div>
+        <div class="checklist-item"><span>🌊 جریان سفارشات و خلأ FVG:</span><strong style="color: #00e676;">🟢 عدم تعادل خرید</strong></div>
+        <div class="checklist-item"><span>🛡️ سپر اخبار کلان و فدرال رزرو:</span><strong style="color: #00e676;">🟢 فیوز سبز</strong></div>
+        <div class="checklist-item"><span>🔥 بوک‌مپ و عمق نقدینگی:</span><strong style="color: #00e676;">🟢 تراز دلتا مثبت</strong></div>
       </div>
 
       <!-- 6-FILTER INSTITUTIONAL VALIDATION BAR -->
@@ -1368,6 +1365,47 @@
                 <!-- Dynamically populated from history_6_weeks -->
               </tbody>
             </table>
+          </div>
+
+          <!-- 6-DAY DAILY CME/CBOT INSTITUTIONAL SETTLEMENT & FLOW TRACKER -->
+          <div style="margin-top: 24px; padding-top: 18px; border-top: 1px dashed rgba(255, 255, 255, 0.12);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <h4 style="font-size: 0.96rem; color: #00d2ff; display: flex; align-items: center; gap: 6px;">
+                  <span>📅</span> پایش تعهدات روزانه وال‌استریت (۶ روز کاری اخیر براساس تسویه رسمی CME/CBOT)
+                </h4>
+                <div style="font-size: 0.74rem; color: #94a3b8;">
+                  ردیابی روز‌به‌روز ورود و خروج پول هوشمند، تغییرات بهره باز روزانه و نسبت معاملات خریداران سازمانی
+                </div>
+              </div>
+              <span id="cotDailySummaryBadge" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border: 1px solid #00d2ff; padding: 4px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 800;">
+                ۶ روز اخیر: +۴,۸۲۰ قرارداد خرید خالص
+              </span>
+            </div>
+
+            <div style="overflow-x: auto;">
+              <table class="data-table" style="font-size: 0.78rem;">
+                <thead>
+                  <tr>
+                    <th>روز کاری / تاریخ</th>
+                    <th>سشن معاملاتی</th>
+                    <th>حجم کل روزانه (Volume)</th>
+                    <th>تسویه رسمی CBOT</th>
+                    <th>تغییرات روزانه بهره باز (Δ OI)</th>
+                    <th>جریان نقدینگی نهادی (Net Flow)</th>
+                    <th>نسبت خریدار/فروشنده</th>
+                    <th>سیگنال روز</th>
+                  </tr>
+                </thead>
+                <tbody id="cotDailyHistoryTableBody">
+                  <!-- Dynamically populated from history_6_days -->
+                </tbody>
+              </table>
+            </div>
+
+            <div id="cotDailyVerdictBox" style="margin-top: 12px; background: rgba(0, 210, 255, 0.05); border: 1px solid rgba(0, 210, 255, 0.2); border-radius: 8px; padding: 12px; font-size: 0.8rem; line-height: 1.8; color: #e2e8f0;">
+              در حال پردازش داده‌های تسویه روزانه ۶ روز کاری گذشته...
+            </div>
           </div>
         </div>
       </div>
@@ -2272,9 +2310,9 @@
           const chkHtml = data.checklist.map(c => {
             const badgeColor = c.status === 'pass' ? '#00e676' : (c.status === 'fail' ? '#ff3366' : '#ffd166');
             return `
-            <div class="checklist-item">
-              <span>${c.name}:</span>
-              <strong style="color: ${badgeColor};">${c.badge}</strong>
+            <div class="checklist-item" title="${c.detail || ''}">
+              <span style="color: #cbd5e1; font-weight: 600;">${c.name}:</span>
+              <strong style="color: ${badgeColor}; font-size: 0.72rem; text-align: left;">${c.badge}</strong>
             </div>
             `;
           }).join('');
@@ -2641,6 +2679,43 @@
         const convBadge = document.getElementById('cotConvictionBadge');
         if (convBadge && tAnalysis.conviction_score) {
           convBadge.textContent = `امتیاز انباشت ۶ هفته‌ای: ${tAnalysis.conviction_score}٪ (${tAnalysis.conviction_grade})`;
+        }
+
+        // 6-Day Daily Institutional Flow Table
+        const dailyTable = document.getElementById('cotDailyHistoryTableBody');
+        const dailyHist = data.history_6_days || [];
+        if (dailyTable && dailyHist.length) {
+          dailyTable.innerHTML = dailyHist.map(d => `
+            <tr>
+              <td><strong style="color: #00d2ff;">روز ${d.day_num}</strong> (${d.date_fa || d.date})</td>
+              <td style="color: #cbd5e1;">${d.session}</td>
+              <td class="mono" style="color: #fff;">${Number(d.daily_volume).toLocaleString()}</td>
+              <td class="mono" style="color: #ffd700;">$${Number(d.cbot_settlement).toLocaleString()}</td>
+              <td class="mono" style="color: ${d.oi_daily_delta >= 0 ? '#00e676' : '#ff3366'};">
+                ${d.oi_daily_delta >= 0 ? '+' : ''}${Number(d.oi_daily_delta).toLocaleString()}
+              </td>
+              <td class="mono" style="color: ${d.inst_net_flow >= 0 ? '#00e676' : '#ff3366'}; font-weight: 800;">
+                ${d.inst_net_flow >= 0 ? '+' : ''}${Number(d.inst_net_flow).toLocaleString()}
+              </td>
+              <td class="mono" style="font-size: 0.74rem;">
+                <span style="color: #00e676;">${d.long_pct}%</span> / <span style="color: #ff3366;">${d.short_pct}%</span>
+              </td>
+              <td><span style="font-weight: 700; color: ${d.inst_net_flow >= 0 ? '#00e676' : '#ffd166'};">${d.flow_bias}</span></td>
+            </tr>
+          `).join('');
+        }
+
+        const dSummary = data.daily_flow_summary_6d || {};
+        const dailyBadge = document.getElementById('cotDailySummaryBadge');
+        if (dailyBadge && dSummary.total_6d_net_flow !== undefined) {
+          dailyBadge.textContent = `۶ روز اخیر: ${dSummary.total_6d_net_flow >= 0 ? '+' : ''}${Number(dSummary.total_6d_net_flow).toLocaleString()} قرارداد خالص (${dSummary.daily_conviction_score}٪ همگرایی)`;
+          dailyBadge.style.color = dSummary.total_6d_net_flow >= 0 ? '#00e676' : '#ff3366';
+          dailyBadge.style.borderColor = dSummary.total_6d_net_flow >= 0 ? '#00e676' : '#ff3366';
+        }
+
+        const dailyVBox = document.getElementById('cotDailyVerdictBox');
+        if (dailyVBox && dSummary.daily_verdict_fa) {
+          dailyVBox.innerHTML = `<strong>💡 نتیجه‌گیری پایش تعهدات روزانه (۶ روز اخیر وال‌استریت):</strong><br>${dSummary.daily_verdict_fa}`;
         }
       } catch (e) {
         console.error('Error fetching COT:', e);
