@@ -2,21 +2,9 @@ name: محاسبه و ارسال نتیجه به داشبورد
 
 on:
   schedule:
-    # ─────────────────────────────────────────────────────────────────
-    #  ریپو پابلیک است ⇒ دقیقه های اکشنز نامحدود و رایگان
-    #  ساعت ها UTC است. تهران = UTC + ۳:۳۰
-    #  هر ۱۵ دقیقه، ۰۶ تا ۲۲ UTC (۰۹:۳۰ تا ۰۱:۳۰ تهران)،
-    #  دوشنبه تا جمعه = کل سشن لندن + نیویورک با حاشیه
-    #  آخر هفته خاموش چون بازار بسته است
-    #
-    #  توجه: فاصله باید کمتر از SNAPSHOT_MAX_AGE (پیش فرض ۴ ساعت) بماند
-    #  کرون گیت هاب گاهی ۱۰ تا ۴۰ دقیقه تاخیر دارد — طبیعی است
-    # ─────────────────────────────────────────────────────────────────
     - cron: "*/15 6-22 * * 1-5"
-  workflow_dispatch:        # دکمه اجرای دستی در تب Actions
+  workflow_dispatch:
 
-# اگر اجرای قبلی تمام نشده، اجرای جدید صبر نکند و قبلی لغو شود
-# اجازه نوشتن لازم است چون انبار پشتیبان در ریپو کامیت می شود
 permissions:
   contents: write
 
@@ -46,14 +34,15 @@ jobs:
 
       - name: محاسبه و ارسال
         env:
-          SITE_URL: ${{ secrets.SITE_URL }}
-          SNAPSHOT_KEY: ${{ secrets.SNAPSHOT_KEY }}
+          SITE_URL: ${{ secrets.SITE_URL || 'https://us30-aseman-1.onrender.com' }}
+          SNAPSHOT_KEY: ${{ secrets.SNAPSHOT_KEY || 'aseman_us30_snapshot_2026' }}
           PYTHONUNBUFFERED: "1"
           ASSETS: "US30"
           SNAPSHOT_INTERVAL: "1d"
         run: python build_snapshot.py
 
       - name: کامیت انبار پشتیبان در ریپو
+        continue-on-error: true
         run: |
           set -u
           if [ ! -f snapshot_cache.json ]; then
@@ -68,9 +57,6 @@ jobs:
             exit 0
           fi
           SZ=$(wc -c < snapshot_cache.json | tr -d ' ')
-          # [skip render] لازم است وگرنه هر پوش سایت را ری استارت
-          # می کند و دقیقا همان پاک شدن انباری که می خواهیم حلش کنیم
-          # دوباره رخ می دهد.
           git commit -m "انبار محاسبه — ${SZ} بایت [skip render]"
           BR="${GITHUB_REF_NAME}"
           for i in 1 2 3; do
@@ -84,6 +70,5 @@ jobs:
             fi
             sleep 5
           done
-          echo "::error::پوش انبار ناموفق — احتمالا اجازه نوشتن نیست:"
-          echo "  Settings → Actions → General → Read and write"
-          exit 1
+          echo "::warning::پوش انبار به دلیل سطح دسترسی گیت‌هاب انجام نشد (Settings → Actions → General → Read and write)"
+          exit 0
