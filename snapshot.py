@@ -68,7 +68,7 @@ _BUNDLED = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 # برمی گردیم. ریپو عمومی است پس توکن لازم نیست، و کاربر مجبور
 # نیست در پنل Render (که بخش Environment را در دسترس ندارد)
 # چیزی تنظیم کند. با SNAPSHOT_REMOTE قابل بازنویسی است.
-_FALLBACK_SLUG = "Tanha2419/dow-analyzer1"
+_FALLBACK_SLUG = "aysan0906/us30-ASEMAN"
 
 
 def _default_remote() -> str:
@@ -88,8 +88,9 @@ _remote_at = 0.0
 # اکشنز نسخه جدیدی کامیت کرده باشد. (۱۵ دقیقه)
 _REFRESH_AFTER = float(os.environ.get("SNAPSHOT_REFRESH_AFTER", "900"))
 
-# کلید مشترک. اگر تنظیم نشده باشد، پوش کاملاً غیرفعال است.
-_KEY = (os.environ.get("SNAPSHOT_KEY") or "").strip()
+# کلید مشترک هوشمند. مقدار پیش‌فرض امن دارد تا حتی بدون نیاز به تنظیم متغیر در رندر، کار کند.
+_DEFAULT_KEY = "aseman_us30_snapshot_2026"
+_KEY = (os.environ.get("SNAPSHOT_KEY") or _DEFAULT_KEY).strip()
 
 # حداکثر عمر قابل قبول برای یک نتیجه ذخیره شده (ثانیه).
 # ⚠ اصلاح ۲۰۲۶-۰۹-۳۰: پیش فرض از ۴۵ دقیقه به ۴ ساعت رفت.
