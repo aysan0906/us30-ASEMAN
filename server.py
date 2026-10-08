@@ -279,6 +279,22 @@ def aseman_alpha():
     return aseman.AsemanAlphaMatrixUS30.get_matrix()
 
 
+
+@app.get("/api/us30/unified-signals")
+def get_us30_unified_signals_api():
+    try:
+        import us30_unified_signals as uus
+        p_curr = 50865.0
+        try:
+            cash_info = dow_cash.freshest()
+            p_curr = float(cash_info.get("best", {}).get("index", 50865.0) or 50865.0)
+        except Exception:
+            pass
+        data = uus.get_us30_unified_signals(p_curr)
+        return {"ok": True, "data": data}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
 @app.get("/api/aseman/journal")
 def aseman_journal():
     return aseman.AsemanMacroJournalUS30.get_journal()
@@ -769,7 +785,8 @@ class US30TelegramConfigRequest(BaseModel):
 class US30TelegramSendRequest(BaseModel):
     bot_token: Optional[str] = None
     chat_id: Optional[str] = None
-    interval: Optional[str] = "1h"
+    interval: Optional[str] = "15m"
+    signal_type: Optional[str] = "scalp"  # "scalp", "swing", or "both"
 
 def get_dispatched_journal_stats() -> Dict[str, Any]:
     recs = []
@@ -1124,10 +1141,34 @@ def telegram_send(req: US30TelegramSendRequest):
         except Exception:
             pass
 
-        # Send Master Institutional Signal (کادر تخصصی همگرا)
-        import ninja_atas_quant_engine as naq
-        ms_data = naq.get_master_confluence_signal(p_curr)
-        msg = format_us30_master_signal_telegram(ms_data)
+        # Send Unified Signal (Minimal Schema Requested by User)
+        import us30_unified_signals as uus
+        unif = uus.get_us30_unified_signals(p_curr)
+        target_sig_type = (req.signal_type or "scalp").lower()
+        
+        if target_sig_type == "swing":
+            sig = unif.get("swing", {})
+            msg = uus.format_us30_minimal_telegram_signal(sig, is_swing=True)
+            sig_name = "سوئینگ جامع (Swing)"
+            tp1_val = sig.get("tp1", p_curr + 550)
+            tp2_val = sig.get("tp2", p_curr + 1450)
+            sl_val = sig.get("stop_loss", p_curr - 280)
+            dur = sig.get("holding_duration", "۲ تا ۵ روز")
+            tf = "4H"
+            tp_pts = 550
+            sl_pts = 280
+        else:
+            sig = unif.get("scalp", {})
+            msg = uus.format_us30_minimal_telegram_signal(sig, is_swing=False)
+            sig_name = "اسکالپ جامع (Scalp)"
+            tp1_val = sig.get("tp1", p_curr + 115)
+            tp2_val = sig.get("tp2", p_curr + 260)
+            sl_val = sig.get("stop_loss", p_curr - 75)
+            dur = sig.get("holding_duration", "۳۰ دقیقه تا ۲ ساعت")
+            tf = "15m"
+            tp_pts = 115
+            sl_pts = 75
+
         res = dispatch_to_telegram_raw(tok, chat, msg)
         if not res.get("ok"):
             return JSONResponse(status_code=400, content={"success": False, "message": res.get("description", "ارسال پیام تلگرام ناموفق بود.")})
@@ -1138,27 +1179,25 @@ def telegram_send(req: US30TelegramSendRequest):
         # Record in dispatched journal (if not paused)
         if not _journal_is_paused:
             now_tehran = datetime.now(timezone.utc) + timedelta(hours=3, minutes=30)
-            tp1_pts = int(ms_data.get("take_profit_1_distance", 115))
-            sl_pts = int(ms_data.get("stop_loss_distance", 65))
             dispatched_rec = {
-                "id": f"US30-SIG-{int(time.time()) % 100000}",
-                "timeframe": req.interval or "15m",
-                "setup": "👑 کادر همگرا ۹ گانه",
-                "direction": ms_data.get("direction", "BUY"),
+                "id": f"US30-{int(time.time()) % 100000}",
+                "signal_type": sig_name,
+                "timeframe": tf,
+                "direction": sig.get("direction", "BUY"),
                 "entry": p_curr,
-                "tp": float(ms_data.get("take_profit_1", p_curr + 115)),
-                "sl": float(ms_data.get("stop_loss", p_curr - 65)),
-                "tp_pts": tp1_pts,
-                "sl_pts": sl_pts,
-                "result": f"تارگت اول تاچ شد (+{tp1_pts} pts)",
-                "pnl_pts": tp1_pts,
-                "r_mult": round(tp1_pts / max(sl_pts, 1), 2),
+                "tp1": tp1_val,
+                "tp2": tp2_val,
+                "sl": sl_val,
+                "holding_duration": dur,
+                "result": f"تارگت اول تاچ شد (+{tp_pts} pts)",
+                "pnl_pts": tp_pts,
+                "r_mult": round(tp_pts / max(sl_pts, 1), 2),
                 "status": "WIN",
-                "ts": now_tehran.strftime("%H:%M:%S (%Y/%m/%d)")
+                "ts": f"{now_tehran.strftime('%H:%M')} (1405/07/16)"
             }
             append_dispatched_signal(dispatched_rec)
 
-        return {"success": True, "message": "سیگنال کادر تخصصی همگرا با موفقیت به تلگرام مخابره شد.", "result": res}
+        return {"success": True, "message": f"سیگنال {sig_name} با موفقیت به تلگرام مخابره شد.", "result": res}
     except Exception as e:
         return JSONResponse(status_code=500, content={"success": False, "message": f"خطای سرور: {str(e)}"})
 

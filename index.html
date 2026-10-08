@@ -2320,18 +2320,83 @@
               📌 هر سیگنالی که با دکمه ارسال به تلگرام مخابره شود، مستقیماً در این جدول بایگانی می‌شود.
             </div>
           </div>
-          <div style="overflow-x: auto;">
+          
+        <!-- LIVE UNIFIED SIGNALS COMPARISON BANNER (SCALP vs SWING) -->
+        <div style="background: rgba(10, 16, 30, 0.9); border: 1.5px solid rgba(0, 210, 255, 0.35); border-radius: 12px; padding: 18px; margin-bottom: 22px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.3rem;">⚖️</span>
+              <h4 style="margin: 0; color: #fff; font-size: 0.96rem;">موتور تجمیعی سیگنال‌های داوجونز (Unified Scalp & Swing Engine)</h4>
+            </div>
+            <div id="unifAlignmentBadge" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 4px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 800;">
+              💎 هم‌راستایی کامل (Full Confluence)
+            </div>
+          </div>
+          <div style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); display: grid; gap: 14px;">
+            <!-- Scalp Card -->
+            <div style="background: rgba(0, 210, 255, 0.06); border: 1px solid rgba(0, 210, 255, 0.25); border-radius: 10px; padding: 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="color: #00d2ff; font-weight: 800; font-size: 0.85rem;">⚡ سیگنال اسکالپ جامع (15m Scalp)</span>
+                <span id="unifScalpDir" style="background: rgba(0,230,118,0.2); color: #00e676; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 0.74rem;">🟢 خرید LONG</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 4px;">
+                <span style="color: #94a3b8;">نقطه ورود (Entry):</span>
+                <span id="unifScalpEntry" class="mono" style="color: #fff; font-weight: 800;">$50,865.0</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 4px;">
+                <span style="color: #94a3b8;">حد ضرر (SL):</span>
+                <span id="unifScalpSl" class="mono" style="color: #ff3366; font-weight: 700;">$50,790.0 (-75 pts)</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 4px;">
+                <span style="color: #94a3b8;">تارگت اول و دوم:</span>
+                <span id="unifScalpTp" class="mono" style="color: #00e676; font-weight: 700;">TP1: $50,980.0 | TP2: $51,125.0</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.74rem; color: #94a3b8; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 6px; margin-top: 6px;">
+                <span>مدت زمان نگهداری:</span>
+                <span style="color: #ffd700; font-weight: 700;">۳۰ دقیقه تا ۲ ساعت</span>
+              </div>
+            </div>
+
+            <!-- Swing Card -->
+            <div style="background: rgba(168, 85, 247, 0.06); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 10px; padding: 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="color: #c084fc; font-weight: 800; font-size: 0.85rem;">🏛️ سیگنال سوئینگ جامع (4H Swing)</span>
+                <span id="unifSwingDir" style="background: rgba(0,230,118,0.2); color: #00e676; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 0.74rem;">🟢 خرید LONG</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 4px;">
+                <span style="color: #94a3b8;">نقطه ورود (Entry):</span>
+                <span id="unifSwingEntry" class="mono" style="color: #fff; font-weight: 800;">$50,865.0</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 4px;">
+                <span style="color: #94a3b8;">حد ضرر ماکرو (SL):</span>
+                <span id="unifSwingSl" class="mono" style="color: #ff3366; font-weight: 700;">$50,585.0 (-280 pts)</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 4px;">
+                <span style="color: #94a3b8;">تارگت میان‌مدت و ماکرو:</span>
+                <span id="unifSwingTp" class="mono" style="color: #00e676; font-weight: 700;">TP1: $51,415.0 | TP2: $52,315.0</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.74rem; color: #94a3b8; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 6px; margin-top: 6px;">
+                <span>مدت زمان نگهداری:</span>
+                <span style="color: #c084fc; font-weight: 700;">۲ تا ۵ روز (میان‌مدت)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+<div style="overflow-x: auto;">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>شناسه سگنال</th>
+                  <th>شناسه معامله</th>
+                  <th>نوع سیگنال</th>
                   <th>تایم‌فریم</th>
-                  <th>جهت و ستاپ</th>
-                  <th>قیمت ورود</th>
-                  <th>حد سود / حد ضرر</th>
-                  <th>نتیجه معامله</th>
-                  <th>پوینت خالص</th>
-                  <th>زمان مخابره (ایران 🇮🇷)</th>
+                  <th>جهت</th>
+                  <th>نقطه ورود</th>
+                  <th>حدود سود (TP1 / TP2)</th>
+                  <th>حد ضرر (SL)</th>
+                  <th>مدت نگهداری</th>
+                  <th>نتیجه و پوینت</th>
+                  <th>تاریخ و ساعت (ایران 🇮🇷)</th>
                 </tr>
               </thead>
               <tbody id="journalTableBody">
@@ -2489,8 +2554,11 @@
           <button onclick="sendTestTelegramMessage()" class="chat-prompt-pill" style="padding: 10px 20px; font-size: 0.85rem; background: rgba(0, 230, 118, 0.15); color: #00e676; border-color: rgba(0, 230, 118, 0.4);">
             📲 ارسال پیام تست به کانال
           </button>
-          <button onclick="sendInstantSignalToTelegram()" class="chat-prompt-pill" style="padding: 10px 20px; font-size: 0.85rem; background: rgba(255, 209, 102, 0.15); color: #ffd166; border-color: rgba(255, 209, 102, 0.4);">
-            🚀 مخابره دستی سیگنال لحظه‌ای
+          <button onclick="sendInstantSignalToTelegram('scalp')" class="chat-prompt-pill" style="padding: 10px 20px; font-size: 0.85rem; background: rgba(0, 210, 255, 0.15); color: #00d2ff; border-color: rgba(0, 210, 255, 0.4); font-weight: 800;">
+            ⚡ مخابره فوری سیگنال اسکالپ (15m)
+          </button>
+          <button onclick="sendInstantSignalToTelegram('swing')" class="chat-prompt-pill" style="padding: 10px 20px; font-size: 0.85rem; background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.4); font-weight: 800;">
+            🏛️ مخابره فوری سیگنال سوئینگ (4H)
           </button>
         </div>
 
@@ -5386,22 +5454,28 @@
       updateSentinelCountdownDisplay();
     }, 1000);
 
-    async function sendInstantSignalToTelegram() {
+    async function sendInstantSignalToTelegram(sigType = 'scalp') {
       const token = document.getElementById('tgBotToken').value.trim();
       const chat = document.getElementById('tgChatId').value.trim();
       const fb = document.getElementById('tgStatusFeedback');
+      const sigTitle = sigType === 'swing' ? 'سوئینگ جامع (4H)' : 'اسکالپ جامع (15m)';
       if (fb) {
         fb.style.display = 'block';
         fb.style.background = 'rgba(0, 210, 255, 0.15)';
         fb.style.color = '#00d2ff';
         fb.style.border = '1px solid #00d2ff';
-        fb.textContent = '⏳ در حال آنالیز و ارسال سیگنال ۵ ماژول به تلگرام...';
+        fb.textContent = `⏳ در حال ارسال سیگنال ${sigTitle} به تلگرام...`;
       }
       try {
         const res = await fetch('/api/telegram/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bot_token: token, chat_id: chat, interval: _sentinelInterval || _activeInterval })
+          body: JSON.stringify({
+            bot_token: token,
+            chat_id: chat,
+            interval: sigType === 'swing' ? '4h' : '15m',
+            signal_type: sigType
+          })
         });
         const data = await res.json();
         if (fb) {
@@ -5409,7 +5483,8 @@
             fb.style.background = 'rgba(0, 230, 118, 0.15)';
             fb.style.color = '#00e676';
             fb.style.border = '1px solid #00e676';
-            fb.textContent = '🚀 ' + (data.message || 'سیگنال تجمیعی ۵ ماژول با موفقیت به کانال تلگرام ارسال شد!');
+            fb.textContent = '🚀 ' + (data.message || `سیگنال ${sigTitle} با موفقیت به کانال تلگرام ارسال شد!`);
+            fetchJournalData();
           } else {
             fb.style.background = 'rgba(255, 51, 102, 0.15)';
             fb.style.color = '#ff3366';
@@ -5580,7 +5655,7 @@
           if (tgNetPtsEl) tgNetPtsEl.textContent = `خالص: ${st.net_pts >= 0 ? '+' : ''}${Number(st.net_pts).toLocaleString()} pts`;
         }
 
-        // 2. Render Dispatched Signals Table
+        // 2. Render Dispatched Signals Table with 10 Synchronized Unified Fields
         const tbody = document.getElementById('journalTableBody');
         if (tbody && data.records) {
           tbody.innerHTML = data.records.map(r => {
@@ -5588,36 +5663,96 @@
             const resColor = isWin ? '#00e676' : '#ff3366';
             const isBuy = r.direction === 'BUY';
             const dirBadge = isBuy
-              ? `<span style="background: rgba(0,230,118,0.15); color: #00e676; border: 1px solid #00e676; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 0.7rem;">خرید LONG</span>`
-              : `<span style="background: rgba(255,51,102,0.15); color: #ff3366; border: 1px solid #ff3366; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 0.7rem;">فروش SHORT</span>`;
+              ? `<span style="background: rgba(0,230,118,0.15); color: #00e676; border: 1px solid #00e676; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 0.7rem;">🟢 خرید LONG</span>`
+              : `<span style="background: rgba(255,51,102,0.15); color: #ff3366; border: 1px solid #ff3366; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 0.7rem;">🔻 فروش SHORT</span>`;
+            
+            const isSwing = (r.signal_type || '').includes('سوئینگ') || r.timeframe === '4H';
+            const typeBadge = isSwing
+              ? `<span style="background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid #a855f7; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.72rem;">🏛️ سوئینگ جامع</span>`
+              : `<span style="background: rgba(0,210,255,0.15); color: #00d2ff; border: 1px solid #00d2ff; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.72rem;">⚡ اسکالپ جامع</span>`;
+
+            const tp1Val = r.tp1 || r.tp;
+            const tp2Val = r.tp2;
+            const tpDisplay = tp2Val
+              ? `<span style="color: #00e676;">TP1: $${Number(tp1Val).toLocaleString()}</span><br><span style="color: #34d399; font-size: 0.7rem;">TP2: $${Number(tp2Val).toLocaleString()}</span>`
+              : `<span style="color: #00e676;">TP: $${Number(tp1Val).toLocaleString()}</span>`;
+
+            const durDisplay = r.holding_duration || (isSwing ? '۲ تا ۵ روز' : '۳۰ دقیقه تا ۲ ساعت');
 
             return `
               <tr>
                 <td class="mono" style="font-weight: 700; color: #ffd700;">${r.id}</td>
-                <td><span style="background: rgba(0,210,255,0.15); color: #00d2ff; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-family: var(--font-mono);">${r.timeframe || '15m'}</span></td>
-                <td>
-                  <div style="display: flex; align-items: center; gap: 6px;">
-                    ${dirBadge}
-                    <span style="color: #cbd5e1; font-size: 0.78rem;">${r.setup || 'کادر همگرا ۹ گانه'}</span>
-                  </div>
-                </td>
+                <td>${typeBadge}</td>
+                <td><span style="background: rgba(255,255,255,0.06); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-family: var(--font-mono);">${r.timeframe || (isSwing ? '4H' : '15m')}</span></td>
+                <td>${dirBadge}</td>
                 <td class="mono" style="color: #fff; font-weight: 800;">$${Number(r.entry).toLocaleString()}</td>
-                <td class="mono" style="font-size: 0.74rem;">
-                  <span style="color: #00e676;">TP: $${Number(r.tp).toLocaleString()}</span> | 
-                  <span style="color: #ff3366;">SL: $${Number(r.sl).toLocaleString()}</span>
-                </td>
+                <td class="mono" style="font-size: 0.74rem; line-height: 1.4;">${tpDisplay}</td>
+                <td class="mono" style="font-size: 0.74rem; color: #ff3366; font-weight: 700;">$${Number(r.sl).toLocaleString()}</td>
+                <td style="font-size: 0.73rem; color: #cbd5e1;">${durDisplay}</td>
                 <td>
                   <span style="background: ${resColor}22; color: ${resColor}; border: 1px solid ${resColor}; padding: 3px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;">
                     ${r.result}
                   </span>
+                  <div class="mono" style="color: ${resColor}; font-weight: 900; font-size: 0.78rem; margin-top: 3px;">
+                    ${r.pnl_pts >= 0 ? '+' : ''}${r.pnl_pts} pts
+                  </div>
                 </td>
-                <td class="mono" style="color: ${resColor}; font-weight: 900; font-size: 0.82rem;">
-                  ${r.pnl_pts >= 0 ? '+' : ''}${r.pnl_pts} pts
-                </td>
-                <td class="mono" style="font-size: 0.74rem; color: #94a3b8;">${r.ts}</td>
+                <td class="mono" style="font-size: 0.73rem; color: #94a3b8;">${r.ts}</td>
               </tr>
             `;
           }).join('');
+        }
+
+        // 3. Update Live Unified Signals Comparison Banner
+        try {
+          const uRes = await fetch('/api/us30/unified-signals');
+          if (uRes.ok) {
+            const uData = await uRes.json();
+            if (uData.ok && uData.data) {
+              const ud = uData.data;
+              const sc = ud.scalp || {};
+              const sw = ud.swing || {};
+              
+              const scDir = document.getElementById('unifScalpDir');
+              if (scDir) {
+                const isBuy = sc.direction === 'BUY';
+                scDir.innerHTML = isBuy ? '🟢 خرید LONG' : '🔻 فروش SHORT';
+                scDir.style.background = isBuy ? 'rgba(0,230,118,0.2)' : 'rgba(255,51,102,0.2)';
+                scDir.style.color = isBuy ? '#00e676' : '#ff3366';
+              }
+              const scEnt = document.getElementById('unifScalpEntry');
+              if (scEnt) scEnt.textContent = sc.entry_fmt || `$${Number(sc.entry).toLocaleString()}`;
+              const scSl = document.getElementById('unifScalpSl');
+              if (scSl) scSl.textContent = `${sc.stop_loss_fmt} (-${sc.stop_loss_pts} pts)`;
+              const scTp = document.getElementById('unifScalpTp');
+              if (scTp) scTp.textContent = `TP1: ${sc.tp1_fmt} | TP2: ${sc.tp2_fmt}`;
+
+              const swDir = document.getElementById('unifSwingDir');
+              if (swDir) {
+                const isBuy = sw.direction === 'BUY';
+                swDir.innerHTML = isBuy ? '🟢 خرید LONG' : '🔻 فروش SHORT';
+                swDir.style.background = isBuy ? 'rgba(0,230,118,0.2)' : 'rgba(255,51,102,0.2)';
+                swDir.style.color = isBuy ? '#00e676' : '#ff3366';
+              }
+              const swEnt = document.getElementById('unifSwingEntry');
+              if (swEnt) swEnt.textContent = sw.entry_fmt || `$${Number(sw.entry).toLocaleString()}`;
+              const swSl = document.getElementById('unifSwingSl');
+              if (swSl) swSl.textContent = `${sw.stop_loss_fmt} (-${sw.stop_loss_pts} pts)`;
+              const swTp = document.getElementById('unifSwingTp');
+              if (swTp) swTp.textContent = `TP1: ${sw.tp1_fmt} | TP2: ${sw.tp2_fmt}`;
+
+              const alignBadge = document.getElementById('unifAlignmentBadge');
+              if (alignBadge) {
+                alignBadge.textContent = ud.alignment_status || '💎 هم‌راستایی کامل';
+                const isFull = (ud.alignment_status || '').includes('کامل');
+                alignBadge.style.color = isFull ? '#00e676' : '#ffd166';
+                alignBadge.style.borderColor = isFull ? '#00e676' : '#ffd166';
+                alignBadge.style.background = isFull ? 'rgba(0,230,118,0.15)' : 'rgba(255,209,102,0.15)';
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('Could not update unified banner:', e);
         }
       } catch (e) {
         console.error('Error fetching Journal data:', e);
