@@ -1104,27 +1104,28 @@ def telegram_send(req: US30TelegramSendRequest):
         _us30_sentinel_stats["signals_sent_total"] += 1
         _us30_sentinel_stats["last_signal_time"] = time.strftime("%Y-%m-%d %H:%M:%S UTC")
 
-        # Record in dispatched journal
-        now_tehran = datetime.now(timezone.utc) + timedelta(hours=3, minutes=30)
-        tp1_pts = int(ms_data.get("take_profit_1_distance", 115))
-        sl_pts = int(ms_data.get("stop_loss_distance", 65))
-        dispatched_rec = {
-            "id": f"US30-SIG-{int(time.time()) % 100000}",
-            "timeframe": req.interval or "15m",
-            "setup": "👑 کادر همگرا ۹ گانه",
-            "direction": ms_data.get("direction", "BUY"),
-            "entry": p_curr,
-            "tp": float(ms_data.get("take_profit_1", p_curr + 115)),
-            "sl": float(ms_data.get("stop_loss", p_curr - 65)),
-            "tp_pts": tp1_pts,
-            "sl_pts": sl_pts,
-            "result": f"تارگت اول تاچ شد (+{tp1_pts} pts)",
-            "pnl_pts": tp1_pts,
-            "r_mult": round(tp1_pts / max(sl_pts, 1), 2),
-            "status": "WIN",
-            "ts": now_tehran.strftime("%H:%M:%S (%Y/%m/%d)")
-        }
-        append_dispatched_signal(dispatched_rec)
+        # Record in dispatched journal (if not paused)
+        if not _journal_is_paused:
+            now_tehran = datetime.now(timezone.utc) + timedelta(hours=3, minutes=30)
+            tp1_pts = int(ms_data.get("take_profit_1_distance", 115))
+            sl_pts = int(ms_data.get("stop_loss_distance", 65))
+            dispatched_rec = {
+                "id": f"US30-SIG-{int(time.time()) % 100000}",
+                "timeframe": req.interval or "15m",
+                "setup": "👑 کادر همگرا ۹ گانه",
+                "direction": ms_data.get("direction", "BUY"),
+                "entry": p_curr,
+                "tp": float(ms_data.get("take_profit_1", p_curr + 115)),
+                "sl": float(ms_data.get("stop_loss", p_curr - 65)),
+                "tp_pts": tp1_pts,
+                "sl_pts": sl_pts,
+                "result": f"تارگت اول تاچ شد (+{tp1_pts} pts)",
+                "pnl_pts": tp1_pts,
+                "r_mult": round(tp1_pts / max(sl_pts, 1), 2),
+                "status": "WIN",
+                "ts": now_tehran.strftime("%H:%M:%S (%Y/%m/%d)")
+            }
+            append_dispatched_signal(dispatched_rec)
 
         return {"success": True, "message": "سیگنال کادر تخصصی همگرا با موفقیت به تلگرام مخابره شد.", "result": res}
     except Exception as e:
@@ -1186,6 +1187,7 @@ def journal_live():
 
         return {
             "ok": True,
+            "is_paused": _journal_is_paused,
             "records": list(reversed(recs)),
             "stats": {
                 "total_signals": total,
@@ -1199,6 +1201,68 @@ def journal_live():
         }
     except Exception as e:
         return {"ok": False, "records": [], "stats": {}, "error": str(e)}
+
+_journal_is_paused = False
+
+@app.post("/api/journal/toggle-pause")
+def journal_toggle_pause():
+    global _journal_is_paused
+    _journal_is_paused = not _journal_is_paused
+    status_label = "متوقف‌شده" if _journal_is_paused else "فعال"
+    return {
+        "ok": True,
+        "is_paused": _journal_is_paused,
+        "message": f"وضعیت ثبت سیگنال ژورنال به حالت «{status_label}» تغییر یافت."
+    }
+
+@app.post("/api/journal/reset")
+def journal_reset():
+    try:
+        if DISPATCHED_SIGNALS_FILE.exists():
+            with open(DISPATCHED_SIGNALS_FILE, "w", encoding="utf-8") as f:
+                f.write("")
+        return {
+            "ok": True,
+            "message": "تمام سوابق سیگنال‌های ژورنال با موفقیت ریست و پاکسازی شدند.",
+            "stats": {
+                "total_signals": 0,
+                "total_tp_pts": 0,
+                "total_sl_pts": 0,
+                "net_pts": 0,
+                "win_rate": 0.0,
+                "wins_count": 0,
+                "losses_count": 0
+            },
+            "records": []
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+@app.post("/api/telegram/toggle-autopilot")
+def telegram_toggle_autopilot():
+    try:
+        current_state = _us30_sentinel_stats.get("is_running", True)
+        new_state = not current_state
+        _us30_sentinel_stats["is_running"] = new_state
+
+        if TG_CONFIG_FILE.exists():
+            try:
+                with open(TG_CONFIG_FILE, "r", encoding="utf-8") as f:
+                    cfg = json.load(f)
+                cfg["auto_pilot"] = new_state
+                with open(TG_CONFIG_FILE, "w", encoding="utf-8") as f:
+                    json.dump(cfg, f, ensure_ascii=False, indent=2)
+            except Exception:
+                pass
+
+        status_text = "فعال و در حال ارسال" if new_state else "متوقف شده"
+        return {
+            "ok": True,
+            "is_running": new_state,
+            "message": f"دیده‌بان تلگرام اکنون «{status_text}» است."
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 
 
@@ -1998,7 +2062,7 @@ def us30_sentinel_auto_loop():
                     except Exception:
                         pass
 
-            if real_tok and real_chat and cfg.get("auto_pilot", True):
+            if real_tok and real_chat and cfg.get("auto_pilot", True) and _us30_sentinel_stats.get("is_running", True):
                 sig_data = dow_composite_signal("1h")
                 score = sig_data.get("score", 0)
                 action = sig_data.get("action", "WAIT")

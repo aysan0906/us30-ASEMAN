@@ -94,20 +94,57 @@ def get_ninjatrader_live(current_price: float = 51240.0, timeframe: str = "15m")
         c_close = round(c_open + (step * 2.2 if c_idx % 2 == 0 else -step * 1.2), 1)
         c_high = round(max(c_open, c_close) + step * 1.6, 1)
         c_low = round(min(c_open, c_close) - step * 1.4, 1)
+        is_bull = c_close >= c_open
+
         clusters = []
-        c_step = max(1.0, (c_high - c_low) / 4.0)
-        for l in range(4):
+        c_step = max(1.0, (c_high - c_low) / 5.0)
+        max_cluster_vol = 1
+        for l in range(5):
             lp = round(c_low + l * c_step, 1)
-            b_vol = int(40 + (math.sin(c_idx + l) * 25 + 30))
-            a_vol = int(35 + (math.cos(c_idx + l) * 25 + 30))
-            is_poc = (l == 2)
+            b_vol = int(45 + (math.sin(c_idx * 1.2 + l) * 30 + 35))
+            a_vol = int(40 + (math.cos(c_idx * 1.2 + l) * 30 + 35))
+            if is_bull and l >= 3:
+                a_vol = int(a_vol * 1.8)
+            elif not is_bull and l <= 2:
+                b_vol = int(b_vol * 1.8)
+            is_poc = (l == 2 if is_bull else l == 3)
+            tot_v = b_vol + a_vol
+            if tot_v > max_cluster_vol:
+                max_cluster_vol = tot_v
+
+            imb = "BUY" if a_vol >= 2.2 * b_vol else ("SELL" if b_vol >= 2.2 * a_vol else "NONE")
             clusters.append({
-                "price": lp, "bid": b_vol, "ask": a_vol, "delta": a_vol - b_vol, "is_poc": is_poc
+                "price": lp,
+                "bid": b_vol,
+                "bid_vol": b_vol,
+                "ask": a_vol,
+                "ask_vol": a_vol,
+                "delta": a_vol - b_vol,
+                "is_poc": is_poc,
+                "imbalance": imb,
+                "total_vol": tot_v
             })
+
+        for cl in clusters:
+            cl["bid_bar_pct"] = min(100, int((cl["bid"] / max(max_cluster_vol, 1)) * 100))
+            cl["ask_bar_pct"] = min(100, int((cl["ask"] / max(max_cluster_vol, 1)) * 100))
+
+        tot_candle_vol = sum(c["total_vol"] for c in clusters)
+        c_delta = sum(c["delta"] for c in clusters)
+        d_pct = round((c_delta / max(tot_candle_vol, 1)) * 100, 1)
+
         footprint_candles.append({
-            "time": c_time, "open": c_open, "high": c_high, "low": c_low, "close": c_close,
-            "clusters": clusters, "poc_price": round(c_low + 2 * c_step, 1),
-            "candle_delta": sum(c["delta"] for c in clusters)
+            "time": c_time,
+            "open": c_open,
+            "high": c_high,
+            "low": c_low,
+            "close": c_close,
+            "is_bullish": is_bull,
+            "clusters": clusters,
+            "poc_price": [c["price"] for c in clusters if c["is_poc"]][0] if any(c["is_poc"] for c in clusters) else clusters[2]["price"],
+            "candle_delta": c_delta,
+            "total_volume": tot_candle_vol,
+            "delta_pct": d_pct
         })
 
     # 3. Cumulative Delta (CVD)

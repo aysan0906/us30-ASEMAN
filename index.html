@@ -2241,92 +2241,103 @@
       </div>
     </div>
 
-    <!-- ==================== TAB 12: TRADE JOURNAL & SIGNAL COCKPIT ==================== -->
+    <!-- ==================== TAB 12: DEDICATED DISPATCHED SIGNALS JOURNAL ==================== -->
     <div id="journalTab" class="tab-pane">
       <div class="content-card" style="border: 1.5px solid rgba(255, 215, 0, 0.4); background: rgba(12, 16, 28, 0.96); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
         
-        <!-- Two Distinct Sub-Tabs Header -->
-        <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid rgba(255, 255, 255, 0.08); padding-bottom: 14px; flex-wrap: wrap;">
-          <button id="jSubtabBtnSignal" onclick="switchJournalSubtab('signal')" style="display: flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 8px; font-weight: 800; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; border: 1.5px solid #ffd700; background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 140, 0, 0.15)); color: #ffd700;">
-            <span>👑</span> کادر تخصصی سیگنال‌دهی همگرا (Master Institutional Signal)
-          </button>
-          <button id="jSubtabBtnLiquidity" onclick="switchJournalSubtab('liquidity')" style="display: flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; border: 1.5px solid rgba(0, 210, 255, 0.3); background: rgba(0, 210, 255, 0.05); color: #94a3b8;">
-            <span>📋</span> ژورنال سیگنال‌های ارسالی تلگرام (Dispatched Signals Journal)
-          </button>
-        </div>
-
-        <!-- SUB-TAB 1: MASTER INSTITUTIONAL SIGNAL COCKPIT -->
-        <div id="journalPaneSignal">
-          <div id="journalMsDynamicContainer">
-            <!-- Dynamically populated from Master Signal Cockpit -->
-          </div>
-        </div>
-
-        <!-- SUB-TAB 2: DISPATCHED SIGNALS & EXECUTION JOURNAL -->
-        <div id="journalPaneLiquidity" style="display: none;">
-          <!-- 4 KPI Performance Cards for Dispatched Signals -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;">
-            <!-- Card 1: Total Dispatched Signals -->
-            <div style="background: rgba(0, 210, 255, 0.08); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 10px; padding: 14px;">
-              <div style="font-size: 0.74rem; color: #94a3b8;">📨 تعداد کل سیگنال‌های ارسالی</div>
-              <div id="jStatTotalSignals" style="font-size: 1.4rem; font-weight: 900; color: #00d2ff; margin-top: 4px; font-family: var(--font-mono);">۹ سیگنال</div>
-              <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">مخابره شده به کانال تلگرام</div>
-            </div>
-
-            <!-- Card 2: Cumulative TP Points -->
-            <div style="background: rgba(0, 230, 118, 0.08); border: 1px solid rgba(0, 230, 118, 0.3); border-radius: 10px; padding: 14px;">
-              <div style="font-size: 0.74rem; color: #94a3b8;">🎯 کل تارگت پوینت‌های کسب‌شده</div>
-              <div id="jStatTotalTp" style="font-size: 1.4rem; font-weight: 900; color: #00e676; margin-top: 4px; font-family: var(--font-mono);">+۱,۳۴۰ pts</div>
-              <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">مجموع سود معاملات تارگت‌خورده</div>
-            </div>
-
-            <!-- Card 3: Cumulative SL Points -->
-            <div style="background: rgba(255, 51, 102, 0.08); border: 1px solid rgba(255, 51, 102, 0.3); border-radius: 10px; padding: 14px;">
-              <div style="font-size: 0.74rem; color: #94a3b8;">🛑 کل استاپ پوینت‌های متحمل‌شده</div>
-              <div id="jStatTotalSl" style="font-size: 1.4rem; font-weight: 900; color: #ff3366; margin-top: 4px; font-family: var(--font-mono);">-۱۳۰ pts</div>
-              <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">مجموع ریسک معاملات خروج با استاپ</div>
-            </div>
-
-            <!-- Card 4: Win Rate Monitoring -->
-            <div style="background: rgba(255, 215, 0, 0.08); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 10px; padding: 14px;">
-              <div style="font-size: 0.74rem; color: #94a3b8;">🏆 مانیتورینگ وین‌ریت سیگنال‌ها</div>
-              <div id="jStatWinRate" style="font-size: 1.4rem; font-weight: 900; color: #ffd700; margin-top: 4px; font-family: var(--font-mono);">۷۷.۸٪</div>
-              <div id="jStatWinLossDetail" style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">۷ موفق / ۲ استاپ (خالص: +۱,۲۱۰ پوینت)</div>
+        <!-- Header with Title, Live Status Badge and Control Buttons -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid rgba(255, 255, 255, 0.08); padding-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h3 class="card-title" style="display: flex; align-items: center; gap: 8px; margin: 0;">
+              <span>📋</span> ژورنال هوشمند معاملات و سیگنال‌های ارسالی تلگرام (Dispatched Signals Journal)
+            </h3>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
+              ثبت اختصاصی سیگنال‌های مخابره‌شده به تلگرام، محاسبه خودکار تارگت‌ها، استاپ‌ها و مانیتورینگ وین‌ریت زنده
             </div>
           </div>
 
-          <!-- Trade Execution Table strictly for Dispatched Signals -->
-          <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px; margin-bottom: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-              <div style="font-size: 0.85rem; font-weight: 800; color: #ffd700; display: flex; align-items: center; gap: 8px;">
-                <span>📋</span> جدول ثبت دقیق سوابق سیگنال‌های مخابره‌شده به تلگرام
-              </div>
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <button onclick="fetchJournalData()" class="chat-prompt-pill" style="margin: 0;">🔄 به‌روزرسانی زنده</button>
-                <div style="font-size: 0.74rem; color: #94a3b8;">
-                  📌 هر سیگنالی که با دکمه ارسال به تلگرام مخابره شود، مستقیماً در این جدول بایگانی می‌شود.
-                </div>
-              </div>
+          <!-- Journal Control Buttons Group (Stop / Resume, Reset, Refresh) -->
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <span id="journalPauseBadge" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 4px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 800;">
+              🟢 ثبت و پایش فعال
+            </span>
+
+            <!-- Stop/Resume Signal Button -->
+            <button id="btnToggleJournalPause" onclick="toggleJournalPause()" style="background: rgba(255, 215, 0, 0.12); color: #ffd700; border: 1.5px solid #ffd700; padding: 6px 14px; border-radius: 6px; font-size: 0.78rem; font-weight: 800; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 6px;">
+              <span>⏸️</span> استوپ سیگنال
+            </button>
+
+            <!-- Reset Signals Button -->
+            <button id="btnResetJournal" onclick="resetJournalSignals()" style="background: rgba(255, 51, 102, 0.12); color: #ff3366; border: 1.5px solid #ff3366; padding: 6px 14px; border-radius: 6px; font-size: 0.78rem; font-weight: 800; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 6px;">
+              <span>🗑️</span> ریست سیگنال‌ها
+            </button>
+
+            <!-- Refresh Button -->
+            <button onclick="fetchJournalData()" class="chat-prompt-pill" style="margin: 0;">
+              🔄 به‌روزرسانی
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 KPI Performance Cards for Dispatched Signals -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;">
+          <!-- Card 1: Total Dispatched Signals -->
+          <div style="background: rgba(0, 210, 255, 0.08); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 10px; padding: 14px;">
+            <div style="font-size: 0.74rem; color: #94a3b8;">📨 تعداد کل سیگنال‌های ارسالی</div>
+            <div id="jStatTotalSignals" style="font-size: 1.4rem; font-weight: 900; color: #00d2ff; margin-top: 4px; font-family: var(--font-mono);">۹ سیگنال</div>
+            <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">مخابره شده به کانال تلگرام</div>
+          </div>
+
+          <!-- Card 2: Cumulative TP Points -->
+          <div style="background: rgba(0, 230, 118, 0.08); border: 1px solid rgba(0, 230, 118, 0.3); border-radius: 10px; padding: 14px;">
+            <div style="font-size: 0.74rem; color: #94a3b8;">🎯 کل تارگت پوینت‌های کسب‌شده</div>
+            <div id="jStatTotalTp" style="font-size: 1.4rem; font-weight: 900; color: #00e676; margin-top: 4px; font-family: var(--font-mono);">+۱,۳۴۰ pts</div>
+            <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">مجموع سود معاملات تارگت‌خورده</div>
+          </div>
+
+          <!-- Card 3: Cumulative SL Points -->
+          <div style="background: rgba(255, 51, 102, 0.08); border: 1px solid rgba(255, 51, 102, 0.3); border-radius: 10px; padding: 14px;">
+            <div style="font-size: 0.74rem; color: #94a3b8;">🛑 کل استاپ پوینت‌های متحمل‌شده</div>
+            <div id="jStatTotalSl" style="font-size: 1.4rem; font-weight: 900; color: #ff3366; margin-top: 4px; font-family: var(--font-mono);">-۱۳۰ pts</div>
+            <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">مجموع ریسک معاملات خروج با استاپ</div>
+          </div>
+
+          <!-- Card 4: Win Rate Monitoring -->
+          <div style="background: rgba(255, 215, 0, 0.08); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 10px; padding: 14px;">
+            <div style="font-size: 0.74rem; color: #94a3b8;">🏆 مانیتورینگ وین‌ریت سیگنال‌ها</div>
+            <div id="jStatWinRate" style="font-size: 1.4rem; font-weight: 900; color: #ffd700; margin-top: 4px; font-family: var(--font-mono);">۷۷.۸٪</div>
+            <div id="jStatWinLossDetail" style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">۷ موفق / ۲ استاپ (خالص: +۱,۲۱۰ پوینت)</div>
+          </div>
+        </div>
+
+        <!-- Trade Execution Table strictly for Dispatched Signals -->
+        <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px; margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <div style="font-size: 0.85rem; font-weight: 800; color: #ffd700; display: flex; align-items: center; gap: 8px;">
+              <span>📋</span> جدول ثبت دقیق سوابق سیگنال‌های مخابره‌شده به تلگرام
             </div>
-            <div style="overflow-x: auto;">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>شناسه سگنال</th>
-                    <th>تایم‌فریم</th>
-                    <th>جهت و ستاپ</th>
-                    <th>قیمت ورود</th>
-                    <th>حد سود / حد ضرر</th>
-                    <th>نتیجه معامله</th>
-                    <th>پوینت خالص</th>
-                    <th>زمان مخابره (ایران 🇮🇷)</th>
-                  </tr>
-                </thead>
-                <tbody id="journalTableBody">
-                  <!-- Dynamically populated via fetchJournalData -->
-                </tbody>
-              </table>
+            <div style="font-size: 0.74rem; color: #94a3b8;">
+              📌 هر سیگنالی که با دکمه ارسال به تلگرام مخابره شود، مستقیماً در این جدول بایگانی می‌شود.
             </div>
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>شناسه سگنال</th>
+                  <th>تایم‌فریم</th>
+                  <th>جهت و ستاپ</th>
+                  <th>قیمت ورود</th>
+                  <th>حد سود / حد ضرر</th>
+                  <th>نتیجه معامله</th>
+                  <th>پوینت خالص</th>
+                  <th>زمان مخابره (ایران 🇮🇷)</th>
+                </tr>
+              </thead>
+              <tbody id="journalTableBody">
+                <!-- Dynamically populated via fetchJournalData -->
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -2343,7 +2354,16 @@
               ارسال خودکار و آنی سگنال‌های GRADE A+ همراه با سطوح ورود، حد ضرر و تارگت‌های سه‌گانه به کانال تلگرام شما
             </div>
           </div>
-          <span id="tgConfigStatusBadge" style="background: rgba(255, 193, 7, 0.15); color: #ffd166; padding: 4px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <!-- Stop/Resume Telegram Sentinel Button -->
+            <button id="btnToggleTgSentinel" onclick="toggleTelegramSentinel()" style="background: linear-gradient(135deg, rgba(255, 51, 102, 0.2), rgba(225, 29, 72, 0.3)); color: #ff3366; border: 1.5px solid #ff3366; padding: 5px 14px; border-radius: 6px; font-size: 0.78rem; font-weight: 800; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
+              <span>🛑</span> استوپ ارسال به تلگرام
+            </button>
+            <span id="tgConfigStatusBadge" style="background: rgba(255, 193, 7, 0.15); color: #ffd166; padding: 4px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">
+              ⏳ در حال بررسی اتصال تلگرام...
+            </span>
+          </div>
+        </div>
             ⏳ در حال بررسی اتصال تلگرام...
           </span>
         </div>
@@ -2700,13 +2720,21 @@
 
           <!-- Footprint Candles -->
           <div style="background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 14px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <span style="font-size: 0.85rem; font-weight: 800; color: #00e676; display: flex; align-items: center; gap: 6px;">
-                <span>📊</span> چارت فوت‌پرینت کلاستری (Footprint Bid x Ask)
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+              <span style="font-size: 0.88rem; font-weight: 800; color: #00e676; display: flex; align-items: center; gap: 6px;">
+                <span>📊</span> چارت فوت‌پرینت کلاستری وال‌استریت (NinjaTrader Footprint Ladder)
               </span>
-              <span style="font-size: 0.72rem; color: #ffd700;">کندل‌های ۱۰ دقیقه‌ای</span>
+              <!-- Dedicated Timeframe Buttons for Footprint -->
+              <div style="display: flex; gap: 4px; align-items: center; background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 6px; border: 1px solid rgba(0,230,118,0.3);">
+                <span style="font-size: 0.7rem; color: #00e676; margin-left: 4px; font-weight: 700;">⏱️ تایم‌فریم:</span>
+                <button class="nt-tf-btn" data-tf="1m" onclick="setNinjaTraderTimeframe('1m')" style="padding: 2px 6px; font-size: 0.7rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer;">1m</button>
+                <button class="nt-tf-btn" data-tf="5m" onclick="setNinjaTraderTimeframe('5m')" style="padding: 2px 6px; font-size: 0.7rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer;">5m</button>
+                <button class="nt-tf-btn active" data-tf="15m" onclick="setNinjaTraderTimeframe('15m')" style="padding: 2px 6px; font-size: 0.7rem; border-radius: 4px; border: 1px solid #00e676; background: rgba(0,230,118,0.25); color: #00e676; font-weight: 800; cursor: pointer;">15m</button>
+                <button class="nt-tf-btn" data-tf="1h" onclick="setNinjaTraderTimeframe('1h')" style="padding: 2px 6px; font-size: 0.7rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer;">1h</button>
+                <button class="nt-tf-btn" data-tf="4h" onclick="setNinjaTraderTimeframe('4h')" style="padding: 2px 6px; font-size: 0.7rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer;">4h</button>
+              </div>
             </div>
-            <div id="ntFootprintContainer" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px;">
+            <div id="ntFootprintContainer" style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px;">
               <!-- Dynamic Footprint Candles -->
             </div>
           </div>
@@ -3393,7 +3421,6 @@
         fetchSierraChartData();
       } else if (tabId === 'journalTab') {
         fetchJournalData();
-        fetchMasterSignalData();
       } else if (tabId === 'masterSignalTab') {
         fetchMasterSignalData();
       }
@@ -5091,46 +5118,82 @@
     }
 
     // ========================================================
-    // JOURNAL SUB-TABS & DATA FETCHER
+    // JOURNAL CONTROLS & DATA FETCHER
     // ========================================================
-    function switchJournalSubtab(subtab) {
-      const btnSig = document.getElementById('jSubtabBtnSignal');
-      const btnLiq = document.getElementById('jSubtabBtnLiquidity');
-      const paneSig = document.getElementById('journalPaneSignal');
-      const paneLiq = document.getElementById('journalPaneLiquidity');
+    async function toggleTelegramSentinel() {
+      const btn = document.getElementById('btnToggleTgSentinel');
+      const badge = document.getElementById('tgConfigStatusBadge');
+      try {
+        const res = await fetch('/api/telegram/toggle-autopilot', { method: 'POST' });
+        const data = await res.json();
+        if (data.ok) {
+          if (btn) {
+            if (data.is_running) {
+              btn.innerHTML = '<span>🛑</span> استوپ ارسال به تلگرام';
+              btn.style.color = '#ff3366';
+              btn.style.borderColor = '#ff3366';
+              btn.style.background = 'linear-gradient(135deg, rgba(255, 51, 102, 0.2), rgba(225, 29, 72, 0.3))';
+            } else {
+              btn.innerHTML = '<span>▶️</span> فعال‌سازی ارسال به تلگرام';
+              btn.style.color = '#00e676';
+              btn.style.borderColor = '#00e676';
+              btn.style.background = 'linear-gradient(135deg, rgba(0, 230, 118, 0.2), rgba(0, 200, 83, 0.3))';
+            }
+          }
+          if (badge) {
+            badge.textContent = data.is_running ? '🟢 دیده‌بان تلگرام فعال است' : '⏸️ دیده‌بان تلگرام متوقف شد';
+            badge.style.color = data.is_running ? '#00e676' : '#ffd166';
+            badge.style.background = data.is_running ? 'rgba(0, 230, 118, 0.15)' : 'rgba(255, 209, 102, 0.15)';
+          }
+        }
+      } catch (e) {
+        console.error('Error toggling telegram sentinel:', e);
+      }
+    }
 
-      if (subtab === 'signal') {
-        if (btnSig) {
-          btnSig.style.borderColor = '#ffd700';
-          btnSig.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 140, 0, 0.15))';
-          btnSig.style.color = '#ffd700';
-          btnSig.style.fontWeight = '800';
+    async function toggleJournalPause() {
+      const btn = document.getElementById('btnToggleJournalPause');
+      const badge = document.getElementById('journalPauseBadge');
+      try {
+        const res = await fetch('/api/journal/toggle-pause', { method: 'POST' });
+        const data = await res.json();
+        if (data.ok) {
+          if (btn) {
+            if (data.is_paused) {
+              btn.innerHTML = '<span>▶️</span> ادامه سیگنال';
+              btn.style.borderColor = '#00e676';
+              btn.style.color = '#00e676';
+            } else {
+              btn.innerHTML = '<span>⏸️</span> استوپ سیگنال';
+              btn.style.borderColor = '#ffd700';
+              btn.style.color = '#ffd700';
+            }
+          }
+          if (badge) {
+            badge.textContent = data.is_paused ? '⏸️ ثبت سیگنال متوقف است' : '🟢 پایش و ثبت فعال';
+            badge.style.color = data.is_paused ? '#ffd166' : '#00e676';
+            badge.style.borderColor = data.is_paused ? '#ffd166' : '#00e676';
+            badge.style.background = data.is_paused ? 'rgba(255, 209, 102, 0.15)' : 'rgba(0, 230, 118, 0.15)';
+          }
         }
-        if (btnLiq) {
-          btnLiq.style.borderColor = 'rgba(0, 210, 255, 0.3)';
-          btnLiq.style.background = 'rgba(0, 210, 255, 0.05)';
-          btnLiq.style.color = '#94a3b8';
-          btnLiq.style.fontWeight = '700';
+      } catch (e) {
+        console.error('Error toggling journal pause:', e);
+      }
+    }
+
+    async function resetJournalSignals() {
+      if (!confirm('آیا مطمئن هستید که می‌خواهید تمام سوابق سیگنال‌های ژورنال پاک و ریست شوند؟')) {
+        return;
+      }
+      try {
+        const res = await fetch('/api/journal/reset', { method: 'POST' });
+        const data = await res.json();
+        if (data.ok) {
+          fetchJournalData();
+          alert('✅ تمام سوابق سیگنال‌های ژورنال با موفقیت ریست شدند.');
         }
-        if (paneSig) paneSig.style.display = 'block';
-        if (paneLiq) paneLiq.style.display = 'none';
-        fetchMasterSignalData();
-      } else {
-        if (btnLiq) {
-          btnLiq.style.borderColor = '#00d2ff';
-          btnLiq.style.background = 'linear-gradient(135deg, rgba(0, 210, 255, 0.2), rgba(0, 230, 118, 0.15))';
-          btnLiq.style.color = '#00d2ff';
-          btnLiq.style.fontWeight = '800';
-        }
-        if (btnSig) {
-          btnSig.style.borderColor = 'rgba(255, 215, 0, 0.3)';
-          btnSig.style.background = 'rgba(255, 215, 0, 0.05)';
-          btnSig.style.color = '#94a3b8';
-          btnSig.style.fontWeight = '700';
-        }
-        if (paneSig) paneSig.style.display = 'none';
-        if (paneLiq) paneLiq.style.display = 'block';
-        fetchJournalData();
+      } catch (e) {
+        console.error('Error resetting journal signals:', e);
       }
     }
 
@@ -5140,6 +5203,29 @@
         if (!res.ok) return;
         const data = await res.json();
         if (!data.ok) return;
+
+        // Check pause state
+        if (data.is_paused !== undefined) {
+          const btn = document.getElementById('btnToggleJournalPause');
+          const badge = document.getElementById('journalPauseBadge');
+          if (btn) {
+            if (data.is_paused) {
+              btn.innerHTML = '<span>▶️</span> ادامه سیگنال';
+              btn.style.borderColor = '#00e676';
+              btn.style.color = '#00e676';
+            } else {
+              btn.innerHTML = '<span>⏸️</span> استوپ سیگنال';
+              btn.style.borderColor = '#ffd700';
+              btn.style.color = '#ffd700';
+            }
+          }
+          if (badge) {
+            badge.textContent = data.is_paused ? '⏸️ ثبت سیگنال متوقف است' : '🟢 پایش و ثبت فعال';
+            badge.style.color = data.is_paused ? '#ffd166' : '#00e676';
+            badge.style.borderColor = data.is_paused ? '#ffd166' : '#00e676';
+            badge.style.background = data.is_paused ? 'rgba(255, 209, 102, 0.15)' : 'rgba(0, 230, 118, 0.15)';
+          }
+        }
 
         // 1. Update 4 KPI Cards from data.stats
         if (data.stats) {
@@ -5444,26 +5530,76 @@
           }).join('');
         }
 
-        // Footprint Candles
+        // Footprint Candlestick Clusters (Authentic NinjaTrader 8 Footprint Ladder)
         const fpCont = document.getElementById('ntFootprintContainer');
         if (fpCont && data.footprint_candles) {
-          fpCont.innerHTML = data.footprint_candles.map(c => `
-            <div style="min-width: 130px; background: rgba(0,0,0,0.4); border: 1px solid ${c.is_bullish ? 'rgba(0,230,118,0.3)' : 'rgba(255,51,102,0.3)'}; border-radius: 6px; padding: 6px; font-size: 0.72rem; font-family: var(--font-mono);">
-              <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-weight: 700; color: ${c.is_bullish ? '#00e676' : '#ff3366'};">
-                <span>${c.time}</span>
-                <span>${c.delta >= 0 ? '+' : ''}${c.delta} Δ</span>
+          fpCont.innerHTML = data.footprint_candles.map(c => {
+            const isBull = c.is_bullish;
+            const candleBorder = isBull ? 'rgba(0, 230, 118, 0.45)' : 'rgba(255, 51, 102, 0.45)';
+            const candleBg = isBull ? 'linear-gradient(180deg, rgba(0, 230, 118, 0.1), rgba(10, 25, 18, 0.85))' : 'linear-gradient(180deg, rgba(255, 51, 102, 0.1), rgba(28, 12, 18, 0.85))';
+            const deltaColor = c.candle_delta >= 0 ? '#00e676' : '#ff3366';
+
+            return `
+              <div style="min-width: 175px; background: ${candleBg}; border: 1.5px solid ${candleBorder}; border-radius: 8px; padding: 8px; font-family: var(--font-mono); box-shadow: 0 4px 14px rgba(0,0,0,0.45); display: flex; flex-direction: column; justify-content: space-between;">
+                <!-- Candle Top Bar: Time & Net Delta Badge -->
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 5px; margin-bottom: 5px;">
+                  <span style="font-weight: 800; font-size: 0.78rem; color: #fff; display: flex; align-items: center; gap: 4px;">
+                    <span>${isBull ? '🟢' : '🔴'}</span> ${c.time}
+                  </span>
+                  <span style="font-size: 0.72rem; color: ${deltaColor}; font-weight: 800; background: ${deltaColor}22; border: 1px solid ${deltaColor}55; padding: 2px 6px; border-radius: 4px;">
+                    ${c.candle_delta >= 0 ? '+' : ''}${c.candle_delta} Δ
+                  </span>
+                </div>
+
+                <!-- High Wick Center Stub -->
+                <div style="width: 2px; height: 7px; background: ${isBull ? '#00e676' : '#ff3366'}; margin: 0 auto 3px auto; border-radius: 1px;"></div>
+
+                <!-- Footprint Ladder Clusters -->
+                <div style="display: flex; flex-direction: column; gap: 3px; font-size: 0.74rem;">
+                  ${c.clusters.map(cl => {
+                    const isPoc = cl.is_poc;
+                    const pocStyle = isPoc ? 'border: 1.5px solid #ffd700; background: rgba(255, 215, 0, 0.22); box-shadow: 0 0 8px rgba(255, 215, 0, 0.35);' : 'background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);';
+                    const isBuyImb = cl.imbalance === 'BUY';
+                    const isSellImb = cl.imbalance === 'SELL';
+
+                    return `
+                      <div style="display: flex; align-items: center; justify-content: space-between; padding: 2px 4px; border-radius: 3px; ${pocStyle} position: relative;">
+                        <!-- Bid side with green volume bar -->
+                        <div style="width: 38%; display: flex; align-items: center; justify-content: flex-end; position: relative;">
+                          <div style="position: absolute; right: 0; top: 1px; bottom: 1px; width: ${cl.bid_bar_pct}%; background: rgba(0, 230, 118, 0.3); border-radius: 2px;"></div>
+                          <span style="position: relative; z-index: 1; color: #00e676; font-weight: 700;">
+                            ${isSellImb ? '⚡' : ''}${cl.bid}
+                          </span>
+                        </div>
+
+                        <!-- Center Price Tick -->
+                        <div style="width: 24%; text-align: center; color: ${isPoc ? '#ffd700' : '#cbd5e1'}; font-weight: ${isPoc ? '900' : '600'}; font-size: 0.72rem;">
+                          ${isPoc ? '👑 ' : ''}${Number(cl.price).toLocaleString()}
+                        </div>
+
+                        <!-- Ask side with red volume bar -->
+                        <div style="width: 38%; display: flex; align-items: center; justify-content: flex-start; position: relative;">
+                          <div style="position: absolute; left: 0; top: 1px; bottom: 1px; width: ${cl.ask_bar_pct}%; background: rgba(255, 51, 102, 0.3); border-radius: 2px;"></div>
+                          <span style="position: relative; z-index: 1; color: #ff3366; font-weight: 700;">
+                            ${cl.ask}${isBuyImb ? '⚡' : ''}
+                          </span>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+
+                <!-- Low Wick Center Stub -->
+                <div style="width: 2px; height: 7px; background: ${isBull ? '#00e676' : '#ff3366'}; margin: 3px auto 0 auto; border-radius: 1px;"></div>
+
+                <!-- Candle Footer: Total Volume & Delta Ratio -->
+                <div style="margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 4px; display: flex; justify-content: space-between; font-size: 0.68rem; color: #94a3b8;">
+                  <span>حجم: <strong class="mono" style="color: #fff;">${(c.total_volume || 0).toLocaleString()}</strong></span>
+                  <span>نسبت دلتا: <strong class="mono" style="color: ${deltaColor};">${c.delta_pct || 0}%</strong></span>
+                </div>
               </div>
-              <div style="display: flex; flex-direction: column; gap: 2px;">
-                ${c.clusters.map(cl => `
-                  <div style="display: flex; justify-content: space-between; padding: 1px 3px; background: ${cl.is_poc ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255,255,255,0.02)'}; border: ${cl.is_poc ? '1px solid #ffd700' : 'none'}; border-radius: 2px;">
-                    <span style="color: #00e676;">${cl.bid_vol}</span>
-                    <span style="color: ${cl.is_poc ? '#ffd700' : '#94a3b8'}; font-weight: ${cl.is_poc ? '800' : 'normal'};">${Number(cl.price).toLocaleString()}</span>
-                    <span style="color: #ff3366;">${cl.ask_vol}</span>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          `).join('');
+            `;
+          }).join('');
         }
 
         // VWAP Bands
