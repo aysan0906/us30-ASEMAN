@@ -1976,6 +1976,7 @@ def dow_heavyweights():
         return {"ok": False, "error": str(e)}
 
 @app.get("/api/dow/cot")
+@app.get("/api/dow/cot-report")
 def dow_cot_report():
     try:
         import cftc_cot_engine as cot_engine

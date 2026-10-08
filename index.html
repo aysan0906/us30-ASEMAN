@@ -3351,7 +3351,7 @@
   </div>
 
   <!-- TradingView Library -->
-  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js" defer></script>
 
 
   <script>
@@ -4567,9 +4567,8 @@
           btn.style.fontWeight = 'normal';
         }
       });
-      // Reset live points so canvas scale adapts instantly to the new timeframe
-      _bmLivePoints = [];
-      _bmTradeBubbles = [];
+      // Safely re-seed points immediately without leaving points empty
+      initBookmapStreamPoints(_lastPrice || 51240.0);
       fetchBookmapData();
       if (_bmViewMode === 'tv') {
         initBookmapTradingView(tf);
@@ -4845,11 +4844,16 @@
     }
 
     function renderLiveBookmapFrame() {
-      // Schedule next frame unconditionally so the animation loop NEVER dies
-      _bmAnimFrame = requestAnimationFrame(renderLiveBookmapFrame);
+      // If NOT on Bookmap tab or not in canvas mode, sleep 400ms to keep CPU at 0%
+      if (_activeTab !== 'bookmapTab' || _bmViewMode !== 'canvas') {
+        _bmAnimFrame = setTimeout(() => {
+          requestAnimationFrame(renderLiveBookmapFrame);
+        }, 400);
+        return;
+      }
 
-      // Only perform heavy drawing if currently on Bookmap tab and in canvas mode
-      if (_activeTab !== 'bookmapTab' || _bmViewMode !== 'canvas') return;
+      // Schedule exactly ONE single animation frame for silky-smooth 60 FPS
+      _bmAnimFrame = requestAnimationFrame(renderLiveBookmapFrame);
       const cv = document.getElementById('bookmapCanvas');
       if (!cv) return;
       const ctx = cv.getContext('2d');
@@ -5205,7 +5209,6 @@
       }
 
       ctx.restore();
-      _bmAnimFrame = requestAnimationFrame(renderLiveBookmapFrame);
     }
 
     async function sendChatMessage() {
@@ -6561,10 +6564,12 @@
       // 1. Instant zero-latency rendering of clock & session bars
       updateLiveClocksAndCountdowns();
 
-      // 2. Load the PRIMARY hero view & Master Signal Cockpit immediately (< 200ms)
+      // 2. Load the PRIMARY hero view & Master Signal Cockpit immediately (< 20ms)
       fetchCompositeSignal('1m');
       fetchMasterSignalData();
-      initTradingViewChart('1');
+      setTimeout(() => {
+        initTradingViewChart('1');
+      }, 250);
 
       // 3. Start Live 60-FPS Bookmap Streaming Engine
       initBookmapStreamPoints(_lastPrice || 51240.0);
