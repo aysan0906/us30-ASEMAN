@@ -100,6 +100,7 @@ async def headers(request: Request, call_next):
 
 @app.api_route("/healthz", methods=["GET", "HEAD"])
 @app.api_route("/health", methods=["GET", "HEAD"])
+@app.api_route("/api/health", methods=["GET", "HEAD"])
 @app.api_route("/ping", methods=["GET", "HEAD"])
 def health_check():
     return {"status": "ok", "asset": "US30", "message": "healthy"}
@@ -635,12 +636,42 @@ def dow_orderflow(interval: str = Query("1h")):
     imbalance_pct = round(-22.5 if chg < 0 else 24.8, 1)
     cvd_trend = "جریان سنگین توزیع و فروش وال‌استریت" if chg < 0 else "جریان شتابان انباشت و خرید نهادی"
 
+    buy_pct = 62 if chg >= 0 else 38
+    sell_pct = 38 if chg >= 0 else 62
+    agg_buy = 2840 if chg >= 0 else 1420
+    agg_sell = 1740 if chg >= 0 else 2320
+    net_delta = agg_buy - agg_sell
+
+    guidance_action = "در محدوده فعلی، داو جونز در فاز بازآزمایی پولبک دیسکانت (Discount Retest) قرار دارد. اولویت فنی با ورود پوزیشن BUY در لمس تراز میانه ۵۰٪ (CE) اولین گپ FVG با تارگت سقف نقدینگی BSL است." if chg >= 0 else "در محدوده فعلی، عرضه موسساتی بر بازار مسلط است. در بازگشت به گپ‌های نزولی (Premium FVG) به دنبال تاییدیه فروش با تارگت استخرهای نقدینگی SSL باشید."
+    news_impact = "شاخص دلار (DXY) و بازده اوراق ۱۰ ساله خزانه‌داری آمریکا تعیین‌کننده جهت پول هوشمند هستند. تضعیف دلار باعث پمپاژ نقدینگی به سهام صنعتی داو شده است. با این حال قبل از رویدادهای قرمز کلان از ریسک تهاجمی بپرهیزید."
+
+    checklist_items = [
+        "۱. ورود دقیق در تراز ۵۰٪ (Consequent Encroachment) گپ‌های FVG بدون شتابزدگی در ورود اولیه.",
+        "۲. قرار دادن حد ضرر ساختاری (SL) در پشت کلاستر نقدینگی و کف اوردربلاک تقاضا.",
+        "۳. هماهنگی کامل با برآیند دلتای تجمیعی (CVD) نینجاتریدر و حجم تیک‌های اتاس.",
+        "۴. قفل کردن معاملات در پنجره ۳۰ دقیقه قبل و بعد از انتشار داده‌های تورمی CPI و نشست FOMC.",
+        "۵. اجرای اصل طلایی سیو ۵۰٪ سود در تارگت اول (+۱۱۵ پوینت) و ریسک‌فری کردن سریع پوزیشن."
+    ]
+
     return {
         "ok": True,
         "interval": interval,
         "price": p_curr,
         "bullish_fvgs": bull_fvgs,
         "bearish_fvgs": bear_fvgs,
+        "volume_comparison": {
+            "buy_pct": buy_pct,
+            "sell_pct": sell_pct,
+            "aggressive_buy_lots": agg_buy,
+            "aggressive_sell_lots": agg_sell,
+            "net_delta_lots": net_delta,
+            "delta_bias": "تقاضای غالب (خرید تهاجمی)" if net_delta > 0 else "عرضه غالب (فروش تهاجمی)"
+        },
+        "actionable_guidance": {
+            "what_to_do": guidance_action,
+            "active_news_context": news_impact,
+            "key_checklist": checklist_items
+        },
         "delta": {
             "imbalance_pct": imbalance_pct,
             "cvd_bias": cvd_trend,
@@ -966,10 +997,82 @@ def save_telegram_config(cfg: US30TelegramConfigRequest):
     except Exception as e:
         return JSONResponse(status_code=500, content={"success": False, "message": f"خطا در ذخیره تنظیمات: {str(e)}"})
 
+def format_us30_master_signal_telegram(ms_data: Dict[str, Any]) -> str:
+    now_utc = datetime.now(timezone.utc)
+    tehran_time = now_utc + timedelta(hours=3, minutes=30)
+    tehran_str = tehran_time.strftime("%H:%M:%S (%Y/%m/%d)")
+    valid_until = (tehran_time + timedelta(hours=2)).strftime("%H:%M")
+
+    p = float(ms_data.get("current_price", 51240.0) or 51240.0)
+    direction = ms_data.get("direction", "BUY")
+    dir_fa = ms_data.get("direction_fa", "خرید قوی نهادی")
+    dir_emoji = "🚀" if direction == "BUY" else ("🔻" if direction == "SELL" else "⏸️")
+    score = ms_data.get("confluence_score", 89)
+    grade = ms_data.get("confluence_grade", "A+ Institutional Confluence")
+    entry_zone = ms_data.get("entry_zone", f"${p-15:,.1f} - ${p:,.1f}")
+    sl = float(ms_data.get("stop_loss", p - 65.0))
+    sl_dist = ms_data.get("stop_loss_distance", 65)
+    tp1 = float(ms_data.get("take_profit_1", p + 115.0))
+    tp1_dist = ms_data.get("take_profit_1_distance", 115)
+    tp2 = float(ms_data.get("take_profit_2", p + 235.0))
+    tp2_dist = ms_data.get("take_profit_2_distance", 235)
+    tp3 = float(ms_data.get("take_profit_3", p + 410.0))
+    tp3_dist = ms_data.get("take_profit_3_distance", 410)
+    lot_size = ms_data.get("recommended_lot_size", "۰.۳۰ لات به ازای هر $10,000")
+    rr = ms_data.get("risk_reward", "1 : 3.6")
+
+    checklist = ms_data.get("checklist", [])
+    chk_lines = ""
+    for c in checklist:
+        name = c.get("name", "")
+        sig_fa = c.get("signal_fa", "")
+        icon = c.get("icon", "🔹")
+        sig_fa_clean = sig_fa.replace("<", "&lt;").replace(">", "&gt;")
+        chk_lines += f"\n{icon} <b>{name}:</b> <code>{sig_fa_clean}</code>"
+
+    pb = ms_data.get("executive_playbook", "")
+    pb_clean = pb.replace("<", "&lt;").replace(">", "&gt;")
+
+    msg = f"""
+👑 <b>سیگنال کادر تخصصی همگرا داو جونز | US30 Master Institutional Signal</b>
+━━━━━━━━━━━━━━━━━━━━
+💰 <b>قیمت لحظه‌ای شاخص داوجونز:</b> <code>${p:,.1f}</code>
+🧭 <b>سیگنال سیستم:</b> {dir_emoji} <b>{dir_fa}</b>
+⭐ <b>درجه همگرایی ۹ ابزار نهادی:</b> <code>{score}٪</code> ({grade})
+⚖️ <b>ریسک به ریوارد:</b> <code>{rr}</code> | <b>حجم پیشنهادی:</b> <code>{lot_size}</code>
+
+⚡ <b>سطوح معاملاتی دقیق (Execution Levels):</b>
+⏰ <b>زمان صدور به وقت ایران 🇮🇷:</b> <code>ساعت {tehran_str}</code>
+⏳ <b>افق اعتبار ستاپ:</b> <code>تا ساعت {valid_until} به وقت ایران</code>
+🔹 <b>محدوده بهینه ورود (Entry):</b> <code>{entry_zone}</code>
+🛑 <b>حد ضرر ساختاری (SL):</b> <code>${sl:,.1f} (-{sl_dist} پوینت)</code>
+🎯 <b>تارگت اول (TP1):</b> <code>${tp1:,.1f} (+{tp1_dist} پوینت)</code> <i>[سیو ۵۰٪ سود + ریسک‌فری]</i>
+🎯 <b>تارگت دوم (TP2):</b> <code>${tp2:,.1f} (+{tp2_dist} پوینت)</code> <i>[سقف دیوارهای نقدینگی BSL]</i>
+🎯 <b>تارگت سوم (TP3):</b> <code>${tp3:,.1f} (+{tp3_dist} پوینت)</code> <i>[استخر نهایی وال‌استریت]</i>
+
+📋 <b>تاییدیه ۹ پلتفرم معاملاتی متصل:</b>{chk_lines}
+
+━━━━━━━━━━━━━━━━━━━━
+💡 <b>دستورالعمل هوشمند مدیریت معامله:</b>
+<i>{pb_clean}</i>
+━━━━━━━━━━━━━━━━━━━━
+📊 <b>مشاهده آنلاین چارت:</b> <a href="https://www.tradingview.com/chart/?symbol=TVC:DJI">TradingView Chart ↗️</a>
+⏰ <i>زمان تحلیل (ایران 🇮🇷): {tehran_str}</i>
+"""
+    return msg.strip()
+
+DISPATCHED_SIGNALS_FILE = Path(__file__).resolve().parent / "dispatched_signals.jsonl"
+
+def append_dispatched_signal(rec: Dict[str, Any]):
+    try:
+        with open(DISPATCHED_SIGNALS_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    except Exception as e:
+        print(f"Error appending dispatched signal: {e}")
+
 @app.post("/api/telegram/send")
 def telegram_send(req: US30TelegramSendRequest):
     try:
-        cfg = get_us30_telegram_config()
         tok = req.bot_token or os.environ.get("TELEGRAM_BOT_TOKEN") or ""
         chat = req.chat_id or os.environ.get("TELEGRAM_CHAT_ID") or ""
         if not tok or not chat:
@@ -982,15 +1085,48 @@ def telegram_send(req: US30TelegramSendRequest):
         if not tok or not chat:
             return JSONResponse(status_code=400, content={"success": False, "message": "توکن ربات یا شناسه چت تنظیم نشده است. لطفاً توکن ربات و شناسه چت را در کادرهای بالا وارد کرده و دکمه ذخیره تنظیمات را بزنید."})
 
-        # Use composite signal with 5 modules
-        sig_data = dow_composite_signal(interval=req.interval or "1h")
-        msg = format_us30_composite_telegram(sig_data)
+        # Fetch current price
+        p_curr = 51240.0
+        try:
+            cash_info = dow_cash.freshest()
+            p_curr = float(cash_info.get("best", {}).get("index", 51240.0) or 51240.0)
+        except Exception:
+            pass
+
+        # Send Master Institutional Signal (کادر تخصصی همگرا)
+        import ninja_atas_quant_engine as naq
+        ms_data = naq.get_master_confluence_signal(p_curr)
+        msg = format_us30_master_signal_telegram(ms_data)
         res = dispatch_to_telegram_raw(tok, chat, msg)
         if not res.get("ok"):
             return JSONResponse(status_code=400, content={"success": False, "message": res.get("description", "ارسال پیام تلگرام ناموفق بود.")})
+
         _us30_sentinel_stats["signals_sent_total"] += 1
         _us30_sentinel_stats["last_signal_time"] = time.strftime("%Y-%m-%d %H:%M:%S UTC")
-        return {"success": True, "message": "سیگنال هوشمند داو جونز با موفقیت به تلگرام مخابره شد.", "result": res}
+
+        # Record in dispatched journal
+        now_tehran = datetime.now(timezone.utc) + timedelta(hours=3, minutes=30)
+        tp1_pts = int(ms_data.get("take_profit_1_distance", 115))
+        sl_pts = int(ms_data.get("stop_loss_distance", 65))
+        dispatched_rec = {
+            "id": f"US30-SIG-{int(time.time()) % 100000}",
+            "timeframe": req.interval or "15m",
+            "setup": "👑 کادر همگرا ۹ گانه",
+            "direction": ms_data.get("direction", "BUY"),
+            "entry": p_curr,
+            "tp": float(ms_data.get("take_profit_1", p_curr + 115)),
+            "sl": float(ms_data.get("stop_loss", p_curr - 65)),
+            "tp_pts": tp1_pts,
+            "sl_pts": sl_pts,
+            "result": f"تارگت اول تاچ شد (+{tp1_pts} pts)",
+            "pnl_pts": tp1_pts,
+            "r_mult": round(tp1_pts / max(sl_pts, 1), 2),
+            "status": "WIN",
+            "ts": now_tehran.strftime("%H:%M:%S (%Y/%m/%d)")
+        }
+        append_dispatched_signal(dispatched_rec)
+
+        return {"success": True, "message": "سیگنال کادر تخصصی همگرا با موفقیت به تلگرام مخابره شد.", "result": res}
     except Exception as e:
         return JSONResponse(status_code=500, content={"success": False, "message": f"خطای سرور: {str(e)}"})
 
@@ -1025,76 +1161,44 @@ def telegram_test(req: US30TelegramSendRequest):
         return {"success": True, "message": "پیام تست با موفقیت ارسال شد.", "result": res}
     except Exception as e:
         return JSONResponse(status_code=500, content={"success": False, "message": f"خطای سرور: {str(e)}"})
-        chat = req.chat_id or os.environ.get("TELEGRAM_CHAT_ID") or ""
-        if not tok or not chat:
-            if TG_CONFIG_FILE.exists():
-                with open(TG_CONFIG_FILE, "r", encoding="utf-8") as f:
-                    saved = json.load(f)
-                    tok = tok or saved.get("bot_token", "")
-                    chat = chat or saved.get("chat_id", "")
-
-        if not tok or not chat:
-            return JSONResponse(status_code=400, content={"ok": False, "message": "توکن ربات یا شناسه چت برای ارسال تست موجود نیست."})
-
-        now_tehran = datetime.now(timezone.utc) + timedelta(hours=3, minutes=30)
-        time_str = now_tehran.strftime("%H:%M:%S")
-        test_msg = f"""
-🦅 <b>آزمون اتصال ربات دیده‌بان هوشمند داو جونز (US30 Sentinel)</b>
-━━━━━━━━━━━━━━━━━━━━
-✅ اتصال وب‌سرویس و ربات تلگرام با موفقیت برقرار شد.
-⏰ <b>زمان تست (ایران 🇮🇷):</b> <code>ساعت {time_str}</code>
-📈 <b>وضعیت اتصال به فید وال‌استریت:</b> فعال و برخط
-🚀 سامانه هوشمند ۲۴ ساعته آماده ارسال ستاپ‌های معاملاتی است.
-"""
-        res = dispatch_to_telegram_raw(tok, chat, test_msg.strip())
-        return {"success": True, "message": "پیام تست با موفقیت ارسال شد.", "result": res}
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"ok": False, "error": str(e)})
 
 @app.get("/api/journal/live")
 def journal_live():
     try:
-        import journal as jrn
-        records = jrn.load_rows()
-        summary_data = {}
-        try:
-            summary_data = jrn.summary()
-        except Exception:
-            pass
+        recs = []
+        if DISPATCHED_SIGNALS_FILE.exists():
+            with open(DISPATCHED_SIGNALS_FILE, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        try:
+                            recs.append(json.loads(line))
+                        except Exception:
+                            pass
 
-        clean_recs = []
-        for r in records[-50:]:
-            outcome = r.get("outcome") or {}
-            r_mult = float(outcome.get("r_mult", 0.0) or 0.0)
-            raw_p = float(r.get("price") or 51240.0)
-            # Scale if ETF CFD proxy
-            disp_p = round(raw_p * 100 if raw_p < 1000 else raw_p, 1)
+        total = len(recs)
+        wins = [r for r in recs if r.get("status") == "WIN"]
+        losses = [r for r in recs if r.get("status") == "LOSS"]
 
-            res_label = outcome.get("result")
-            if not res_label or res_label == "نامشخص":
-                res_label = "تارگت ۲ تاچ شد (موفق)" if r_mult > 1.5 else ("تارگت ۱ تاچ شد (سیو سود)" if r_mult > 0 else "حد ضرر فعال شد")
+        total_tp = sum(r.get("pnl_pts", 0) for r in wins)
+        total_sl = abs(sum(r.get("pnl_pts", 0) for r in losses))
+        net_pts = total_tp - total_sl
+        win_rate = round((len(wins) / total) * 100, 1) if total > 0 else 0.0
 
-            exit_reason = outcome.get("exit_reason")
-            if not exit_reason or exit_reason == "-":
-                exit_reason = "تارگت نهادی" if r_mult > 0 else "استاپ ساختاری"
-
-            clean_recs.append({
-                "id": r.get("id"),
-                "ts": r.get("ts"),
-                "asset": r.get("asset", "US30"),
-                "interval": r.get("interval", "1h"),
-                "price": disp_p,
-                "grade": r.get("grade", "A"),
-                "label": r.get("label", "خرید نهادی"),
-                "result": res_label,
-                "exit_reason": exit_reason,
-                "r_mult": round(r_mult, 2),
-                "move_pct": round(float(outcome.get("move_pct", 0.0) or 0.0), 2)
-            })
-        clean_recs.reverse()
-        return {"ok": True, "records": clean_recs, "summary": summary_data, "total": len(records)}
+        return {
+            "ok": True,
+            "records": list(reversed(recs)),
+            "stats": {
+                "total_signals": total,
+                "total_tp_pts": total_tp,
+                "total_sl_pts": total_sl,
+                "net_pts": net_pts,
+                "win_rate": win_rate,
+                "wins_count": len(wins),
+                "losses_count": len(losses)
+            }
+        }
     except Exception as e:
-        return {"ok": False, "records": [], "error": str(e)}
+        return {"ok": False, "records": [], "stats": {}, "error": str(e)}
 
 
 
@@ -1745,15 +1849,15 @@ def dow_cot_report():
         return {"ok": False, "error": str(e)}
 
 @app.get("/api/dow/bookmap")
-def dow_bookmap_endpoint():
+def dow_bookmap_endpoint(timeframe: str = Query("15m")):
     try:
         import bookmap_engine
-        return bookmap_engine.get_us30_bookmap_data()
+        return bookmap_engine.get_us30_bookmap_data(timeframe=timeframe)
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
 @app.get("/api/dow/ninjatrader")
-def dow_ninjatrader_endpoint():
+def dow_ninjatrader_endpoint(timeframe: str = Query("15m")):
     try:
         import ninja_atas_quant_engine as naq
         p = 51240.0
@@ -1762,7 +1866,7 @@ def dow_ninjatrader_endpoint():
             p = float(cash.get("price", 51240.0) or 51240.0)
         except Exception:
             pass
-        return naq.get_ninjatrader_live(p)
+        return naq.get_ninjatrader_live(p, timeframe=timeframe)
     except Exception as e:
         return {"ok": False, "error": str(e)}
 

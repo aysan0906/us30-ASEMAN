@@ -1650,20 +1650,55 @@
 
     <!-- ==================== TAB 4: ORDERFLOW & FVG ==================== -->
     <div id="orderflowTab" class="tab-pane">
-      <div class="content-card">
+      <div class="content-card" style="border: 1px solid rgba(0, 210, 255, 0.35); background: rgba(10, 15, 30, 0.95); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
         <div class="card-header-flex">
           <div>
-            <h3 class="card-title">🌊 کالبدشکافی جریان سفارشات (Orderflow) و خلأهای ارزش منصفانه (FVG)</h3>
+            <h3 class="card-title" style="display: flex; align-items: center; gap: 8px;">
+              <span>🌊</span> کالبدشکافی جریان سفارشات (Orderflow) و خلأهای ارزش منصفانه (FVG)
+            </h3>
             <div style="font-size: 0.78rem; color: var(--text-muted);">
               شناسایی دقیق محدوده‌های ورود بهینه، درصد پر شدن گپ‌ها، و شکار نقدینگی بر اساس مفاهیم ICT & SMC
             </div>
           </div>
-          <span style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; padding: 4px 10px; border-radius: 6px; font-size: 0.76rem; font-family: var(--font-mono);">
-            تایم‌فریم فعال: <span id="ofIntervalLabel">1h</span>
-          </span>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <span style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; padding: 4px 10px; border-radius: 6px; font-size: 0.76rem; font-family: var(--font-mono);">
+              تایم‌فریم فعال: <span id="ofIntervalLabel">1h</span>
+            </span>
+            <button onclick="fetchOrderflow()" class="chat-prompt-pill" style="margin: 0;">🔄 بازخوانی</button>
+          </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+        <!-- 1. VISUAL COMPARISON BARS: BUY VS SELL VOLUME & NET DELTA -->
+        <div style="background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <span style="font-weight: 800; color: #ffd700; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+              <span>📊</span> مقایسه بصری حجم‌های تهاجمی خرید و فروش (Aggressive Buy vs Sell Volume)
+            </span>
+            <span id="ofNetDeltaBadge" class="mono" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 3px 10px; border-radius: 6px; font-size: 0.76rem; font-weight: 800;">
+              دلتای خالص: در حال محاسبه...
+            </span>
+          </div>
+
+          <!-- Dual Split Bar Container -->
+          <div style="margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 4px;">
+              <span style="color: #00e676; font-weight: 700;">🟢 حجم خرید تهاجمی (Aggressive Bids): <span id="ofBuyVolLots" class="mono">--- لات</span> (<span id="ofBuyPct" class="mono">--%</span>)</span>
+              <span style="color: #ff3366; font-weight: 700;">🔴 حجم فروش تهاجمی (Aggressive Asks): <span id="ofSellVolLots" class="mono">--- لات</span> (<span id="ofSellPct" class="mono">--%</span>)</span>
+            </div>
+            <div style="height: 18px; width: 100%; display: flex; border-radius: 6px; overflow: hidden; background: rgba(255,255,255,0.06);">
+              <div id="ofBuyBar" style="width: 50%; height: 100%; background: linear-gradient(90deg, #00c853, #00e676); transition: width 0.4s ease;"></div>
+              <div id="ofSellBar" style="width: 50%; height: 100%; background: linear-gradient(90deg, #ff3366, #ff1744); transition: width 0.4s ease;"></div>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.74rem; color: #94a3b8;">
+            <span>وضعیت تراز جریان: <strong id="ofBiasText" style="color: #fff;">در حال ارزیابی...</strong></span>
+            <span>بازه اردر فلو: ۳۰ کندل گذشته تیک وال‌استریت</span>
+          </div>
+        </div>
+
+        <!-- 2. BULLISH & BEARISH FVG ZONES WITH PROGRESS BARS -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 20px;">
           <!-- Bullish FVGs -->
           <div style="background: rgba(0, 230, 118, 0.05); border: 1px solid rgba(0, 230, 118, 0.2); border-radius: 10px; padding: 18px;">
             <div style="font-weight: 800; color: #00e676; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
@@ -1672,8 +1707,8 @@
             <div style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.7;" id="bullishFvgDesc">
               محدوده‌های عدم تقارن خرید که قیمت در صورت اصلاح به آنها مانند فنر پرتاب می‌شود.
             </div>
-            <div id="bullishFvgList" style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
-              <!-- FVG item -->
+            <div id="bullishFvgList" style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px;">
+              <!-- Dynamic FVG item with mitigation progress bar -->
             </div>
           </div>
 
@@ -1685,9 +1720,72 @@
             <div style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.7;" id="bearishFvgDesc">
               بلوک‌های عدم تقارن فروش که سقف‌های مقاومتی معتبر داو جونز را تشکیل داده‌اند.
             </div>
-            <div id="bearishFvgList" style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
-              <!-- FVG item -->
+            <div id="bearishFvgList" style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px;">
+              <!-- Dynamic FVG item with mitigation progress bar -->
             </div>
+          </div>
+        </div>
+
+        <!-- 3. ACTIONABLE GUIDANCE & MACRO IMPACT: "الان چی کار کنم یا چه خبری هست" -->
+        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1.5px solid rgba(255, 215, 0, 0.35); border-radius: 10px; padding: 18px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.3rem;">🧭</span>
+              <h4 style="font-size: 0.98rem; font-weight: 800; color: #ffd700; margin: 0;">
+                الان چی کار کنم یا چه خبری هست؟ (راهنمای اقدام فوری و تاثیر اخبار کلان)
+              </h4>
+            </div>
+            <span style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1px solid #ffd700; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;">
+              راهنمای زنده معامله‌گر
+            </span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 14px;">
+            <div style="background: rgba(0, 230, 118, 0.06); border: 1px solid rgba(0, 230, 118, 0.25); border-radius: 8px; padding: 12px;">
+              <div style="font-weight: 800; color: #00e676; font-size: 0.85rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <span>🎯</span> اقدام معاملاتی فوری (Actionable Guidance):
+              </div>
+              <p id="ofActionGuidanceText" style="color: #e2e8f0; font-size: 0.8rem; line-height: 1.8; margin: 0;">
+                در محدوده فعلی، داو جونز در فاز بازآزمایی پولبک دیسکانت قرار دارد. اولویت فنی با ورود پوزیشن BUY در لمس تراز میانه ۵۰٪ (CE) اولین گپ FVG با تارگت سقف نقدینگی BSL است.
+              </p>
+            </div>
+
+            <div style="background: rgba(0, 210, 255, 0.06); border: 1px solid rgba(0, 210, 255, 0.25); border-radius: 8px; padding: 12px;">
+              <div style="font-weight: 800; color: #00d2ff; font-size: 0.85rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <span>📰</span> تاثیر اخبار کلان جاری (Macro Impact):
+              </div>
+              <p id="ofNewsContextText" style="color: #e2e8f0; font-size: 0.8rem; line-height: 1.8; margin: 0;">
+                شاخص دلار (DXY) و بازده اوراق ۱۰ ساله خزانه‌داری آمریکا تعیین‌کننده جهت پول هوشمند هستند. تضعیف دلار باعث پمپاژ نقدینگی به سهام صنعتی داو شده است. با این حال قبل از رویدادهای قرمز کلان از ریسک تهاجمی بپرهیزید.
+              </p>
+            </div>
+          </div>
+
+          <!-- Telegram Dispatch Button inside Orderflow -->
+          <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 215, 0, 0.25); border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <div style="font-size: 0.82rem; font-weight: 800; color: #fff;">مخابره آنی سیگنال کادر همگرا به کانال تلگرام:</div>
+              <div style="font-size: 0.72rem; color: #94a3b8;">ارسال مستقیم با فرمت تخصصی ۹ ابزار نهادی، سطوح ورود، استاپ، تارگت‌های سه‌گانه و ثبت خودکار در ژورنال</div>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button id="btnOfSendTg" onclick="sendMasterSignalFromOrderflow()" style="background: linear-gradient(135deg, #0088cc, #00b4d8); color: #fff; border: none; padding: 9px 18px; border-radius: 6px; font-weight: 800; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,136,204,0.3); transition: all 0.2s;">
+                <span>🚀</span> مخابره فوری سیگنال به تلگرام
+              </button>
+            </div>
+          </div>
+          <div id="ofTgFeedback" style="display: none; margin-top: 8px; padding: 8px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 700;"></div>
+        </div>
+
+        <!-- 4. KEY CONSIDERATIONS: "به چه نکاتی توجه کنم؟" -->
+        <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 16px;">
+          <div style="font-size: 0.88rem; font-weight: 800; color: #ffd700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <span>💡</span> به چه نکاتی توجه کنم؟ (چک‌لیست طلایی ورود به معامله با جریان سفارشات و FVG):
+          </div>
+          <div id="ofChecklistContainer" style="display: flex; flex-direction: column; gap: 8px; font-size: 0.78rem; line-height: 1.8; color: #cbd5e1;">
+            <div>• <strong>۱. ورود در تراز ۵۰٪ (CE):</strong> از ورود زودهنگام در نوک گپ خودداری کنید؛ بهترین نسبت ریسک به ریوارد در تراز میانه (CE) شکل می‌گیرد.</div>
+            <div>• <strong>۲. حد ضرر ساختاری:</strong> استاپ‌لاس را حتماً پشت کف/سقف کندل تشکیل‌دهنده FVG یا پشت اوردربلاک تاییدشده قرار دهید.</div>
+            <div>• <strong>۳. تاییدیه CVD نینجاتریدر:</strong> قبل از فشردن دکمه ورود، جهت شیب دلتای تجمیعی نینجاتریدر را چک کنید تا خلاف جهت پول هوشمند نباشد.</div>
+            <div>• <strong>۴. انجماد در ساعات خبر کلان:</strong> در فاصله ۳۰ دقیقه قبل تا ۳۰ دقیقه بعد از اخبار قرمز (CPI/FOMC/NFP) از ثبت اوردر جدید اکیداً خودداری نمایید.</div>
+            <div>• <strong>۵. سیو ۵۰٪ سود در TP1:</strong> به محض رسیدن قیمت به تارگت اول (+۱۱۵ پوینت)، نیمی از حجم را بسته و استاپ را روی ورود بگذارید.</div>
           </div>
         </div>
       </div>
@@ -2153,7 +2251,7 @@
             <span>👑</span> کادر تخصصی سیگنال‌دهی همگرا (Master Institutional Signal)
           </button>
           <button id="jSubtabBtnLiquidity" onclick="switchJournalSubtab('liquidity')" style="display: flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; border: 1.5px solid rgba(0, 210, 255, 0.3); background: rgba(0, 210, 255, 0.05); color: #94a3b8;">
-            <span>🌊</span> نقدینگی و ماژول نینجاتریدر و اتاس (Liquidity & NT8 / ATAS Journal)
+            <span>📋</span> ژورنال سیگنال‌های ارسالی تلگرام (Dispatched Signals Journal)
           </button>
         </div>
 
@@ -2164,80 +2262,71 @@
           </div>
         </div>
 
-        <!-- SUB-TAB 2: LIQUIDITY, NINJATRADER & ATAS JOURNAL -->
+        <!-- SUB-TAB 2: DISPATCHED SIGNALS & EXECUTION JOURNAL -->
         <div id="journalPaneLiquidity" style="display: none;">
-          <!-- 4 KPI Performance Cards -->
+          <!-- 4 KPI Performance Cards for Dispatched Signals -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;">
-            <div style="background: rgba(0, 230, 118, 0.08); border: 1px solid rgba(0, 230, 118, 0.3); border-radius: 10px; padding: 14px;">
-              <div style="font-size: 0.74rem; color: #94a3b8;">🎯 وین‌ریت استراتژی نهادی</div>
-              <div id="jStatWinRate" style="font-size: 1.4rem; font-weight: 900; color: #00e676; margin-top: 4px; font-family: var(--font-mono);">55.6%</div>
-              <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">بر مبنای ۳۱ سگنال ارزیابی‌شده</div>
-            </div>
-
+            <!-- Card 1: Total Dispatched Signals -->
             <div style="background: rgba(0, 210, 255, 0.08); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 10px; padding: 14px;">
-              <div style="font-size: 0.74rem; color: #94a3b8;">⚖️ میانگین سود هر معامله (R)</div>
-              <div id="jStatAvgR" style="font-size: 1.4rem; font-weight: 900; color: #00d2ff; margin-top: 4px; font-family: var(--font-mono);">+1.72 R</div>
-              <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">ریسک به ریوارد اثبات‌شده</div>
+              <div style="font-size: 0.74rem; color: #94a3b8;">📨 تعداد کل سیگنال‌های ارسالی</div>
+              <div id="jStatTotalSignals" style="font-size: 1.4rem; font-weight: 900; color: #00d2ff; margin-top: 4px; font-family: var(--font-mono);">۹ سیگنال</div>
+              <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">مخابره شده به کانال تلگرام</div>
             </div>
 
+            <!-- Card 2: Cumulative TP Points -->
+            <div style="background: rgba(0, 230, 118, 0.08); border: 1px solid rgba(0, 230, 118, 0.3); border-radius: 10px; padding: 14px;">
+              <div style="font-size: 0.74rem; color: #94a3b8;">🎯 کل تارگت پوینت‌های کسب‌شده</div>
+              <div id="jStatTotalTp" style="font-size: 1.4rem; font-weight: 900; color: #00e676; margin-top: 4px; font-family: var(--font-mono);">+۱,۳۴۰ pts</div>
+              <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">مجموع سود معاملات تارگت‌خورده</div>
+            </div>
+
+            <!-- Card 3: Cumulative SL Points -->
+            <div style="background: rgba(255, 51, 102, 0.08); border: 1px solid rgba(255, 51, 102, 0.3); border-radius: 10px; padding: 14px;">
+              <div style="font-size: 0.74rem; color: #94a3b8;">🛑 کل استاپ پوینت‌های متحمل‌شده</div>
+              <div id="jStatTotalSl" style="font-size: 1.4rem; font-weight: 900; color: #ff3366; margin-top: 4px; font-family: var(--font-mono);">-۱۳۰ pts</div>
+              <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">مجموع ریسک معاملات خروج با استاپ</div>
+            </div>
+
+            <!-- Card 4: Win Rate Monitoring -->
             <div style="background: rgba(255, 215, 0, 0.08); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 10px; padding: 14px;">
-              <div style="font-size: 0.74rem; color: #94a3b8;">🌊 اردر فلو نینجاتریدر و اتاس</div>
-              <div id="jStatNtAtas" style="font-size: 1.05rem; font-weight: 800; color: #ffd700; margin-top: 4px;">🟢 CVD مثبت (+1,280 لات)</div>
-              <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">تایید ورود نقدینگی هوشمند</div>
-            </div>
-
-            <div style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 10px; padding: 14px;">
-              <div style="font-size: 0.74rem; color: #94a3b8;">🛡️ بالانس عمق نقدینگی بوک‌مپ</div>
-              <div id="jStatBookmap" style="font-size: 1.05rem; font-weight: 800; color: #c084fc; margin-top: 4px;">🛡️ کف لیمیت در 51,180</div>
-              <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">استخر نقدینگی امن پشت ورود</div>
+              <div style="font-size: 0.74rem; color: #94a3b8;">🏆 مانیتورینگ وین‌ریت سیگنال‌ها</div>
+              <div id="jStatWinRate" style="font-size: 1.4rem; font-weight: 900; color: #ffd700; margin-top: 4px; font-family: var(--font-mono);">۷۷.۸٪</div>
+              <div id="jStatWinLossDetail" style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">۷ موفق / ۲ استاپ (خالص: +۱,۲۱۰ پوینت)</div>
             </div>
           </div>
 
-          <!-- NinjaTrader & ATAS Live Execution Telemetry -->
+          <!-- Trade Execution Table strictly for Dispatched Signals -->
           <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px; margin-bottom: 20px;">
-            <div style="font-size: 0.85rem; font-weight: 800; color: #38bdf8; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-              <span>⚡</span> وضعیت زنده ماژول‌های نقدینگی، نینجاتریدر ۸ و اتاس در ژورنال
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; font-size: 0.78rem;">
-              <div style="background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 6px; border-right: 3px solid #00e676;">
-                <strong style="color: #00e676;">🎯 NinjaTrader 8 Order Flow:</strong>
-                <p style="color: #cbd5e1; margin: 4px 0 0 0; line-height: 1.6;">
-                  دلتای تجمیعی سشن با شتاب مثبت در جریان است و قیمت داوجونز بالاتر از خط میانگین وزنی VWAP سشن (51,216.3) تثبیت شده است.
-                </p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+              <div style="font-size: 0.85rem; font-weight: 800; color: #ffd700; display: flex; align-items: center; gap: 8px;">
+                <span>📋</span> جدول ثبت دقیق سوابق سیگنال‌های مخابره‌شده به تلگرام
               </div>
-              <div style="background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 6px; border-right: 3px solid #00d2ff;">
-                <strong style="color: #00d2ff;">⚡ ATAS Advanced Time & Sales:</strong>
-                <p style="color: #cbd5e1; margin: 4px 0 0 0; line-height: 1.6;">
-                  معاملات بلوکی بزرگ موسسات با حجم بالای ۵۰ لات در سمت خرید تیک‌زنی شده و عدم‌تعادل قطری تقاضا به عرضه ۳.۲ به ۱ است.
-                </p>
-              </div>
-              <div style="background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 6px; border-right: 3px solid #ffd700;">
-                <strong style="color: #ffd700;">🔥 Bookmap Resting Depth:</strong>
-                <p style="color: #cbd5e1; margin: 4px 0 0 0; line-height: 1.6;">
-                  دیوارهای ضخیم خرید لیمیت در عمق هیت‌مپ به عنوان سنگر حمایتی عمل کرده و اوردرهای کوه یخ مانع از هرگونه ریزش شارپ شده‌اند.
-                </p>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <button onclick="fetchJournalData()" class="chat-prompt-pill" style="margin: 0;">🔄 به‌روزرسانی زنده</button>
+                <div style="font-size: 0.74rem; color: #94a3b8;">
+                  📌 هر سیگنالی که با دکمه ارسال به تلگرام مخابره شود، مستقیماً در این جدول بایگانی می‌شود.
+                </div>
               </div>
             </div>
-          </div>
-
-          <!-- Trade Execution Table -->
-          <div style="overflow-x: auto;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>شناسه سگنال</th>
-                  <th>تایم‌فریم</th>
-                  <th>قیمت ورود</th>
-                  <th>سطح ستاپ</th>
-                  <th>نتیجه معامله</th>
-                  <th>بازده خالص (R)</th>
-                  <th>زمان ثبت (ایران 🇮🇷)</th>
-                </tr>
-              </thead>
-              <tbody id="journalTableBody">
-                <!-- Dynamically populated via fetchJournalData -->
-              </tbody>
-            </table>
+            <div style="overflow-x: auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>شناسه سگنال</th>
+                    <th>تایم‌فریم</th>
+                    <th>جهت و ستاپ</th>
+                    <th>قیمت ورود</th>
+                    <th>حد سود / حد ضرر</th>
+                    <th>نتیجه معامله</th>
+                    <th>پوینت خالص</th>
+                    <th>زمان مخابره (ایران 🇮🇷)</th>
+                  </tr>
+                </thead>
+                <tbody id="journalTableBody">
+                  <!-- Dynamically populated via fetchJournalData -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -2390,6 +2479,16 @@
                 🔴 آنلاین و زنده (Live Stream 60 FPS)
               </span>
               <span style="color: #cbd5e1; font-weight: 600;">📊 هیت‌مپ نقدینگی و عمق سفارشات وال‌استریت</span>
+            </div>
+
+            <!-- Multi-Timeframe Switcher Buttons for Bookmap -->
+            <div style="display: flex; gap: 4px; align-items: center; background: rgba(0,0,0,0.6); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(255,215,0,0.3);">
+              <span style="font-size: 0.72rem; color: #ffd700; margin-left: 4px; font-weight: 700;">⏱️ تایم‌فریم:</span>
+              <button class="bm-tf-btn" data-tf="1m" onclick="setBookmapTimeframe('1m')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer; transition: all 0.2s;">1m</button>
+              <button class="bm-tf-btn" data-tf="5m" onclick="setBookmapTimeframe('5m')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer; transition: all 0.2s;">5m</button>
+              <button class="bm-tf-btn active" data-tf="15m" onclick="setBookmapTimeframe('15m')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1.5px solid #ffd700; background: rgba(255,215,0,0.25); color: #ffd700; font-weight: 800; cursor: pointer; transition: all 0.2s;">15m</button>
+              <button class="bm-tf-btn" data-tf="1h" onclick="setBookmapTimeframe('1h')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer; transition: all 0.2s;">1h</button>
+              <button class="bm-tf-btn" data-tf="4h" onclick="setBookmapTimeframe('4h')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer; transition: all 0.2s;">4h</button>
             </div>
 
             <!-- Dual-View Mode Switcher Buttons -->
@@ -2555,6 +2654,15 @@
             </div>
           </div>
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <!-- Multi-Timeframe Switcher Buttons for NinjaTrader -->
+            <div style="display: flex; gap: 4px; align-items: center; background: rgba(0,0,0,0.6); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(0,210,255,0.3);">
+              <span style="font-size: 0.72rem; color: #00d2ff; margin-left: 4px; font-weight: 700;">⏱️ تایم‌فریم:</span>
+              <button class="nt-tf-btn" data-tf="1m" onclick="setNinjaTraderTimeframe('1m')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer; transition: all 0.2s;">1m</button>
+              <button class="nt-tf-btn" data-tf="5m" onclick="setNinjaTraderTimeframe('5m')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer; transition: all 0.2s;">5m</button>
+              <button class="nt-tf-btn active" data-tf="15m" onclick="setNinjaTraderTimeframe('15m')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1.5px solid #00d2ff; background: rgba(0,210,255,0.25); color: #00d2ff; font-weight: 800; cursor: pointer; transition: all 0.2s;">15m</button>
+              <button class="nt-tf-btn" data-tf="1h" onclick="setNinjaTraderTimeframe('1h')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer; transition: all 0.2s;">1h</button>
+              <button class="nt-tf-btn" data-tf="4h" onclick="setNinjaTraderTimeframe('4h')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer; transition: all 0.2s;">4h</button>
+            </div>
             <span id="ntCvdBadge" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 4px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 800;">
               CVD: در حال محاسبه...
             </span>
@@ -3806,43 +3914,161 @@
         const data = await res.json();
         if (!data.ok) return;
 
-        const bullList = document.getElementById('bullishFvgList');
-        if (bullList && data.bullish_fvgs) {
-          bullList.innerHTML = data.bullish_fvgs.map(f => `
-            <div style="background: rgba(0, 230, 118, 0.08); border-right: 3px solid #00e676; border-radius: 6px; padding: 10px 12px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span class="mono" style="color: #00e676; font-weight: 800; font-size: 0.95rem;">${Number(f.bottom).toLocaleString()} ➔ ${Number(f.top).toLocaleString()}</span>
-                <span style="font-size: 0.72rem; background: rgba(0, 230, 118, 0.2); color: #00e676; padding: 2px 8px; border-radius: 4px;">${f.status}</span>
-              </div>
-              <div style="font-size: 0.76rem; color: #94a3b8; display: flex; justify-content: space-between;">
-                <span>پهنای گپ: <strong class="mono" style="color: #fff;">${f.size} pts</strong> | میانه ۵۰٪: <strong class="mono" style="color: #ffd166;">${Number(f.ce).toLocaleString()}</strong></span>
-              </div>
-              <div style="font-size: 0.74rem; color: #00e676; margin-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 4px;">
-                💡 ${f.entry_rule}
-              </div>
-            </div>
-          `).join('');
+        // 1. Volume comparison bars & Net Delta
+        const vc = data.volume_comparison || {};
+        const buyPct = vc.buy_pct || 50;
+        const sellPct = vc.sell_pct || 50;
+        const netLots = vc.net_delta_lots || 0;
+
+        const netBadge = document.getElementById('ofNetDeltaBadge');
+        if (netBadge) {
+          netBadge.textContent = `دلتای خالص: ${netLots >= 0 ? '+' : ''}${netLots.toLocaleString()} لات (${vc.delta_bias || ''})`;
+          netBadge.style.color = netLots >= 0 ? '#00e676' : '#ff3366';
+          netBadge.style.borderColor = netLots >= 0 ? '#00e676' : '#ff3366';
+          netBadge.style.background = netLots >= 0 ? 'rgba(0,230,118,0.15)' : 'rgba(255,51,102,0.15)';
         }
 
+        const buyLotsEl = document.getElementById('ofBuyVolLots');
+        if (buyLotsEl) buyLotsEl.textContent = `${(vc.aggressive_buy_lots || 0).toLocaleString()} لات`;
+        const buyPctEl = document.getElementById('ofBuyPct');
+        if (buyPctEl) buyPctEl.textContent = `${buyPct}%`;
+
+        const sellLotsEl = document.getElementById('ofSellVolLots');
+        if (sellLotsEl) sellLotsEl.textContent = `${(vc.aggressive_sell_lots || 0).toLocaleString()} لات`;
+        const sellPctEl = document.getElementById('ofSellPct');
+        if (sellPctEl) sellPctEl.textContent = `${sellPct}%`;
+
+        const buyBar = document.getElementById('ofBuyBar');
+        if (buyBar) buyBar.style.width = `${buyPct}%`;
+        const sellBar = document.getElementById('ofSellBar');
+        if (sellBar) sellBar.style.width = `${sellPct}%`;
+
+        const biasText = document.getElementById('ofBiasText');
+        if (biasText) biasText.textContent = vc.delta_bias || (data.delta ? data.delta.cvd_bias : 'متوازن');
+
+        // 2. Bullish FVGs with Mitigation % progress bars
+        const bullList = document.getElementById('bullishFvgList');
+        if (bullList && data.bullish_fvgs) {
+          bullList.innerHTML = data.bullish_fvgs.map(f => {
+            const fill = f.fill_pct || 0;
+            return `
+              <div style="background: rgba(0, 230, 118, 0.08); border-right: 3px solid #00e676; border-radius: 6px; padding: 10px 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <span class="mono" style="color: #00e676; font-weight: 800; font-size: 0.95rem;">${Number(f.bottom).toLocaleString()} ➔ ${Number(f.top).toLocaleString()}</span>
+                  <span style="font-size: 0.72rem; background: rgba(0, 230, 118, 0.2); color: #00e676; padding: 2px 8px; border-radius: 4px; font-weight: 700;">${f.status}</span>
+                </div>
+                <!-- Mitigation / Fill Progress Bar -->
+                <div style="margin-bottom: 6px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #94a3b8; margin-bottom: 2px;">
+                    <span>درصد میتیگیشن (پر شدن گپ):</span>
+                    <span class="mono" style="color: ${fill > 0 ? '#ffd700' : '#00e676'}; font-weight: 700;">${fill}% پر شده</span>
+                  </div>
+                  <div style="width: 100%; height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden;">
+                    <div style="width: ${fill}%; height: 100%; background: ${fill > 0 ? '#ffd700' : '#00e676'};"></div>
+                  </div>
+                </div>
+                <div style="font-size: 0.76rem; color: #94a3b8; display: flex; justify-content: space-between;">
+                  <span>پهنای گپ: <strong class="mono" style="color: #fff;">${f.size} pts</strong> | میانه ۵۰٪ (CE): <strong class="mono" style="color: #ffd166;">${Number(f.ce).toLocaleString()}</strong></span>
+                </div>
+                <div style="font-size: 0.74rem; color: #00e676; margin-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 4px;">
+                  💡 ${f.entry_rule}
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        // 3. Bearish FVGs with Mitigation % progress bars
         const bearList = document.getElementById('bearishFvgList');
         if (bearList && data.bearish_fvgs) {
-          bearList.innerHTML = data.bearish_fvgs.map(f => `
-            <div style="background: rgba(255, 51, 102, 0.08); border-right: 3px solid #ff3366; border-radius: 6px; padding: 10px 12px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span class="mono" style="color: #ff3366; font-weight: 800; font-size: 0.95rem;">${Number(f.bottom).toLocaleString()} ➔ ${Number(f.top).toLocaleString()}</span>
-                <span style="font-size: 0.72rem; background: rgba(255, 51, 102, 0.2); color: #ff3366; padding: 2px 8px; border-radius: 4px;">${f.status}</span>
+          bearList.innerHTML = data.bearish_fvgs.map(f => {
+            const fill = f.fill_pct || 0;
+            return `
+              <div style="background: rgba(255, 51, 102, 0.08); border-right: 3px solid #ff3366; border-radius: 6px; padding: 10px 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <span class="mono" style="color: #ff3366; font-weight: 800; font-size: 0.95rem;">${Number(f.bottom).toLocaleString()} ➔ ${Number(f.top).toLocaleString()}</span>
+                  <span style="font-size: 0.72rem; background: rgba(255, 51, 102, 0.2); color: #ff3366; padding: 2px 8px; border-radius: 4px; font-weight: 700;">${f.status}</span>
+                </div>
+                <!-- Mitigation / Fill Progress Bar -->
+                <div style="margin-bottom: 6px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #94a3b8; margin-bottom: 2px;">
+                    <span>درصد میتیگیشن (پر شدن گپ):</span>
+                    <span class="mono" style="color: ${fill > 0 ? '#ffd700' : '#ff3366'}; font-weight: 700;">${fill}% پر شده</span>
+                  </div>
+                  <div style="width: 100%; height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden;">
+                    <div style="width: ${fill}%; height: 100%; background: ${fill > 0 ? '#ffd700' : '#ff3366'};"></div>
+                  </div>
+                </div>
+                <div style="font-size: 0.76rem; color: #94a3b8; display: flex; justify-content: space-between;">
+                  <span>پهنای گپ: <strong class="mono" style="color: #fff;">${f.size} pts</strong> | میانه ۵۰٪ (CE): <strong class="mono" style="color: #ffd166;">${Number(f.ce).toLocaleString()}</strong></span>
+                </div>
+                <div style="font-size: 0.74rem; color: #ff3366; margin-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 4px;">
+                  💡 ${f.entry_rule}
+                </div>
               </div>
-              <div style="font-size: 0.76rem; color: #94a3b8; display: flex; justify-content: space-between;">
-                <span>پهنای گپ: <strong class="mono" style="color: #fff;">${f.size} pts</strong> | میانه ۵۰٪: <strong class="mono" style="color: #ffd166;">${Number(f.ce).toLocaleString()}</strong></span>
-              </div>
-              <div style="font-size: 0.74rem; color: #ff3366; margin-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 4px;">
-                💡 ${f.entry_rule}
-              </div>
-            </div>
-          `).join('');
+            `;
+          }).join('');
+        }
+
+        // 4. Actionable Guidance & News Context
+        const ag = data.actionable_guidance;
+        if (ag) {
+          const actEl = document.getElementById('ofActionGuidanceText');
+          if (actEl && ag.what_to_do) actEl.textContent = ag.what_to_do;
+          const newsEl = document.getElementById('ofNewsContextText');
+          if (newsEl && ag.active_news_context) newsEl.textContent = ag.active_news_context;
+          const chkCont = document.getElementById('ofChecklistContainer');
+          if (chkCont && ag.key_checklist) {
+            chkCont.innerHTML = ag.key_checklist.map(item => `<div>• ${item}</div>`).join('');
+          }
         }
       } catch (e) {
         console.error('Orderflow fetch error:', e);
+      }
+    }
+
+    async function sendMasterSignalFromOrderflow() {
+      const btn = document.getElementById('btnOfSendTg');
+      const fb = document.getElementById('ofTgFeedback');
+      if (btn) btn.disabled = true;
+      if (fb) {
+        fb.style.display = 'block';
+        fb.style.background = 'rgba(0, 210, 255, 0.15)';
+        fb.style.color = '#00d2ff';
+        fb.style.border = '1px solid #00d2ff';
+        fb.textContent = '⏳ در حال بسته‌بندی سیگنال کادر همگرا و مخابره به تلگرام...';
+      }
+
+      try {
+        const res = await fetch('/api/telegram/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ interval: _activeInterval || '15m' })
+        });
+        const data = await res.json();
+        if (fb) {
+          if (res.ok && data.success) {
+            fb.style.background = 'rgba(0, 230, 118, 0.15)';
+            fb.style.color = '#00e676';
+            fb.style.border = '1px solid #00e676';
+            fb.textContent = '🚀 سیگنال کادر تخصصی همگرا با موفقیت به تلگرام مخابره شد و در ژورنال ثبت گردید!';
+            fetchJournalData();
+          } else {
+            fb.style.background = 'rgba(255, 51, 102, 0.15)';
+            fb.style.color = '#ff3366';
+            fb.style.border = '1px solid #ff3366';
+            fb.textContent = '❌ خطا: ' + (data.message || 'ارسال ناموفق بود.');
+          }
+        }
+      } catch (e) {
+        if (fb) {
+          fb.style.background = 'rgba(255, 51, 102, 0.15)';
+          fb.style.color = '#ff3366';
+          fb.style.border = '1px solid #ff3366';
+          fb.textContent = '❌ خطای ارتباط با سرور تلگرام: ' + e.message;
+        }
+      } finally {
+        if (btn) btn.disabled = false;
       }
     }
 
@@ -4168,9 +4394,31 @@
     // ========================================================
     // MODULE 15: BOOKMAP LIQUIDITY HEATMAP TERMINAL
     // ========================================================
+    let _bmTimeframe = '15m';
+
+    function setBookmapTimeframe(tf) {
+      _bmTimeframe = tf;
+      document.querySelectorAll('.bm-tf-btn').forEach(btn => {
+        if (btn.getAttribute('data-tf') === tf) {
+          btn.classList.add('active');
+          btn.style.borderColor = '#ffd700';
+          btn.style.background = 'rgba(255,215,0,0.25)';
+          btn.style.color = '#ffd700';
+          btn.style.fontWeight = '800';
+        } else {
+          btn.classList.remove('active');
+          btn.style.borderColor = 'rgba(255,255,255,0.1)';
+          btn.style.background = 'transparent';
+          btn.style.color = '#cbd5e1';
+          btn.style.fontWeight = 'normal';
+        }
+      });
+      fetchBookmapData();
+    }
+
     async function fetchBookmapData() {
       try {
-        const res = await fetch('/api/dow/bookmap');
+        const res = await fetch(`/api/dow/bookmap?timeframe=${_bmTimeframe}`);
         if (!res.ok) return;
         const data = await res.json();
         if (!data.ok) return;
@@ -4404,14 +4652,25 @@
           ctx.fillStyle = '#030712';
           ctx.fillRect(0, 0, w, h);
 
-          // Liquidity Heatmap Slices
-          const sliceCount = _bmSlices.length || 16;
+          // Liquidity Heatmap Slices with authentic thermal spectrum
+          const sliceCount = _bmSlices.length || 17;
           const sliceH = h / sliceCount;
           _bmSlices.forEach((s, idx) => {
             const y = idx * sliceH;
-            const pulse = Math.sin(t + idx * 0.5) * 0.05;
-            const alpha = Math.min(0.68, Math.max(0.04, (s.intensity / 120.0) + pulse));
-            ctx.fillStyle = s.side === 'ASK' ? `rgba(255, 140, 0, ${alpha})` : (s.side === 'BID' ? `rgba(0, 210, 255, ${alpha})` : 'rgba(255, 255, 255, 0.08)');
+            const pulse = Math.sin(t + idx * 0.45) * 5;
+            const intensity = Math.min(100, Math.max(5, (s.intensity || 50) + pulse));
+
+            // Authentic Bookmap thermal palette (midnight -> ocean cyan -> neon green -> amber -> hot yellow -> white)
+            let color;
+            if (intensity > 85) color = 'rgba(255, 255, 255, 0.85)';
+            else if (intensity > 70) color = 'rgba(255, 215, 0, 0.75)';
+            else if (intensity > 55) color = 'rgba(255, 120, 0, 0.65)';
+            else if (intensity > 40) color = 'rgba(255, 51, 102, 0.55)';
+            else if (intensity > 25) color = 'rgba(0, 230, 118, 0.45)';
+            else if (intensity > 15) color = 'rgba(0, 210, 255, 0.35)';
+            else color = 'rgba(79, 70, 229, 0.22)';
+
+            ctx.fillStyle = color;
             ctx.fillRect(0, y, w - 90, sliceH - 1);
           });
 
@@ -4423,6 +4682,13 @@
             const r = Math.min(18, Math.max(7, a.volume_lots / 250));
             ctx.arc(w - 145 - (i * 45), y, r, 0, Math.PI * 2);
             ctx.fill();
+
+            // Iceberg detector flag if volume is high
+            if (a.volume_lots > 2500) {
+              ctx.fillStyle = '#00d2ff';
+              ctx.font = 'bold 8px monospace';
+              ctx.fillText('ICE', w - 153 - (i * 45), y - r - 2);
+            }
 
             ctx.fillStyle = '#ffffff';
             ctx.font = '10px monospace';
@@ -4438,6 +4704,12 @@
             const r = Math.min(18, Math.max(7, b.volume_lots / 250));
             ctx.arc(w - 145 - (i * 45), y, r, 0, Math.PI * 2);
             ctx.fill();
+
+            if (b.volume_lots > 2500) {
+              ctx.fillStyle = '#00e676';
+              ctx.font = 'bold 8px monospace';
+              ctx.fillText('ICE', w - 153 - (i * 45), y - r - 2);
+            }
 
             ctx.fillStyle = '#ffffff';
             ctx.font = '10px monospace';
@@ -4869,37 +5141,65 @@
         const data = await res.json();
         if (!data.ok) return;
 
+        // 1. Update 4 KPI Cards from data.stats
+        if (data.stats) {
+          const st = data.stats;
+          const totEl = document.getElementById('jStatTotalSignals');
+          if (totEl) totEl.textContent = `${st.total_signals} سیگنال`;
+
+          const tpEl = document.getElementById('jStatTotalTp');
+          if (tpEl) tpEl.textContent = `+${Number(st.total_tp_pts || 0).toLocaleString()} pts`;
+
+          const slEl = document.getElementById('jStatTotalSl');
+          if (slEl) slEl.textContent = `-${Number(st.total_sl_pts || 0).toLocaleString()} pts`;
+
+          const wrEl = document.getElementById('jStatWinRate');
+          if (wrEl) wrEl.textContent = `${st.win_rate}%`;
+
+          const detailEl = document.getElementById('jStatWinLossDetail');
+          if (detailEl) {
+            detailEl.textContent = `${st.wins_count || 0} موفق / ${st.losses_count || 0} استاپ (خالص: ${st.net_pts >= 0 ? '+' : ''}${Number(st.net_pts).toLocaleString()} پوینت)`;
+          }
+        }
+
+        // 2. Render Dispatched Signals Table
         const tbody = document.getElementById('journalTableBody');
         if (tbody && data.records) {
           tbody.innerHTML = data.records.map(r => {
-            const isWin = r.r_mult > 0;
-            const resColor = isWin ? '#00e676' : (r.r_mult < 0 ? '#ff3366' : '#ffd166');
-            let dateStr = r.ts;
-            try {
-              const dt = new Date(r.ts);
-              dateStr = dt.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }) + ' (' + dt.toLocaleDateString('fa-IR') + ')';
-            } catch (e) {}
+            const isWin = r.status === 'WIN' || r.pnl_pts > 0;
+            const resColor = isWin ? '#00e676' : '#ff3366';
+            const isBuy = r.direction === 'BUY';
+            const dirBadge = isBuy
+              ? `<span style="background: rgba(0,230,118,0.15); color: #00e676; border: 1px solid #00e676; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 0.7rem;">خرید LONG</span>`
+              : `<span style="background: rgba(255,51,102,0.15); color: #ff3366; border: 1px solid #ff3366; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 0.7rem;">فروش SHORT</span>`;
 
             return `
               <tr>
                 <td class="mono" style="font-weight: 700; color: #ffd700;">${r.id}</td>
-                <td><span style="background: rgba(0,210,255,0.15); color: #00d2ff; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem;">${r.interval}</span></td>
-                <td class="mono" style="color: #fff; font-weight: 700;">$${Number(r.price).toLocaleString()}</td>
-                <td><span style="color: #cbd5e1;">${r.label}</span></td>
-                <td><span style="background: ${resColor}22; color: ${resColor}; border: 1px solid ${resColor}; padding: 3px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;">${r.result}</span></td>
-                <td class="mono" style="color: ${resColor}; font-weight: 800;">${r.r_mult >= 0 ? '+' : ''}${r.r_mult} R</td>
-                <td class="mono" style="font-size: 0.74rem; color: #94a3b8;">${dateStr}</td>
+                <td><span style="background: rgba(0,210,255,0.15); color: #00d2ff; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-family: var(--font-mono);">${r.timeframe || '15m'}</span></td>
+                <td>
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    ${dirBadge}
+                    <span style="color: #cbd5e1; font-size: 0.78rem;">${r.setup || 'کادر همگرا ۹ گانه'}</span>
+                  </div>
+                </td>
+                <td class="mono" style="color: #fff; font-weight: 800;">$${Number(r.entry).toLocaleString()}</td>
+                <td class="mono" style="font-size: 0.74rem;">
+                  <span style="color: #00e676;">TP: $${Number(r.tp).toLocaleString()}</span> | 
+                  <span style="color: #ff3366;">SL: $${Number(r.sl).toLocaleString()}</span>
+                </td>
+                <td>
+                  <span style="background: ${resColor}22; color: ${resColor}; border: 1px solid ${resColor}; padding: 3px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;">
+                    ${r.result}
+                  </span>
+                </td>
+                <td class="mono" style="color: ${resColor}; font-weight: 900; font-size: 0.82rem;">
+                  ${r.pnl_pts >= 0 ? '+' : ''}${r.pnl_pts} pts
+                </td>
+                <td class="mono" style="font-size: 0.74rem; color: #94a3b8;">${r.ts}</td>
               </tr>
             `;
           }).join('');
-        }
-
-        if (data.summary) {
-          const s = data.summary;
-          const wrEl = document.getElementById('jStatWinRate');
-          if (wrEl && s.win_rate) wrEl.textContent = `${s.win_rate}%`;
-          const arEl = document.getElementById('jStatAvgR');
-          if (arEl && s.avg_r) arEl.textContent = `+${s.avg_r} R`;
         }
       } catch (e) {
         console.error('Error fetching Journal data:', e);
@@ -5078,9 +5378,31 @@
     // ========================================================
     // MODULE 16: NINJATRADER 8 LIVE TERMINAL
     // ========================================================
+    let _ntTimeframe = '15m';
+
+    function setNinjaTraderTimeframe(tf) {
+      _ntTimeframe = tf;
+      document.querySelectorAll('.nt-tf-btn').forEach(btn => {
+        if (btn.getAttribute('data-tf') === tf) {
+          btn.classList.add('active');
+          btn.style.borderColor = '#00d2ff';
+          btn.style.background = 'rgba(0,210,255,0.25)';
+          btn.style.color = '#00d2ff';
+          btn.style.fontWeight = '800';
+        } else {
+          btn.classList.remove('active');
+          btn.style.borderColor = 'rgba(255,255,255,0.1)';
+          btn.style.background = 'transparent';
+          btn.style.color = '#cbd5e1';
+          btn.style.fontWeight = 'normal';
+        }
+      });
+      fetchNinjaTraderData();
+    }
+
     async function fetchNinjaTraderData() {
       try {
-        const res = await fetch('/api/dow/ninjatrader');
+        const res = await fetch(`/api/dow/ninjatrader?timeframe=${_ntTimeframe}`);
         if (!res.ok) return;
         const data = await res.json();
         if (!data.ok) return;
@@ -5097,25 +5419,25 @@
           priceEl.textContent = `US30: ${Number(data.current_price).toLocaleString()}`;
         }
 
-        // SuperDOM Body
+        // SuperDOM Body with enhanced proportional depth bars
         const domBody = document.getElementById('ntSuperDomBody');
         if (domBody && data.super_dom) {
           domBody.innerHTML = data.super_dom.map(row => {
             const isCur = row.is_current;
-            const bg = isCur ? 'rgba(0, 210, 255, 0.18)' : 'rgba(255,255,255,0.02)';
-            const borderStyle = isCur ? 'border-top: 1px solid #00d2ff; border-bottom: 1px solid #00d2ff;' : 'border-bottom: 1px solid rgba(255,255,255,0.04);';
+            const bg = isCur ? 'rgba(0, 210, 255, 0.22)' : 'rgba(255,255,255,0.02)';
+            const borderStyle = isCur ? 'border-top: 1.5px solid #00d2ff; border-bottom: 1.5px solid #00d2ff;' : 'border-bottom: 1px solid rgba(255,255,255,0.04);';
             return `
               <tr style="background: ${bg}; ${borderStyle}">
-                <td style="padding: 6px; text-align: right; position: relative;">
-                  <div style="position: absolute; right: 0; top: 2px; bottom: 2px; width: ${row.bid_bar_pct}%; background: rgba(0, 230, 118, 0.25); border-radius: 3px;"></div>
-                  <span style="position: relative; z-index: 1; color: #00e676; font-weight: 700;">${row.bid_vol > 0 ? row.bid_vol.toLocaleString() : '-'}</span>
+                <td style="padding: 7px 10px; text-align: right; position: relative; width: 38%;">
+                  <div style="position: absolute; right: 0; top: 2px; bottom: 2px; width: ${row.bid_bar_pct}%; background: linear-gradient(90deg, rgba(0, 230, 118, 0.35), rgba(0, 200, 83, 0.15)); border-radius: 4px;"></div>
+                  <span style="position: relative; z-index: 1; color: #00e676; font-weight: 800;">${row.bid_vol > 0 ? row.bid_vol.toLocaleString() + ' (' + row.bid_bar_pct + '%)' : '-'}</span>
                 </td>
-                <td style="padding: 6px; font-weight: 800; color: ${isCur ? '#ffd700' : '#fff'}; background: ${isCur ? 'rgba(0, 210, 255, 0.25)' : 'transparent'};">
-                  ${Number(row.price).toLocaleString()} ${isCur ? '◄' : ''}
+                <td style="padding: 7px 10px; font-weight: 900; color: ${isCur ? '#ffd700' : '#fff'}; background: ${isCur ? 'rgba(0, 210, 255, 0.35)' : 'transparent'}; font-size: 0.84rem;">
+                  ${Number(row.price).toLocaleString()} ${isCur ? '◄ بازار' : ''}
                 </td>
-                <td style="padding: 6px; text-align: left; position: relative;">
-                  <div style="position: absolute; left: 0; top: 2px; bottom: 2px; width: ${row.ask_bar_pct}%; background: rgba(255, 51, 102, 0.25); border-radius: 3px;"></div>
-                  <span style="position: relative; z-index: 1; color: #ff3366; font-weight: 700;">${row.ask_vol > 0 ? row.ask_vol.toLocaleString() : '-'}</span>
+                <td style="padding: 7px 10px; text-align: left; position: relative; width: 38%;">
+                  <div style="position: absolute; left: 0; top: 2px; bottom: 2px; width: ${row.ask_bar_pct}%; background: linear-gradient(90deg, rgba(255, 51, 102, 0.15), rgba(255, 51, 102, 0.35)); border-radius: 4px;"></div>
+                  <span style="position: relative; z-index: 1; color: #ff3366; font-weight: 800;">${row.ask_vol > 0 ? row.ask_vol.toLocaleString() + ' (' + row.ask_bar_pct + '%)' : '-'}</span>
                 </td>
               </tr>
             `;

@@ -25,18 +25,30 @@ _TTL = 3.0  # High-frequency 3-second cache for online responsiveness
 # =============================================================================
 # 1. NINJATRADER TERMINAL ENGINE (SuperDOM, Footprint, CVD, VWAP)
 # =============================================================================
-def get_ninjatrader_live(current_price: float = 51240.0) -> Dict[str, Any]:
+def get_ninjatrader_live(current_price: float = 51240.0, timeframe: str = "15m") -> Dict[str, Any]:
     """Generate real-time online NinjaTrader Order Flow, Footprint & SuperDOM data."""
     now = time.time()
-    cached = _CACHE.get("ninjatrader")
-    if cached and (now - _CACHE_TIME.get("ninjatrader", 0.0) < _TTL):
+    tf_clean = str(timeframe or "15m").lower()
+    cache_key = f"ninjatrader_{tf_clean}"
+    cached = _CACHE.get(cache_key)
+    if cached and (now - _CACHE_TIME.get(cache_key, 0.0) < _TTL):
         return cached
 
     p = round(current_price, 1)
 
+    tf_cfg = {
+        "1m": {"mins": 1, "step": 2.0, "span": 60, "name": "۱ دقیقه‌ای اسکالپ"},
+        "5m": {"mins": 5, "step": 4.0, "span": 300, "name": "۵ دقیقه‌ای مومنتوم"},
+        "15m": {"mins": 15, "step": 5.0, "span": 900, "name": "۱۵ دقیقه‌ای استاندارد"},
+        "1h": {"mins": 60, "step": 12.0, "span": 3600, "name": "۱ ساعته دی‌ترید"},
+        "4h": {"mins": 240, "step": 25.0, "span": 14400, "name": "۴ ساعته ساختاری"},
+    }
+    cfg = tf_cfg.get(tf_clean, tf_cfg["15m"])
+    step = cfg["step"]
+    bar_sec = cfg["span"]
+
     # 1. SuperDOM (10 levels above & 10 levels below with Bid/Ask depth)
     super_dom: List[Dict[str, Any]] = []
-    step = 5.0  # 5-point ticks for US30
     for i in range(10, 0, -1):
         lvl_p = round(p + (i * step), 1)
         ask_lots = int(85 + abs(math.sin(now * 0.1 + i) * 160) + (140 if i in [3, 7] else 0))
@@ -75,15 +87,15 @@ def get_ninjatrader_live(current_price: float = 51240.0) -> Dict[str, Any]:
 
     # 2. Footprint Candlestick Clusters (Last 6 candles with Bid x Ask volume)
     footprint_candles: List[Dict[str, Any]] = []
-    base_time = now - 3600
+    base_time = now - (bar_sec * 6)
     for c_idx in range(6):
-        c_time = datetime.fromtimestamp(base_time + c_idx * 600, tz=TEHRAN_TZ).strftime("%H:%M")
-        c_open = round(p - 60 + c_idx * 12 + math.sin(c_idx) * 10, 1)
-        c_close = round(c_open + (15 if c_idx % 2 == 0 else -10), 1)
-        c_high = max(c_open, c_close) + 12
-        c_low = min(c_open, c_close) - 10
+        c_time = datetime.fromtimestamp(base_time + c_idx * bar_sec, tz=TEHRAN_TZ).strftime("%H:%M")
+        c_open = round(p - (c_idx * step * 1.5) + math.sin(c_idx) * step, 1)
+        c_close = round(c_open + (step * 2.2 if c_idx % 2 == 0 else -step * 1.2), 1)
+        c_high = round(max(c_open, c_close) + step * 1.6, 1)
+        c_low = round(min(c_open, c_close) - step * 1.4, 1)
         clusters = []
-        c_step = (c_high - c_low) / 4.0
+        c_step = max(1.0, (c_high - c_low) / 4.0)
         for l in range(4):
             lp = round(c_low + l * c_step, 1)
             b_vol = int(40 + (math.sin(c_idx + l) * 25 + 30))
@@ -113,6 +125,8 @@ def get_ninjatrader_live(current_price: float = 51240.0) -> Dict[str, Any]:
         "ok": True,
         "platform": "NinjaTrader 8 Order Flow Suite",
         "current_price": p,
+        "timeframe": tf_clean,
+        "timeframe_name_fa": cfg["name"],
         "super_dom": super_dom,
         "footprint_candles": footprint_candles,
         "cvd": {
@@ -129,12 +143,12 @@ def get_ninjatrader_live(current_price: float = 51240.0) -> Dict[str, Any]:
             "lower_band_2": lower_band_2,
             "bias_fa": "🟢 قیمت بالای VWAP سشن تثبیت شده (سوگیری صعودی)"
         },
-        "order_flow_verdict": "سیستم نینجاتریدر نشان می‌دهد انباشت تقاضای مارکت در کف‌های اصلاحی فعال است و قیمت بین سقف اول باند و VWAP در گردش است.",
+        "order_flow_verdict": f"سیستم نینجاتریدر در تایم‌فریم {cfg['name']} نشان می‌دهد انباشت تقاضای مارکت در کف‌های اصلاحی فعال است و قیمت بین سقف اول باند و VWAP در گردش است.",
         "updated_at": datetime.now(TEHRAN_TZ).strftime("%H:%M:%S")
     }
 
-    _CACHE["ninjatrader"] = res
-    _CACHE_TIME["ninjatrader"] = now
+    _CACHE[cache_key] = res
+    _CACHE_TIME[cache_key] = now
     return res
 
 
@@ -157,8 +171,10 @@ def get_atas_live(current_price: float = 51240.0) -> Dict[str, Any]:
             "time": datetime.fromtimestamp(now - 45, tz=TEHRAN_TZ).strftime("%H:%M:%S"),
             "price": round(p - 8.0, 1),
             "volume_lots": 142,
+            "size_lots": 142,
             "side": "BUY",
             "side_fa": "🟢 خرید مارکت سنگین",
+            "color": "#00e676",
             "aggressor": "BUYER",
             "tag": "INSTITUTIONAL_SWEEP"
         },
@@ -167,8 +183,10 @@ def get_atas_live(current_price: float = 51240.0) -> Dict[str, Any]:
             "time": datetime.fromtimestamp(now - 120, tz=TEHRAN_TZ).strftime("%H:%M:%S"),
             "price": round(p - 14.5, 1),
             "volume_lots": 88,
+            "size_lots": 88,
             "side": "BUY",
             "side_fa": "🟢 جذب کف (Absorption)",
+            "color": "#00e676",
             "aggressor": "BUYER",
             "tag": "ICEBERG_ABSORPTION"
         },
@@ -177,8 +195,10 @@ def get_atas_live(current_price: float = 51240.0) -> Dict[str, Any]:
             "time": datetime.fromtimestamp(now - 210, tz=TEHRAN_TZ).strftime("%H:%M:%S"),
             "price": round(p + 25.0, 1),
             "volume_lots": 96,
+            "size_lots": 96,
             "side": "SELL",
             "side_fa": "🔴 سیو سود در سقف",
+            "color": "#ff3366",
             "aggressor": "SELLER",
             "tag": "PROFIT_TAKING"
         },
@@ -187,8 +207,10 @@ def get_atas_live(current_price: float = 51240.0) -> Dict[str, Any]:
             "time": datetime.fromtimestamp(now - 340, tz=TEHRAN_TZ).strftime("%H:%M:%S"),
             "price": round(p - 35.0, 1),
             "volume_lots": 210,
+            "size_lots": 210,
             "side": "BUY",
             "side_fa": "🟢 بلاک‌ترید بانکی",
+            "color": "#00e676",
             "aggressor": "BUYER",
             "tag": "BLOCK_TRADE"
         }
@@ -196,14 +218,16 @@ def get_atas_live(current_price: float = 51240.0) -> Dict[str, Any]:
 
     # 2. Diagonal Imbalance Meter (عدم تعادل قطری ۳۰۰٪ در کلاسترهای ATAS)
     imbalances: List[Dict[str, Any]] = [
-        {"price": round(p + 15.0, 1), "bid_vol": 22, "ask_vol": 114, "ratio": "5.18x", "type": "ASK_IMBALANCE", "status": "🔴 مقاومت عرضه قطری"},
-        {"price": round(p - 12.0, 1), "bid_vol": 145, "ask_vol": 28, "ratio": "5.17x", "type": "BID_IMBALANCE", "status": "🟢 حمایت تقاضای قطری"},
-        {"price": round(p - 28.0, 1), "bid_vol": 190, "ask_vol": 35, "ratio": "5.42x", "type": "BID_IMBALANCE", "status": "🟢 کف بتنی اوردربلاک"}
+        {"price": round(p + 15.0, 1), "bid_vol": 22, "ask_vol": 114, "ratio": "5.18x", "imbalance_ratio": "5.18", "type": "ASK_IMBALANCE", "imbalance_side": "sell", "color": "#ff3366", "status": "🔴 مقاومت عرضه قطری"},
+        {"price": round(p - 12.0, 1), "bid_vol": 145, "ask_vol": 28, "ratio": "5.17x", "imbalance_ratio": "5.17", "type": "BID_IMBALANCE", "imbalance_side": "buy", "color": "#00e676", "status": "🟢 حمایت تقاضای قطری"},
+        {"price": round(p - 28.0, 1), "bid_vol": 190, "ask_vol": 35, "ratio": "5.42x", "imbalance_ratio": "5.42", "type": "BID_IMBALANCE", "imbalance_side": "buy", "color": "#00e676", "status": "🟢 کف بتنی اوردربلاک"}
     ]
 
     # 3. Speed of Tape (تعداد تراکنش در ثانیه - Ticks Per Second)
     tape_tps = int(48 + abs(math.sin(now * 0.2)) * 36)
     tape_state = "HIGH_VOLATILITY" if tape_tps > 65 else ("NORMAL_FLOW" if tape_tps > 30 else "QUIET")
+
+    verdict_text = "ردیاب معاملات بزرگ ATAS نشان می‌دهد بیش از ۶۸٪ حجم معاملات سنگین بالای ۵۰ لات در سمت خریدار (Aggressive Buyers) انجام شده است."
 
     res = {
         "ok": True,
@@ -213,10 +237,13 @@ def get_atas_live(current_price: float = 51240.0) -> Dict[str, Any]:
         "diagonal_imbalances": imbalances,
         "speed_of_tape": {
             "ticks_per_second": tape_tps,
+            "ticks_per_sec": tape_tps,
             "state": tape_state,
+            "pace_fa": "🔥 شتاب بالای نوسان وال‌استریت" if tape_tps > 60 else "⚡ جریان معاملات نرمال سشن",
             "status_fa": f"سرعت نوار معاملات: {tape_tps} تراکنش/ثانیه ({'🔥 شتاب بالای نوسان وال‌استریت' if tape_tps > 60 else '⚡ جریان معاملات نرمال سشن'})"
         },
-        "cluster_verdict": "ردیاب معاملات بزرگ ATAS نشان می‌دهد بیش از ۶۸٪ حجم معاملات سنگین بالای ۵۰ لات در سمت خریدار (Aggressive Buyers) انجام شده است.",
+        "cluster_verdict": verdict_text,
+        "verdict_fa": verdict_text,
         "updated_at": datetime.now(TEHRAN_TZ).strftime("%H:%M:%S")
     }
 
@@ -244,18 +271,21 @@ def get_quantower_live(current_price: float = 51240.0) -> Dict[str, Any]:
 
     # 2. Volume Nodes (HVN & LVN)
     hvn_nodes = [
-        {"price": poc_price, "volume": "42,800 لات", "type": "VPOC", "label": "نقطه کنترل حجم سشن (Point of Control)"},
-        {"price": val_area_high, "volume": "31,400 لات", "type": "HVN", "label": "سقف ناحیه ارزش (VAH) - سد مقاومتی"},
-        {"price": val_area_low, "volume": "34,200 لات", "type": "HVN", "label": "کف ناحیه ارزش (VAL) - سطح جهش خرید"}
+        {"price": poc_price, "volume": "42,800 لات", "type": "VPOC", "label": "نقطه کنترل حجم سشن (Point of Control)", "color": "#ffd700", "description_fa": "نقطه کنترل حجم سشن (VPOC) - گرانیگاه نقدینگی"},
+        {"price": val_area_high, "volume": "31,400 لات", "type": "HVN", "label": "سقف ناحیه ارزش (VAH) - سد مقاومتی", "color": "#ff3366", "description_fa": "سقف ناحیه ارزش (VAH) - گره پرحجم مقاومتی"},
+        {"price": val_area_low, "volume": "34,200 لات", "type": "HVN", "label": "کف ناحیه ارزش (VAL) - سطح جهش خرید", "color": "#00e676", "description_fa": "کف ناحیه ارزش (VAL) - گره پرحجم حمایتی"}
     ]
     lvn_nodes = [
-        {"price": round(p + 65.0, 1), "label": "خلأ نقدینگی نوسانی (LVN) - عبور شتابان قیمت"},
-        {"price": round(p - 60.0, 1), "label": "گپ حجم ضعیف - منطقه عدم تعادل"}
+        {"price": round(p + 65.0, 1), "label": "خلأ نقدینگی نوسانی (LVN) - عبور شتابان قیمت", "color": "#38bdf8", "description_fa": "خلأ حجم LVN - شتاب سریع قیمت بدون مقاومت"},
+        {"price": round(p - 60.0, 1), "label": "گپ حجم ضعیف - منطقه عدم تعادل", "color": "#a855f7", "description_fa": "گپ حجم LVN - جهش مجدد به سمت VPOC"}
     ]
+    all_nodes = hvn_nodes + lvn_nodes
 
     # 3. Synthetic Cross-Index Spread (Dow vs S&P 500 & Nasdaq 100)
     spx_ratio = round(p / 5920.0, 2)  # Dow / SPX
     nasdaq_ratio = round(p / 20450.0, 2)
+    relative_str = "🟢 داوجونز در برابر شاخص‌های دیگر قدرت نسبی بالاتری ثبت کرده است (Outperforming S&P)."
+    dom_verdict = f"قیمت درون ناحیه ارزش سشن (Value Area) در حال گردش است. حمایت کلیدی VAL در {val_area_low:,.1f} و هدف صعودی VAH در {val_area_high:,.1f} قرار دارد."
 
     res = {
         "ok": True,
@@ -270,14 +300,27 @@ def get_quantower_live(current_price: float = 51240.0) -> Dict[str, Any]:
             "value_area_pct": 70,
             "market_regime": "BALANCED_AUCTION" if p >= val_area_low and p <= val_area_high else "TRENDING_EXPANSION"
         },
+        "market_profile": {
+            "vah": val_area_high,
+            "val": val_area_low,
+            "poc": poc_price,
+            "auction_regime_fa": "حراج متوازن در تراز منصفانه (Value Area)"
+        },
         "hvn_nodes": hvn_nodes,
         "lvn_nodes": lvn_nodes,
+        "volume_nodes": all_nodes,
         "synthetic_spread": {
             "dow_spx_ratio": spx_ratio,
             "dow_nasdaq_ratio": nasdaq_ratio,
-            "relative_strength": "🟢 داوجونز در برابر شاخص‌های دیگر قدرت نسبی بالاتری ثبت کرده است (Outperforming S&P)."
+            "relative_strength": relative_str
         },
-        "dom_surface_verdict": f"قیمت درون ناحیه ارزش سشن (Value Area) در حال گردش است. حمایت کلیدی VAL در {val_area_low} و هدف صعودی VAH در {val_area_high} قرار دارد.",
+        "synthetic_spreads": {
+            "dow_sp500_ratio": spx_ratio,
+            "dow_nasdaq_ratio": nasdaq_ratio,
+            "divergence_fa": relative_str
+        },
+        "dom_surface_verdict": dom_verdict,
+        "verdict_fa": dom_verdict,
         "updated_at": datetime.now(TEHRAN_TZ).strftime("%H:%M:%S")
     }
 
@@ -306,24 +349,39 @@ def get_geopolitical_live(current_price: float = 51240.0) -> Dict[str, Any]:
     hotspots = [
         {
             "region": "خاورمیانه و کریدور انرژی تنگه هرمز",
+            "name_fa": "خاورمیانه و کریدور انرژی تنگه هرمز",
             "threat_level": "متوسط (زرد)",
+            "status_fa": "متوسط (زرد)",
             "impact_on_oil": "+1.2% جهش نوسان",
             "impact_on_dow": "خنثی تا مثبت (تقویت سهام شرکت‌های انرژی داو چون شِورون CVX)",
-            "risk_score": 62
+            "dow_impact_scenario_fa": "خنثی تا مثبت (تقویت سهام شرکت‌های انرژی داو چون شِورون CVX)",
+            "risk_score": 62,
+            "tension_score": 62,
+            "color": "#ffd166"
         },
         {
             "region": "تایوان و زنجیره تأمین تراشه‌های سیلیکونی",
+            "name_fa": "تایوان و زنجیره تأمین تراشه‌های سیلیکونی",
             "threat_level": "پایدار و تحت کنترل",
+            "status_fa": "پایدار و تحت کنترل",
             "impact_on_oil": "بدون اثر",
             "impact_on_dow": "حفظ ثبات سهام فناوری داوجونز (اینتل INTC، اپل AAPL و مایکروسافت MSFT)",
-            "risk_score": 38
+            "dow_impact_scenario_fa": "حفظ ثبات سهام فناوری داوجونز (اینتل INTC، اپل AAPL و مایکروسافت MSFT)",
+            "risk_score": 38,
+            "tension_score": 38,
+            "color": "#00e676"
         },
         {
             "region": "بحران بدهی و سقف بدهی ایالات متحده (US Debt Ceiling)",
+            "name_fa": "بحران بدهی و سقف بدهی ایالات متحده (US Debt Ceiling)",
             "threat_level": "نرمال با رصد اوراق خزانه‌داری",
+            "status_fa": "نرمال با رصد اوراق خزانه‌داری",
             "impact_on_oil": "تضعیف ملایم دلار",
             "impact_on_dow": "🟢 کاهش بازدهی اوراق ۱۰ ساله به نفع جریان ورود پول به سهام صنعتی",
-            "risk_score": 44
+            "dow_impact_scenario_fa": "🟢 کاهش بازدهی اوراق ۱۰ ساله به نفع جریان ورود پول به سهام صنعتی",
+            "risk_score": 44,
+            "tension_score": 44,
+            "color": "#00e676"
         }
     ]
 
@@ -333,6 +391,13 @@ def get_geopolitical_live(current_price: float = 51240.0) -> Dict[str, Any]:
         "dxy_index": {"trend": "MILD_BEARISH", "value": 101.8, "bias": "🟢 تضعیف دلار به سود داو"},
         "us10y_yield": {"trend": "STABLE", "yield_pct": 4.28, "bias": "🟢 آرامش بازدهی اوراق قرضه"},
         "flow_verdict": "سرمایه‌ها در وضعیت ریسک‌پذیری (Risk-On) قرار دارند و تقاضای پناهگاه امن در سطح نرمال است."
+    }
+
+    safe_haven_flows = {
+        "regime_fa": safe_haven_flow["flow_verdict"],
+        "gold_flow": f"${safe_haven_flow['gold_xau']['price']} ({safe_haven_flow['gold_xau']['bias']})",
+        "dxy_flow": f"{safe_haven_flow['dxy_index']['value']} ({safe_haven_flow['dxy_index']['bias']})",
+        "us10y_flow": f"{safe_haven_flow['us10y_yield']['yield_pct']}% ({safe_haven_flow['us10y_yield']['bias']})"
     }
 
     # 4. Dow Fundamentals (30 Giants Health)
@@ -345,6 +410,14 @@ def get_geopolitical_live(current_price: float = 51240.0) -> Dict[str, Any]:
         "valuation_verdict": "ارزش‌گذاری بنیادین در تراز منصفانه (Fair Value) با جریان سودآوری قوی شرکت‌های صنعتی و بهداشتی."
     }
 
+    fundamentals_dow30 = {
+        "pe_ratio_dow": fundamentals["dow_pe_ratio"],
+        "dividend_yield_pct": fundamentals["dividend_yield_pct"],
+        "earnings_growth_est_pct": fundamentals["earnings_growth_pct"],
+        "dow_divisor": fundamentals["dow_divisor"],
+        "valuation_fa": fundamentals["valuation_verdict"]
+    }
+
     res = {
         "ok": True,
         "platform": "Geopolitical & Fundamental Intelligence",
@@ -353,11 +426,15 @@ def get_geopolitical_live(current_price: float = 51240.0) -> Dict[str, Any]:
             "score": gpr_index,
             "baseline": 100.0,
             "state": gpr_state,
+            "color": "#00e676",
+            "level_fa": "ریسک نرمال و پایدار",
             "status_fa": "🟢 شاخص ریسک ژئوپلیتیک جهانی (GPR) در محدوده نرمال و پایدار (۱۱۴.۵)"
         },
         "hotspots": hotspots,
         "safe_haven_flow": safe_haven_flow,
+        "safe_haven_flows": safe_haven_flows,
         "fundamentals": fundamentals,
+        "fundamentals_dow30": fundamentals_dow30,
         "shockwave_risk": "کم (LOW RISK - کمتر از ۲۵٪ احتمال شوک ناگهانی ژئوپلیتیک به بازار)",
         "updated_at": datetime.now(TEHRAN_TZ).strftime("%H:%M:%S")
     }
