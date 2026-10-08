@@ -2364,8 +2364,52 @@
             </span>
           </div>
         </div>
-            ⏳ در حال بررسی اتصال تلگرام...
-          </span>
+
+        <!-- Telegram Signals Performance Dashboard (4 KPI Cards) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 20px;">
+          <!-- Card 1: Total Sent Signals -->
+          <div style="background: rgba(0, 210, 255, 0.08); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 10px; padding: 14px;">
+            <div style="font-size: 0.74rem; color: #94a3b8; display: flex; align-items: center; gap: 5px;">
+              <span>📨</span> تعداد کل سیگنال‌های ارسالی
+            </div>
+            <div id="tgStatSentCount" style="font-size: 1.4rem; font-weight: 900; color: #00d2ff; margin-top: 4px; font-family: var(--font-mono);">
+              ۹ سیگنال
+            </div>
+            <div style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">مخابره‌شده به کانال تلگرام</div>
+          </div>
+
+          <!-- Card 2: Take Profit Hits -->
+          <div style="background: rgba(0, 230, 118, 0.08); border: 1px solid rgba(0, 230, 118, 0.3); border-radius: 10px; padding: 14px;">
+            <div style="font-size: 0.74rem; color: #94a3b8; display: flex; align-items: center; gap: 5px;">
+              <span>🎯</span> سیگنال‌های اصابت به حد سود (TP)
+            </div>
+            <div id="tgStatWinCount" style="font-size: 1.4rem; font-weight: 900; color: #00e676; margin-top: 4px; font-family: var(--font-mono);">
+              ۷ تارگت موفق
+            </div>
+            <div id="tgStatTpPts" style="font-size: 0.7rem; color: #00e676; margin-top: 2px;">مجموع سود: +۱,۳۴۰ pts</div>
+          </div>
+
+          <!-- Card 3: Stop Loss Hits -->
+          <div style="background: rgba(255, 51, 102, 0.08); border: 1px solid rgba(255, 51, 102, 0.3); border-radius: 10px; padding: 14px;">
+            <div style="font-size: 0.74rem; color: #94a3b8; display: flex; align-items: center; gap: 5px;">
+              <span>🛑</span> سیگنال‌های اصابت به حد ضرر (SL)
+            </div>
+            <div id="tgStatLossCount" style="font-size: 1.4rem; font-weight: 900; color: #ff3366; margin-top: 4px; font-family: var(--font-mono);">
+              ۲ استاپ
+            </div>
+            <div id="tgStatSlPts" style="font-size: 0.7rem; color: #ff3366; margin-top: 2px;">مجموع استاپ: -۱۳۰ pts</div>
+          </div>
+
+          <!-- Card 4: Win Rate & Net Performance -->
+          <div style="background: rgba(255, 215, 0, 0.08); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 10px; padding: 14px;">
+            <div style="font-size: 0.74rem; color: #94a3b8; display: flex; align-items: center; gap: 5px;">
+              <span>🏆</span> وین‌ریت و بازدهی خالص تلگرام
+            </div>
+            <div id="tgStatWinRate" style="font-size: 1.4rem; font-weight: 900; color: #ffd700; margin-top: 4px; font-family: var(--font-mono);">
+              ۷۷.۸٪
+            </div>
+            <div id="tgStatNetPts" style="font-size: 0.7rem; color: #ffd700; margin-top: 2px;">خالص: +۱,۲۱۰ pts</div>
+          </div>
         </div>
 
         <!-- Render Environment Variable Guide Box -->
@@ -3421,6 +3465,8 @@
         fetchSierraChartData();
       } else if (tabId === 'journalTab') {
         fetchJournalData();
+      } else if (tabId === 'sentinelTab') {
+        loadTelegramConfig();
       } else if (tabId === 'masterSignalTab') {
         fetchMasterSignalData();
       }
@@ -4665,170 +4711,362 @@
     }
 
     function renderLiveBookmapFrame() {
-      if (_activeTab === 'bookmapTab' && _bmViewMode === 'canvas') {
-        const cv = document.getElementById('bookmapCanvas');
-        if (cv) {
-          const ctx = cv.getContext('2d');
-          const w = cv.width;
-          const h = cv.height;
+      if (_activeTab !== 'bookmapTab' || _bmViewMode !== 'canvas') return;
+      const cv = document.getElementById('bookmapCanvas');
+      if (!cv) return;
+      const ctx = cv.getContext('2d');
 
-          // Micro breathing oscillation for depth
-          const t = Date.now() * 0.0025;
+      // High-DPI Crisp Retina Canvas Resolution (Prevents blurriness on all screens)
+      const dpr = window.devicePixelRatio || 1;
+      const cssW = cv.clientWidth || 1000;
+      const cssH = 340;
+      if (cv.width !== Math.round(cssW * dpr) || cv.height !== Math.round(cssH * dpr)) {
+        cv.width = Math.round(cssW * dpr);
+        cv.height = Math.round(cssH * dpr);
+      }
+      ctx.save();
+      ctx.scale(dpr, dpr);
 
-          // Background
-          ctx.fillStyle = '#030712';
-          ctx.fillRect(0, 0, w, h);
+      const w = cssW;
+      const h = cssH;
+      const domWidth = 115;
+      const chartW = w - domWidth;
+      const t = Date.now() * 0.0025;
 
-          // Liquidity Heatmap Slices with authentic thermal spectrum
-          const sliceCount = _bmSlices.length || 17;
-          const sliceH = h / sliceCount;
-          _bmSlices.forEach((s, idx) => {
-            const y = idx * sliceH;
-            const pulse = Math.sin(t + idx * 0.45) * 5;
-            const intensity = Math.min(100, Math.max(5, (s.intensity || 50) + pulse));
+      // 1. Background (Dark Tech Theme)
+      ctx.fillStyle = '#030712';
+      ctx.fillRect(0, 0, w, h);
 
-            // Authentic Bookmap thermal palette (midnight -> ocean cyan -> neon green -> amber -> hot yellow -> white)
-            let color;
-            if (intensity > 85) color = 'rgba(255, 255, 255, 0.85)';
-            else if (intensity > 70) color = 'rgba(255, 215, 0, 0.75)';
-            else if (intensity > 55) color = 'rgba(255, 120, 0, 0.65)';
-            else if (intensity > 40) color = 'rgba(255, 51, 102, 0.55)';
-            else if (intensity > 25) color = 'rgba(0, 230, 118, 0.45)';
-            else if (intensity > 15) color = 'rgba(0, 210, 255, 0.35)';
-            else color = 'rgba(79, 70, 229, 0.22)';
+      // 2. Dynamic Price Scaling encompassing all elements cleanly
+      let allPrices = [];
+      _bmLivePoints.forEach(p => allPrices.push(p.price));
+      _bmAskWalls.forEach(a => allPrices.push(a.price));
+      _bmBidShelves.forEach(b => allPrices.push(b.price));
+      if (allPrices.length === 0) allPrices = [51240];
 
-            ctx.fillStyle = color;
-            ctx.fillRect(0, y, w - 90, sliceH - 1);
-          });
+      let minP = Math.min(...allPrices);
+      let maxP = Math.max(...allPrices);
+      if (maxP <= minP) { maxP += 35; minP -= 35; }
+      const pad = (maxP - minP) * 0.12 || 15;
+      minP -= pad;
+      maxP += pad;
 
-          // Resting Ask Walls
-          _bmAskWalls.forEach((a, i) => {
-            const y = 35 + i * 28;
-            ctx.fillStyle = a.heat_color || '#ff8c00';
-            ctx.beginPath();
-            const r = Math.min(18, Math.max(7, a.volume_lots / 250));
-            ctx.arc(w - 145 - (i * 45), y, r, 0, Math.PI * 2);
-            ctx.fill();
+      const getY = (val) => {
+        const norm = (val - minP) / (maxP - minP);
+        return h - (norm * (h - 36) + 18);
+      };
 
-            // Iceberg detector flag if volume is high
-            if (a.volume_lots > 2500) {
-              ctx.fillStyle = '#00d2ff';
-              ctx.font = 'bold 8px monospace';
-              ctx.fillText('ICE', w - 153 - (i * 45), y - r - 2);
-            }
+      // 3. Grid Lines & Watermark Price Scale
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+      ctx.lineWidth = 1;
+      const pStep = Math.max(10, Math.round((maxP - minP) / 7 / 5) * 5);
+      const startP = Math.floor(minP / pStep) * pStep;
+      for (let p = startP; p <= maxP; p += pStep) {
+        const y = getY(p);
+        if (y >= 10 && y <= h - 10) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(chartW, y);
+          ctx.stroke();
 
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '10px monospace';
-            ctx.textAlign = 'left';
-            ctx.fillText(`${a.price}`, w - 82, y + 3);
-          });
-
-          // Resting Bid Shelves
-          _bmBidShelves.forEach((b, i) => {
-            const y = h - 35 - i * 28;
-            ctx.fillStyle = b.heat_color || '#00d2ff';
-            ctx.beginPath();
-            const r = Math.min(18, Math.max(7, b.volume_lots / 250));
-            ctx.arc(w - 145 - (i * 45), y, r, 0, Math.PI * 2);
-            ctx.fill();
-
-            if (b.volume_lots > 2500) {
-              ctx.fillStyle = '#00e676';
-              ctx.font = 'bold 8px monospace';
-              ctx.fillText('ICE', w - 153 - (i * 45), y - r - 2);
-            }
-
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '10px monospace';
-            ctx.textAlign = 'left';
-            ctx.fillText(`${b.price}`, w - 82, y + 3);
-          });
-
-          // Price scale
-          let minP = 999999, maxP = -999999;
-          _bmLivePoints.forEach(pt => {
-            if (pt.price < minP) minP = pt.price;
-            if (pt.price > maxP) maxP = pt.price;
-          });
-          if (maxP <= minP) { maxP += 40; minP -= 40; }
-          const pad = (maxP - minP) * 0.25 || 25;
-          minP -= pad;
-          maxP += pad;
-
-          const getY = (val) => h - ((val - minP) / (maxP - minP)) * h;
-
-          // Streaming Price Trail
-          if (_bmLivePoints.length > 1) {
-            ctx.strokeStyle = '#ffd700';
-            ctx.lineWidth = 2.4;
-            ctx.shadowColor = 'rgba(255, 215, 0, 0.5)';
-            ctx.shadowBlur = 6;
-            ctx.beginPath();
-            const dx = (w - 100) / Math.max(1, _bmLivePoints.length - 1);
-            _bmLivePoints.forEach((pt, i) => {
-              const x = i * dx;
-              const y = getY(pt.price);
-              if (i === 0) ctx.moveTo(x, y);
-              else ctx.lineTo(x, y);
-            });
-            ctx.stroke();
-            ctx.shadowBlur = 0;
-          }
-
-          // Execution Trade Bubbles
-          _bmTradeBubbles.forEach(b => {
-            const dx = (w - 100) / Math.max(1, _bmLivePoints.length - 1);
-            const x = b.idx * dx;
-            const y = getY(b.price);
-            ctx.fillStyle = b.color;
-            ctx.beginPath();
-            ctx.arc(x, y, b.radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 1;
-            ctx.stroke();
-          });
-
-          // Current Head Dot & Crosshair
-          if (_bmLivePoints.length > 0) {
-            const last = _bmLivePoints[_bmLivePoints.length - 1];
-            const headX = w - 100;
-            const headY = getY(last.price);
-
-            // Laser guideline
-            ctx.strokeStyle = 'rgba(0, 230, 118, 0.45)';
-            ctx.lineWidth = 1.2;
-            ctx.setLineDash([4, 4]);
-            ctx.beginPath();
-            ctx.moveTo(0, headY);
-            ctx.lineTo(w, headY);
-            ctx.stroke();
-            ctx.setLineDash([]);
-
-            // Pulse Head
-            const pulseR = 5 + Math.sin(t * 3) * 2;
-            ctx.fillStyle = '#00e676';
-            ctx.beginPath();
-            ctx.arc(headX, headY, pulseR, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
-
-            // Floating Live Tag
-            ctx.fillStyle = '#00e676';
-            ctx.font = 'bold 11px monospace';
-            ctx.textAlign = 'left';
-            ctx.fillText(`◄ ${last.price.toFixed(1)}`, w - 85, headY + 4);
-
-            const tagEl = document.getElementById('bmLiveCrosshairTag');
-            if (tagEl) {
-              tagEl.style.top = `${Math.max(8, Math.min(h - 26, headY - 12))}px`;
-              tagEl.textContent = `◄ ${last.price.toFixed(1)} LIVE`;
-            }
-          }
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+          ctx.font = '9px monospace';
+          ctx.textAlign = 'right';
+          ctx.fillText(Number(p).toLocaleString(), chartW - 8, y - 3);
         }
       }
+
+      // 4. Subtle Thermal Atmospheric Depth Glow
+      const gradBg = ctx.createLinearGradient(0, 0, 0, h);
+      gradBg.addColorStop(0, 'rgba(255, 51, 102, 0.05)');
+      gradBg.addColorStop(0.5, 'rgba(0, 210, 255, 0.02)');
+      gradBg.addColorStop(1, 'rgba(0, 230, 118, 0.05)');
+      ctx.fillStyle = gradBg;
+      ctx.fillRect(0, 0, chartW, h);
+
+      // 5. Authentic Bookmap Resting Liquidity Highways
+      // Ask Supply Highways (Red / Amber / Golden Glow)
+      _bmAskWalls.forEach((a, i) => {
+        const y = getY(a.price);
+        const pulse = Math.sin(t + i * 0.8) * 0.15 + 0.85;
+        const beamH = Math.min(18, Math.max(5, (a.volume_lots / 250) * pulse));
+        const vol = a.volume_lots || 1200;
+
+        const beamGrad = ctx.createLinearGradient(0, y, chartW, y);
+        if (vol > 2500) {
+          beamGrad.addColorStop(0, 'rgba(255, 120, 0, 0.1)');
+          beamGrad.addColorStop(0.3, 'rgba(255, 215, 0, 0.45)');
+          beamGrad.addColorStop(0.8, 'rgba(255, 255, 255, 0.85)');
+          beamGrad.addColorStop(1, 'rgba(255, 80, 0, 0.9)');
+        } else {
+          beamGrad.addColorStop(0, 'rgba(255, 51, 102, 0.05)');
+          beamGrad.addColorStop(0.5, 'rgba(255, 140, 0, 0.35)');
+          beamGrad.addColorStop(1, 'rgba(255, 183, 3, 0.65)');
+        }
+
+        ctx.fillStyle = beamGrad;
+        ctx.fillRect(0, y - beamH / 2, chartW, beamH);
+
+        ctx.strokeStyle = vol > 2500 ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 183, 3, 0.6)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(chartW, y);
+        ctx.stroke();
+
+        // Iceberg Order Tag
+        if (vol > 2000) {
+          const badgeX = 25 + (i * 85);
+          ctx.fillStyle = 'rgba(10, 15, 29, 0.9)';
+          ctx.strokeStyle = '#ffd700';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(badgeX, y - 9, 72, 17);
+          ctx.fillRect(badgeX, y - 9, 72, 17);
+
+          ctx.fillStyle = '#ffd700';
+          ctx.font = 'bold 9px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(`🧊 ${vol}L`, badgeX + 36, y + 3);
+        }
+      });
+
+      // Bid Demand Highways (Green / Cyan / Emerald Glow)
+      _bmBidShelves.forEach((b, i) => {
+        const y = getY(b.price);
+        const pulse = Math.cos(t + i * 0.8) * 0.15 + 0.85;
+        const beamH = Math.min(18, Math.max(5, (b.volume_lots / 250) * pulse));
+        const vol = b.volume_lots || 1200;
+
+        const beamGrad = ctx.createLinearGradient(0, y, chartW, y);
+        if (vol > 2500) {
+          beamGrad.addColorStop(0, 'rgba(0, 180, 216, 0.1)');
+          beamGrad.addColorStop(0.4, 'rgba(0, 230, 118, 0.45)');
+          beamGrad.addColorStop(0.8, 'rgba(255, 255, 255, 0.85)');
+          beamGrad.addColorStop(1, 'rgba(0, 230, 118, 0.9)');
+        } else {
+          beamGrad.addColorStop(0, 'rgba(0, 210, 255, 0.05)');
+          beamGrad.addColorStop(0.5, 'rgba(0, 230, 118, 0.35)');
+          beamGrad.addColorStop(1, 'rgba(0, 210, 255, 0.65)');
+        }
+
+        ctx.fillStyle = beamGrad;
+        ctx.fillRect(0, y - beamH / 2, chartW, beamH);
+
+        ctx.strokeStyle = vol > 2500 ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 230, 118, 0.6)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(chartW, y);
+        ctx.stroke();
+
+        if (vol > 2000) {
+          const badgeX = 35 + (i * 85);
+          ctx.fillStyle = 'rgba(10, 15, 29, 0.9)';
+          ctx.strokeStyle = '#00e676';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(badgeX, y - 9, 72, 17);
+          ctx.fillRect(badgeX, y - 9, 72, 17);
+
+          ctx.fillStyle = '#00e676';
+          ctx.font = 'bold 9px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(`🛡️ ${vol}L`, badgeX + 36, y + 3);
+        }
+      });
+
+      // 6. Streaming Price Trajectory (Glowing Neon Line)
+      if (_bmLivePoints.length > 1) {
+        const dx = chartW / Math.max(1, _bmLivePoints.length - 1);
+
+        // Area under trajectory
+        ctx.beginPath();
+        _bmLivePoints.forEach((pt, i) => {
+          const x = i * dx;
+          const y = getY(pt.price);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.lineTo((_bmLivePoints.length - 1) * dx, h);
+        ctx.lineTo(0, h);
+        ctx.closePath();
+        const areaGrad = ctx.createLinearGradient(0, 0, 0, h);
+        areaGrad.addColorStop(0, 'rgba(0, 210, 255, 0.14)');
+        areaGrad.addColorStop(1, 'rgba(0, 210, 255, 0.0)');
+        ctx.fillStyle = areaGrad;
+        ctx.fill();
+
+        // Main Trajectory Glow Line
+        ctx.shadowColor = 'rgba(0, 210, 255, 0.85)';
+        ctx.shadowBlur = 8;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        _bmLivePoints.forEach((pt, i) => {
+          const x = i * dx;
+          const y = getY(pt.price);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
+      // 7. Order Flow Execution Trade Bubbles
+      _bmTradeBubbles.forEach(b => {
+        const dx = chartW / Math.max(1, _bmLivePoints.length - 1);
+        const x = Math.min(chartW - 4, b.idx * dx);
+        const y = getY(b.price);
+        const isBuy = b.side === 'BUY';
+
+        const radGrad = ctx.createRadialGradient(x - b.radius/3, y - b.radius/3, 1, x, y, b.radius);
+        if (isBuy) {
+          radGrad.addColorStop(0, '#ffffff');
+          radGrad.addColorStop(0.4, 'rgba(0, 255, 136, 0.85)');
+          radGrad.addColorStop(1, 'rgba(0, 200, 83, 0.45)');
+        } else {
+          radGrad.addColorStop(0, '#ffffff');
+          radGrad.addColorStop(0.4, 'rgba(255, 51, 102, 0.85)');
+          radGrad.addColorStop(1, 'rgba(225, 29, 72, 0.45)');
+        }
+
+        ctx.fillStyle = radGrad;
+        ctx.beginPath();
+        ctx.arc(x, y, b.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = isBuy ? '#00e676' : '#ff3366';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        if (b.radius >= 8) {
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 8px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(`${isBuy ? '+' : '-'}${Math.round(b.radius * 9)}`, x, y + 3);
+        }
+      });
+
+      // 8. Live Head Dot & Crosshair Laser
+      if (_bmLivePoints.length > 0) {
+        const last = _bmLivePoints[_bmLivePoints.length - 1];
+        const headX = chartW;
+        const headY = getY(last.price);
+
+        ctx.strokeStyle = 'rgba(255, 215, 0, 0.45)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(0, headY);
+        ctx.lineTo(chartW, headY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Pulsing radar concentric wave rings
+        const ring1 = 6 + (Math.sin(t * 4) + 1) * 3;
+        const ring2 = 9 + (Math.sin(t * 4 + 1.5) + 1) * 5;
+        ctx.strokeStyle = 'rgba(0, 230, 118, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(headX, headY, ring1, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(0, 210, 255, 0.3)';
+        ctx.beginPath();
+        ctx.arc(headX, headY, ring2, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = '#00e676';
+        ctx.beginPath();
+        ctx.arc(headX, headY, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+
+        const tagEl = document.getElementById('bmLiveCrosshairTag');
+        if (tagEl) {
+          tagEl.style.top = `${Math.max(6, Math.min(h - 26, headY - 12))}px`;
+          tagEl.style.right = `${domWidth + 8}px`;
+          tagEl.textContent = `◄ ${last.price.toFixed(1)} LIVE`;
+        }
+      }
+
+      // 9. Right-Side Bookmap Cumulative DOM (Depth of Market) Ladder
+      ctx.fillStyle = 'rgba(6, 11, 24, 0.96)';
+      ctx.fillRect(chartW, 0, domWidth, h);
+
+      ctx.strokeStyle = 'rgba(255, 215, 0, 0.35)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(chartW, 0);
+      ctx.lineTo(chartW, h);
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(255, 215, 0, 0.15)';
+      ctx.fillRect(chartW, 0, domWidth, 22);
+      ctx.fillStyle = '#ffd700';
+      ctx.font = 'bold 9px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('BOOKMAP DOM L2', chartW + domWidth / 2, 15);
+
+      const maxDomVol = 3500;
+      
+      // Draw Ask Rows in DOM
+      _bmAskWalls.forEach(a => {
+        const y = getY(a.price);
+        const barW = Math.min(domWidth - 15, (a.volume_lots / maxDomVol) * (domWidth - 20));
+        ctx.fillStyle = 'rgba(255, 140, 0, 0.35)';
+        ctx.fillRect(chartW + 2, y - 7, barW, 14);
+
+        ctx.fillStyle = '#ff8c00';
+        ctx.fillRect(chartW + 2, y - 7, 3, 14);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 9px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`${Number(a.price).toLocaleString()}`, chartW + 8, y + 3);
+
+        ctx.fillStyle = '#ffd700';
+        ctx.textAlign = 'right';
+        ctx.fillText(`${(a.volume_lots/1000).toFixed(1)}k`, chartW + domWidth - 6, y + 3);
+      });
+
+      // Draw Bid Rows in DOM
+      _bmBidShelves.forEach(b => {
+        const y = getY(b.price);
+        const barW = Math.min(domWidth - 15, (b.volume_lots / maxDomVol) * (domWidth - 20));
+        ctx.fillStyle = 'rgba(0, 230, 118, 0.35)';
+        ctx.fillRect(chartW + 2, y - 7, barW, 14);
+
+        ctx.fillStyle = '#00e676';
+        ctx.fillRect(chartW + 2, y - 7, 3, 14);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 9px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`${Number(b.price).toLocaleString()}`, chartW + 8, y + 3);
+
+        ctx.fillStyle = '#00e676';
+        ctx.textAlign = 'right';
+        ctx.fillText(`${(b.volume_lots/1000).toFixed(1)}k`, chartW + domWidth - 6, y + 3);
+      });
+
+      // Draw Live Price Highlight in DOM
+      if (_bmLivePoints.length > 0) {
+        const last = _bmLivePoints[_bmLivePoints.length - 1];
+        const y = getY(last.price);
+        ctx.fillStyle = 'rgba(0, 210, 255, 0.35)';
+        ctx.fillRect(chartW, y - 9, domWidth, 18);
+        ctx.strokeStyle = '#00d2ff';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(chartW, y - 9, domWidth, 18);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(`◄ ${last.price.toFixed(1)}`, chartW + domWidth / 2, y + 4);
+      }
+
+      ctx.restore();
       _bmAnimFrame = requestAnimationFrame(renderLiveBookmapFrame);
     }
 
@@ -4945,6 +5183,31 @@
             badge.style.color = '#ffd166';
             badge.style.background = 'rgba(255, 209, 102, 0.15)';
           }
+        }
+
+        // Update Telegram KPI Performance Cards
+        const st = data.journal_stats;
+        if (st) {
+          const sentEl = document.getElementById('tgStatSentCount');
+          if (sentEl) sentEl.textContent = `${st.total_signals} سیگنال`;
+
+          const winEl = document.getElementById('tgStatWinCount');
+          if (winEl) winEl.textContent = `${st.wins_count || 0} تارگت موفق (TP)`;
+
+          const tpPtsEl = document.getElementById('tgStatTpPts');
+          if (tpPtsEl) tpPtsEl.textContent = `مجموع سود: +${Number(st.total_tp_pts || 0).toLocaleString()} pts`;
+
+          const lossEl = document.getElementById('tgStatLossCount');
+          if (lossEl) lossEl.textContent = `${st.losses_count || 0} استاپ (SL)`;
+
+          const slPtsEl = document.getElementById('tgStatSlPts');
+          if (slPtsEl) slPtsEl.textContent = `مجموع استاپ: -${Number(st.total_sl_pts || 0).toLocaleString()} pts`;
+
+          const wrEl = document.getElementById('tgStatWinRate');
+          if (wrEl) wrEl.textContent = `${st.win_rate}%`;
+
+          const netPtsEl = document.getElementById('tgStatNetPts');
+          if (netPtsEl) netPtsEl.textContent = `خالص: ${st.net_pts >= 0 ? '+' : ''}${Number(st.net_pts).toLocaleString()} pts`;
         }
       } catch (e) {}
     }
@@ -5246,6 +5509,28 @@
           if (detailEl) {
             detailEl.textContent = `${st.wins_count || 0} موفق / ${st.losses_count || 0} استاپ (خالص: ${st.net_pts >= 0 ? '+' : ''}${Number(st.net_pts).toLocaleString()} پوینت)`;
           }
+
+          // Also synchronize Telegram Sentinel KPI Performance Cards
+          const tgSentEl = document.getElementById('tgStatSentCount');
+          if (tgSentEl) tgSentEl.textContent = `${st.total_signals} سیگنال`;
+
+          const tgWinEl = document.getElementById('tgStatWinCount');
+          if (tgWinEl) tgWinEl.textContent = `${st.wins_count || 0} تارگت موفق (TP)`;
+
+          const tgTpPtsEl = document.getElementById('tgStatTpPts');
+          if (tgTpPtsEl) tgTpPtsEl.textContent = `مجموع سود: +${Number(st.total_tp_pts || 0).toLocaleString()} pts`;
+
+          const tgLossEl = document.getElementById('tgStatLossCount');
+          if (tgLossEl) tgLossEl.textContent = `${st.losses_count || 0} استاپ (SL)`;
+
+          const tgSlPtsEl = document.getElementById('tgStatSlPts');
+          if (tgSlPtsEl) tgSlPtsEl.textContent = `مجموع استاپ: -${Number(st.total_sl_pts || 0).toLocaleString()} pts`;
+
+          const tgWrEl = document.getElementById('tgStatWinRate');
+          if (tgWrEl) tgWrEl.textContent = `${st.win_rate}%`;
+
+          const tgNetPtsEl = document.getElementById('tgStatNetPts');
+          if (tgNetPtsEl) tgNetPtsEl.textContent = `خالص: ${st.net_pts >= 0 ? '+' : ''}${Number(st.net_pts).toLocaleString()} pts`;
         }
 
         // 2. Render Dispatched Signals Table
@@ -5540,61 +5825,74 @@
             const deltaColor = c.candle_delta >= 0 ? '#00e676' : '#ff3366';
 
             return `
-              <div style="min-width: 175px; background: ${candleBg}; border: 1.5px solid ${candleBorder}; border-radius: 8px; padding: 8px; font-family: var(--font-mono); box-shadow: 0 4px 14px rgba(0,0,0,0.45); display: flex; flex-direction: column; justify-content: space-between;">
-                <!-- Candle Top Bar: Time & Net Delta Badge -->
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 5px; margin-bottom: 5px;">
-                  <span style="font-weight: 800; font-size: 0.78rem; color: #fff; display: flex; align-items: center; gap: 4px;">
+              <div style="min-width: 250px; background: ${candleBg}; border: 1.5px solid ${candleBorder}; border-radius: 10px; padding: 10px 12px; font-family: var(--font-mono); box-shadow: 0 6px 20px rgba(0,0,0,0.5); display: flex; flex-direction: column; justify-content: space-between;">
+                
+                <!-- Candle Top Bar: Time, Bull/Bear tag, Net Delta Badge -->
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; margin-bottom: 6px;">
+                  <span style="font-weight: 800; font-size: 0.82rem; color: #fff; display: flex; align-items: center; gap: 5px;">
                     <span>${isBull ? '🟢' : '🔴'}</span> ${c.time}
                   </span>
-                  <span style="font-size: 0.72rem; color: ${deltaColor}; font-weight: 800; background: ${deltaColor}22; border: 1px solid ${deltaColor}55; padding: 2px 6px; border-radius: 4px;">
+                  <span style="font-size: 0.74rem; color: ${deltaColor}; font-weight: 900; background: ${deltaColor}22; border: 1.5px solid ${deltaColor}66; padding: 2px 8px; border-radius: 5px;">
                     ${c.candle_delta >= 0 ? '+' : ''}${c.candle_delta} Δ
                   </span>
                 </div>
 
                 <!-- High Wick Center Stub -->
-                <div style="width: 2px; height: 7px; background: ${isBull ? '#00e676' : '#ff3366'}; margin: 0 auto 3px auto; border-radius: 1px;"></div>
+                <div style="width: 3px; height: 10px; background: ${isBull ? '#00e676' : '#ff3366'}; margin: 0 auto 5px auto; border-radius: 1px; box-shadow: 0 0 6px ${isBull ? '#00e676' : '#ff3366'};"></div>
 
-                <!-- Footprint Ladder Clusters -->
-                <div style="display: flex; flex-direction: column; gap: 3px; font-size: 0.74rem;">
+                <!-- Column Header: Bid Vol | Dow Price | Ask Vol -->
+                <div style="display: grid; grid-template-columns: 78px 84px 78px; font-size: 0.68rem; color: #94a3b8; font-weight: 800; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px; margin-bottom: 6px;">
+                  <span style="color: #00e676; text-align: right; padding-right: 6px;">حجم خرید</span>
+                  <span style="color: #ffd700;">نرخ داوجونز</span>
+                  <span style="color: #ff3366; text-align: left; padding-left: 6px;">حجم فروش</span>
+                </div>
+
+                <!-- Footprint Ladder Clusters (Spacious 3-Column Grid) -->
+                <div style="display: flex; flex-direction: column; gap: 4px;">
                   ${c.clusters.map(cl => {
                     const isPoc = cl.is_poc;
-                    const pocStyle = isPoc ? 'border: 1.5px solid #ffd700; background: rgba(255, 215, 0, 0.22); box-shadow: 0 0 8px rgba(255, 215, 0, 0.35);' : 'background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);';
                     const isBuyImb = cl.imbalance === 'BUY';
                     const isSellImb = cl.imbalance === 'SELL';
+                    const rowBg = isPoc ? 'rgba(255, 215, 0, 0.12)' : 'rgba(255, 255, 255, 0.02)';
+                    const rowBorder = isPoc ? 'border: 1.5px solid #ffd700; box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);' : 'border: 1px solid rgba(255,255,255,0.04);';
 
                     return `
-                      <div style="display: flex; align-items: center; justify-content: space-between; padding: 2px 4px; border-radius: 3px; ${pocStyle} position: relative;">
-                        <!-- Bid side with green volume bar -->
-                        <div style="width: 38%; display: flex; align-items: center; justify-content: flex-end; position: relative;">
-                          <div style="position: absolute; right: 0; top: 1px; bottom: 1px; width: ${cl.bid_bar_pct}%; background: rgba(0, 230, 118, 0.3); border-radius: 2px;"></div>
-                          <span style="position: relative; z-index: 1; color: #00e676; font-weight: 700;">
-                            ${isSellImb ? '⚡' : ''}${cl.bid}
+                      <div style="display: grid; grid-template-columns: 78px 84px 78px; align-items: center; min-height: 25px; padding: 2px 0; border-radius: 4px; ${rowBorder} background: ${rowBg}; position: relative; overflow: hidden;">
+                        
+                        <!-- Column 1: Bid Side with Green Volume Bar -->
+                        <div style="text-align: right; padding-right: 8px; position: relative; height: 100%; display: flex; align-items: center; justify-content: flex-end;">
+                          <div style="position: absolute; right: 0; top: 0; bottom: 0; width: ${cl.bid_bar_pct}%; background: rgba(0, 230, 118, 0.28); border-radius: 2px; pointer-events: none;"></div>
+                          <span style="position: relative; z-index: 1; color: #00e676; font-weight: 800; font-size: 0.78rem; display: flex; align-items: center; gap: 2px;">
+                            ${isSellImb ? '<span title="عدم تعادل فروش تهاجمی" style="color:#ff3366; font-size:0.7rem;">⚡</span>' : ''}
+                            ${cl.bid}
                           </span>
                         </div>
 
-                        <!-- Center Price Tick -->
-                        <div style="width: 24%; text-align: center; color: ${isPoc ? '#ffd700' : '#cbd5e1'}; font-weight: ${isPoc ? '900' : '600'}; font-size: 0.72rem;">
-                          ${isPoc ? '👑 ' : ''}${Number(cl.price).toLocaleString()}
+                        <!-- Column 2: Center Price Step -->
+                        <div style="text-align: center; padding: 2px 4px; font-weight: 900; font-size: 0.78rem; color: ${isPoc ? '#ffd700' : '#e2e8f0'}; background: ${isPoc ? 'rgba(255, 215, 0, 0.25)' : 'rgba(0, 0, 0, 0.45)'}; border-left: 1px solid rgba(255,255,255,0.06); border-right: 1px solid rgba(255,255,255,0.06); white-space: nowrap;">
+                          ${isPoc ? '<span style="color:#ffd700;">👑 </span>' : ''}${Number(cl.price).toLocaleString()}
                         </div>
 
-                        <!-- Ask side with red volume bar -->
-                        <div style="width: 38%; display: flex; align-items: center; justify-content: flex-start; position: relative;">
-                          <div style="position: absolute; left: 0; top: 1px; bottom: 1px; width: ${cl.ask_bar_pct}%; background: rgba(255, 51, 102, 0.3); border-radius: 2px;"></div>
-                          <span style="position: relative; z-index: 1; color: #ff3366; font-weight: 700;">
-                            ${cl.ask}${isBuyImb ? '⚡' : ''}
+                        <!-- Column 3: Ask Side with Red Volume Bar -->
+                        <div style="text-align: left; padding-left: 8px; position: relative; height: 100%; display: flex; align-items: center; justify-content: flex-start;">
+                          <div style="position: absolute; left: 0; top: 0; bottom: 0; width: ${cl.ask_bar_pct}%; background: rgba(255, 51, 102, 0.28); border-radius: 2px; pointer-events: none;"></div>
+                          <span style="position: relative; z-index: 1; color: #ff3366; font-weight: 800; font-size: 0.78rem; display: flex; align-items: center; gap: 2px;">
+                            ${cl.ask}
+                            ${isBuyImb ? '<span title="عدم تعادل خرید تهاجمی" style="color:#00e676; font-size:0.7rem;">⚡</span>' : ''}
                           </span>
                         </div>
+
                       </div>
                     `;
                   }).join('')}
                 </div>
 
                 <!-- Low Wick Center Stub -->
-                <div style="width: 2px; height: 7px; background: ${isBull ? '#00e676' : '#ff3366'}; margin: 3px auto 0 auto; border-radius: 1px;"></div>
+                <div style="width: 3px; height: 10px; background: ${isBull ? '#00e676' : '#ff3366'}; margin: 5px auto 0 auto; border-radius: 1px; box-shadow: 0 0 6px ${isBull ? '#00e676' : '#ff3366'};"></div>
 
                 <!-- Candle Footer: Total Volume & Delta Ratio -->
-                <div style="margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 4px; display: flex; justify-content: space-between; font-size: 0.68rem; color: #94a3b8;">
-                  <span>حجم: <strong class="mono" style="color: #fff;">${(c.total_volume || 0).toLocaleString()}</strong></span>
+                <div style="margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; display: flex; justify-content: space-between; font-size: 0.72rem; color: #94a3b8;">
+                  <span>حجم کل: <strong class="mono" style="color: #fff;">${(c.total_volume || 0).toLocaleString()}</strong></span>
                   <span>نسبت دلتا: <strong class="mono" style="color: ${deltaColor};">${c.delta_pct || 0}%</strong></span>
                 </div>
               </div>

@@ -771,6 +771,35 @@ class US30TelegramSendRequest(BaseModel):
     chat_id: Optional[str] = None
     interval: Optional[str] = "1h"
 
+def get_dispatched_journal_stats() -> Dict[str, Any]:
+    recs = []
+    if DISPATCHED_SIGNALS_FILE.exists():
+        with open(DISPATCHED_SIGNALS_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    try:
+                        recs.append(json.loads(line))
+                    except Exception:
+                        pass
+    total = len(recs)
+    wins = [r for r in recs if r.get("status") == "WIN"]
+    losses = [r for r in recs if r.get("status") == "LOSS"]
+
+    total_tp = sum(r.get("pnl_pts", 0) for r in wins)
+    total_sl = abs(sum(r.get("pnl_pts", 0) for r in losses))
+    net_pts = total_tp - total_sl
+    win_rate = round((len(wins) / total) * 100, 1) if total > 0 else 0.0
+
+    return {
+        "total_signals": total,
+        "total_tp_pts": total_tp,
+        "total_sl_pts": total_sl,
+        "net_pts": net_pts,
+        "win_rate": win_rate,
+        "wins_count": len(wins),
+        "losses_count": len(losses)
+    }
+
 def get_us30_telegram_config() -> Dict[str, Any]:
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
     chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
@@ -791,6 +820,7 @@ def get_us30_telegram_config() -> Dict[str, Any]:
             pass
 
     masked = f"{bot_token[:6]}...{bot_token[-4:]}" if len(bot_token) > 12 else bot_token
+    j_stats = get_dispatched_journal_stats()
     return {
         "is_configured": bool(bot_token and chat_id),
         "masked_token": masked,
@@ -798,7 +828,8 @@ def get_us30_telegram_config() -> Dict[str, Any]:
         "auto_pilot": auto_pilot,
         "interval_minutes": interval_m,
         "min_score": min_score,
-        "sentinel_stats": _us30_sentinel_stats
+        "sentinel_stats": _us30_sentinel_stats,
+        "journal_stats": j_stats
     }
 
 def format_us30_composite_telegram(data: Dict[str, Any]) -> str:

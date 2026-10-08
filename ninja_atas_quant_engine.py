@@ -97,10 +97,11 @@ def get_ninjatrader_live(current_price: float = 51240.0, timeframe: str = "15m")
         is_bull = c_close >= c_open
 
         clusters = []
-        c_step = max(1.0, (c_high - c_low) / 5.0)
+        c_step = max(2, int(round((c_high - c_low) / 4.0)))
+        base_p = int(round(c_low))
         max_cluster_vol = 1
         for l in range(5):
-            lp = round(c_low + l * c_step, 1)
+            lp = base_p + l * c_step
             b_vol = int(45 + (math.sin(c_idx * 1.2 + l) * 30 + 35))
             a_vol = int(40 + (math.cos(c_idx * 1.2 + l) * 30 + 35))
             if is_bull and l >= 3:
