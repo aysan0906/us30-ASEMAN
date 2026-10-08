@@ -2568,14 +2568,14 @@
 
           <!-- Canvas View -->
           <div id="bookmapCanvasWrap" style="position: relative;">
-            <canvas id="bookmapCanvas" width="1000" height="280" style="width: 100%; height: 280px; display: block; border-radius: 6px; background: #030712;"></canvas>
-            <div id="bmLiveCrosshairTag" style="position: absolute; right: 10px; top: 130px; background: rgba(0,0,0,0.8); border: 1px solid #ffd700; color: #ffd700; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-family: var(--font-mono); font-weight: 800; pointer-events: none;">
+            <canvas id="bookmapCanvas" width="1000" height="340" style="width: 100%; height: 340px; display: block; border-radius: 8px; background: #030712;"></canvas>
+            <div id="bmLiveCrosshairTag" style="position: absolute; right: 10px; top: 130px; background: rgba(0,0,0,0.85); border: 1px solid #ffd700; color: #ffd700; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-family: var(--font-mono); font-weight: 800; pointer-events: none; z-index: 5;">
               ◄ LIVE TICK
             </div>
           </div>
 
           <!-- TradingView Embedded View for Bookmap -->
-          <div id="bookmapTvWrap" style="display: none; height: 350px; width: 100%; border-radius: 6px; overflow: hidden;">
+          <div id="bookmapTvWrap" style="display: none; height: 450px; width: 100%; border-radius: 8px; overflow: hidden; background: #030712;">
             <div id="tradingview_bookmap_widget" style="height: 100%; width: 100%;"></div>
           </div>
         </div>
@@ -3443,7 +3443,11 @@
       } else if (tabId === 'guardTab') {
         fetchExecutionGuard();
       } else if (tabId === 'bookmapTab') {
+        initBookmapStreamPoints(_lastPrice || 51240.0);
         fetchBookmapData();
+        if (_bmViewMode === 'tv') {
+          initBookmapTradingView();
+        }
       } else if (tabId === 'radarTab') {
         fetchRadarLeaders();
       } else if (tabId === 'coalitionTab') {
@@ -4606,15 +4610,45 @@
     let _bmTvWidget = null;
 
     function initBookmapStreamPoints(initialPrice) {
-      if (_bmLivePoints.length > 0) return;
-      const count = 50;
       let p = initialPrice || _lastPrice || 51240.0;
-      for (let i = 0; i < count; i++) {
-        const jitter = Math.sin(i * 0.4) * 12 + Math.cos(i * 0.25) * 8;
-        _bmLivePoints.push({
-          price: p + jitter,
-          time: Date.now() - (count - i) * 600
-        });
+      if (_bmLivePoints.length === 0) {
+        const count = 50;
+        for (let i = 0; i < count; i++) {
+          const jitter = Math.sin(i * 0.4) * 12 + Math.cos(i * 0.25) * 8;
+          _bmLivePoints.push({
+            price: p + jitter,
+            time: Date.now() - (count - i) * 600
+          });
+        }
+      }
+      if (_bmTradeBubbles.length === 0 && _bmLivePoints.length >= 20) {
+        for (let i = 5; i < 45; i += 8) {
+          const isBuy = i % 2 === 0;
+          _bmTradeBubbles.push({
+            idx: i,
+            price: _bmLivePoints[i].price,
+            side: isBuy ? 'BUY' : 'SELL',
+            color: isBuy ? 'rgba(0, 230, 118, 0.85)' : 'rgba(255, 51, 102, 0.85)',
+            radius: isBuy ? 9 : 8,
+            opacity: 0.95
+          });
+        }
+      }
+      if (_bmAskWalls.length === 0) {
+        _bmAskWalls = [
+          { price: p + 30, volume_lots: 1850, heat_color: '#38bdf8', depth_pct: 50, label: 'نقدینگی اسکالپ', distance_pts: 30 },
+          { price: p + 65, volume_lots: 2750, heat_color: '#00d2ff', depth_pct: 70, label: 'دیوار لیمیت فروش', distance_pts: 65 },
+          { price: p + 110, volume_lots: 3600, heat_color: '#fb923c', depth_pct: 85, label: 'استخر نقدینگی BSL', distance_pts: 110 },
+          { price: p + 160, volume_lots: 4800, heat_color: '#ffd700', depth_pct: 95, label: 'دیوار سنگین نهادی', distance_pts: 160 }
+        ];
+      }
+      if (_bmBidShelves.length === 0) {
+        _bmBidShelves = [
+          { price: p - 30, volume_lots: 1950, heat_color: '#34d399', depth_pct: 52, label: 'سپر تقاضای کف', distance_pts: 30 },
+          { price: p - 65, volume_lots: 2900, heat_color: '#00e676', depth_pct: 72, label: 'کف بتنی خرید', distance_pts: 65 },
+          { price: p - 110, volume_lots: 3850, heat_color: '#00d2ff', depth_pct: 88, label: 'استخر نقدینگی SSL', distance_pts: 110 },
+          { price: p - 160, volume_lots: 5100, heat_color: '#a855f7', depth_pct: 98, label: 'کف سنگین نهادی', distance_pts: 160 }
+        ];
       }
       _bmLastTickPrice = p;
     }
@@ -4653,33 +4687,42 @@
           bTv.style.color = '#94a3b8';
           bTv.style.borderColor = 'rgba(255, 255, 255, 0.15)';
         }
+        initBookmapStreamPoints(_lastPrice || 51240.0);
       }
     }
 
     function initBookmapTradingView() {
-      if (_bmTvWidget) return;
       const container = document.getElementById('tradingview_bookmap_widget');
-      if (!container || typeof TradingView === 'undefined') return;
-      try {
-        container.innerHTML = '';
-        _bmTvWidget = new TradingView.widget({
-          "width": "100%",
-          "height": 350,
-          "symbol": "FOREXCOM:US30",
-          "interval": "5",
-          "timezone": "Asia/Tehran",
-          "theme": "dark",
-          "style": "1",
-          "locale": "fa_IR",
-          "toolbar_bg": "#030712",
-          "enable_publishing": false,
-          "allow_symbol_change": false,
-          "container_id": "tradingview_bookmap_widget",
-          "hide_side_toolbar": true
-        });
-      } catch (e) {
-        console.error('Error init TV for Bookmap:', e);
+      if (!container) return;
+
+      if (typeof TradingView !== 'undefined') {
+        try {
+          container.innerHTML = '';
+          _bmTvWidget = new TradingView.widget({
+            "width": "100%",
+            "height": 450,
+            "symbol": "FOREXCOM:US30",
+            "interval": "5",
+            "timezone": "Asia/Tehran",
+            "theme": "dark",
+            "style": "1",
+            "locale": "fa_IR",
+            "toolbar_bg": "#030712",
+            "enable_publishing": false,
+            "allow_symbol_change": true,
+            "container_id": "tradingview_bookmap_widget",
+            "hide_side_toolbar": false
+          });
+          return;
+        } catch (e) {
+          console.warn('TradingView library error, falling back to embed iframe:', e);
+        }
       }
+
+      // Robust iframe fallback that ALWAYS works regardless of scripts or sanctions
+      container.innerHTML = `
+        <iframe src="https://s.tradingview.com/widgetembed/?symbol=FOREXCOM%3AUS30&interval=5&theme=dark&style=1&locale=fa_IR&toolbarbg=030712" style="width: 100%; height: 450px; border: none; border-radius: 6px;"></iframe>
+      `;
     }
 
     function pushBookmapLiveTick(newPrice) {
@@ -4711,6 +4754,10 @@
     }
 
     function renderLiveBookmapFrame() {
+      // Schedule next frame unconditionally so the animation loop NEVER dies
+      _bmAnimFrame = requestAnimationFrame(renderLiveBookmapFrame);
+
+      // Only perform heavy drawing if currently on Bookmap tab and in canvas mode
       if (_activeTab !== 'bookmapTab' || _bmViewMode !== 'canvas') return;
       const cv = document.getElementById('bookmapCanvas');
       if (!cv) return;
