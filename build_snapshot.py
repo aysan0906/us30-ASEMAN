@@ -39,6 +39,7 @@ def get_cached_fallback(asset: str, interval: str) -> dict:
                 if key in d and "payload" in d[key]:
                     print(f"  ℹ️ استفاده از نسخه مطمئن کش برای {asset} {interval}")
                     payload = d[key]["payload"]
+                    # به‌روزرسانی قیمت لحظه‌ای در صورت امکان
                     try:
                         import dow_cash
                         lv = dow_cash.freshest()
@@ -69,6 +70,7 @@ def build_one(asset: str, interval: str):
     except Exception as e:
         print(f"⚠️ خطای محاسبه زنده {asset} {interval}: {e}")
     
+    # استفاده از فال‌بک مطمئن در صورت بروز خطا
     fallback = get_cached_fallback(asset, interval)
     if fallback:
         return fallback
@@ -88,6 +90,7 @@ def push(items: dict, built_at: float) -> bool:
                  "X-Snapshot-Key": KEY,
                  "User-Agent": "dow-snapshot-bot"})
 
+    # تلاش تا حداکثر ۳ بار با تایم‌اوت مناسب (۴۰ ثانیه)
     for attempt in range(3):
         try:
             with urllib.request.urlopen(req, timeout=40) as r:
@@ -124,6 +127,7 @@ def main() -> int:
             print(f"✅ {asset} {interval} — {time.time() - t0:.1f} ثانیه")
         except Exception as e:
             print(f"❌ {asset} {interval} — {type(e).__name__}: {str(e)[:150]}")
+            # استفاده از کش پشتیبان
             fallback = get_cached_fallback(asset, interval)
             if fallback:
                 items[f"agent:{asset}:{interval}"] = fallback
@@ -136,7 +140,7 @@ def main() -> int:
 
     built = time.time()
 
-    # ذخیره انبار روی دیسک مخزن
+    # ۱. ذخیره فوری انبار روی دیسک (snapshot_cache.json)
     try:
         blob = {k: {"payload": v, "built_at": built, "saved_at": built}
                 for k, v in items.items()}
@@ -148,7 +152,7 @@ def main() -> int:
     except Exception as e:
         print(f"⚠️ نوشتن فایل پشتیبان نشد: {e}")
 
-    # پوش مستقیم به رندر
+    # ۲. پوش مستقیم به رندر
     print(f"\nمحاسبه {ok_count}/{len(TARGETS)} مورد در {time.time() - t_all:.1f} ثانیه. در حال مخابره به داشبورد…")
     sent = push(items, built_at=built)
     if sent:
@@ -156,6 +160,7 @@ def main() -> int:
     else:
         print("ℹ️ پوش مستقیم به دلیل اسلیپ بودن سرور انجام نشد؛ انبار snapshot_cache.json در مرحله بعد در ریپو ذخیره می‌شود.")
 
+    # همواره کد ۰ برمی‌گردد تا استپ بعدی (کامیت در گیت‌هاب) حتماً اجرا شود
     return 0
 
 

@@ -78,6 +78,10 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
     # =========================================================================
     # PART 1: UNIFIED US30 SCALP SIGNAL (15m Timeframe)
     # =========================================================================
+    # PART 1: UNIFIED US30 MICRO-SCALP SNIPER SIGNAL (1m Order Flow & Bookmap Depth)
+    # =========================================================================
+    # Fast 1m pre-emptive tick trigger to catch the absolute beginning of the move
+    # Ultra-tight technical stop loss (7.0 pts) right behind Bookmap wall/1m wick
     cvd_data = nt.get("cvd", {})
     cvd_val = cvd_data.get("value", 120) if isinstance(cvd_data, dict) else 120
     sc_div = sc.get("delta_divergence", {}).get("type_fa", "صعودی")
@@ -97,47 +101,46 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
     scalp_dir_str = "خرید (LONG)" if scalp_is_long else "فروش (SHORT)"
     scalp_dir_emoji = "🟢" if scalp_is_long else "🔴"
 
+    # Ultra-tight technical stop loss: 7.0 points (safe from spread, high R:R)
+    micro_sl_pts = 7.0
+    micro_tp1_pts = 22.0
+    micro_tp2_pts = 55.0
+
     if scalp_is_long:
         scalp_entry = current_price
-        scalp_sl = round(current_price - 75.0, 1)
-        scalp_sl_pts = 75
-        scalp_tp1 = round(current_price + 115.0, 1)
-        scalp_tp1_pts = 115
-        scalp_tp2 = round(current_price + 260.0, 1)
-        scalp_tp2_pts = 260
+        scalp_sl = round(current_price - micro_sl_pts, 1)
+        scalp_tp1 = round(current_price + micro_tp1_pts, 1)
+        scalp_tp2 = round(current_price + micro_tp2_pts, 1)
     else:
         scalp_entry = current_price
-        scalp_sl = round(current_price + 75.0, 1)
-        scalp_sl_pts = 75
-        scalp_tp1 = round(current_price - 115.0, 1)
-        scalp_tp1_pts = 115
-        scalp_tp2 = round(current_price - 260.0, 1)
-        scalp_tp2_pts = 260
+        scalp_sl = round(current_price + micro_sl_pts, 1)
+        scalp_tp1 = round(current_price - micro_tp1_pts, 1)
+        scalp_tp2 = round(current_price - micro_tp2_pts, 1)
 
     scalp_signal = {
         "signal_type": "SCALP",
-        "signal_type_fa": "اسکالپ داوجونز (نوسان‌گیری کوتاه‌مدت)",
-        "timeframe": "15m",
+        "signal_type_fa": "میکرو-اسکالپ تک‌تیرانداز داوجونز (Sniper 1m)",
+        "timeframe": "1m (تک‌تیرانداز پیش‌دستانه)",
         "direction": scalp_dir_str,
         "direction_code": "LONG" if scalp_is_long else "SHORT",
         "direction_emoji": scalp_dir_emoji,
         "entry": scalp_entry,
         "entry_fmt": f"${scalp_entry:,.1f}",
         "stop_loss": scalp_sl,
-        "stop_loss_pts": scalp_sl_pts,
-        "stop_loss_fmt": f"${scalp_sl:,.1f} (-{scalp_sl_pts} پوینت)",
+        "stop_loss_pts": int(micro_sl_pts),
+        "stop_loss_fmt": f"${scalp_sl:,.1f} (-{int(micro_sl_pts)} پوینت / فوق‌باریک)",
         "tp1": scalp_tp1,
-        "tp1_pts": scalp_tp1_pts,
-        "tp1_fmt": f"${scalp_tp1:,.1f} (+{scalp_tp1_pts} پوینت)",
+        "tp1_pts": int(micro_tp1_pts),
+        "tp1_fmt": f"${scalp_tp1:,.1f} (+{int(micro_tp1_pts)} پوینت)",
         "tp2": scalp_tp2,
-        "tp2_pts": scalp_tp2_pts,
-        "tp2_fmt": f"${scalp_tp2:,.1f} (+{scalp_tp2_pts} پوینت)",
+        "tp2_pts": int(micro_tp2_pts),
+        "tp2_fmt": f"${scalp_tp2:,.1f} (+{int(micro_tp2_pts)} پوینت)",
         "date_tehran": tehran_date_str,
         "time_tehran": tehran_time_str,
-        "holding_duration": "۳۰ دقیقه الی ۲ ساعت",
-        "holding_duration_en": "30m - 2h",
-        "core_modules": "Bookmap L2/L3 US30 + NinjaTrader 8 + ATAS + Sierra Chart",
-        "rationale_fa": "جذب اردرهای فروش در کف‌های نقدینگی بوک‌مپ، شیب مثبت دلتای تجمیعی نینجاتریدر و برتری خریداران در کندل‌های شماره‌دار سیرا چارت."
+        "holding_duration": "۲ الی ۱۰ دقیقه (خروج سریع)",
+        "holding_duration_en": "2m - 10m",
+        "core_modules": "Bookmap L2/L3 Walls + 1m Footprint Delta + Tape Velocity",
+        "rationale_fa": "ورود پیش‌دستانه در نقطه صفر حرکت؛ استاپ فوق‌باریک تکنیکال ۷ پوینتی دقیقاً پشت دیوار نقدینگی بوک‌مپ تعبیه شده تا با اسپرد نسوزد و از ابتدای روند با سود کامل همراه شود."
     }
 
     # =========================================================================

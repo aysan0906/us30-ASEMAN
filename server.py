@@ -1160,14 +1160,14 @@ def telegram_send(req: US30TelegramSendRequest):
         else:
             sig = unif.get("scalp", {})
             msg = uus.format_us30_minimal_telegram_signal(sig, is_swing=False)
-            sig_name = "اسکالپ جامع (Scalp)"
-            tp1_val = sig.get("tp1", p_curr + 115)
-            tp2_val = sig.get("tp2", p_curr + 260)
-            sl_val = sig.get("stop_loss", p_curr - 75)
-            dur = sig.get("holding_duration", "۳۰ دقیقه تا ۲ ساعت")
-            tf = "15m"
-            tp_pts = 115
-            sl_pts = 75
+            sig_name = "میکرو-اسکالپ تک‌تیرانداز (1m Sniper)"
+            tp1_val = sig.get("tp1", p_curr + 22.0)
+            tp2_val = sig.get("tp2", p_curr + 55.0)
+            sl_val = sig.get("stop_loss", p_curr - 7.0)
+            dur = sig.get("holding_duration", "۲ الی ۱۰ دقیقه (خروج سریع)")
+            tf = "1m"
+            tp_pts = 22
+            sl_pts = 7
 
         res = dispatch_to_telegram_raw(tok, chat, msg)
         if not res.get("ok"):
