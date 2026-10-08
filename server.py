@@ -1437,6 +1437,7 @@ def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 
         pass
 
     scale_map = {
+        "1m": {"atr": 15.0, "sl_mult": 0.47, "tp1_m": 1.47, "tp2_m": 3.67, "tp3_m": 5.67, "name": "⚡ ستاپ میکرو-اسکالپ تک‌تیرانداز ۱ دقیقه‌ای (1m Sniper Pre-Emptive Scalp)"},
         "5m": {"atr": 45.0, "sl_mult": 1.0, "tp1_m": 1.4, "tp2_m": 2.5, "tp3_m": 4.0, "name": "⚡ ستاپ اسکالپ فوق‌سریع ۵ دقیقه‌ای (High-Speed Scalp)"},
         "15m": {"atr": 70.0, "sl_mult": 1.0, "tp1_m": 1.4, "tp2_m": 2.5, "tp3_m": 4.0, "name": "🎯 ستاپ مومنتوم ۱۵ دقیقه‌ای (Intraday Momentum)"},
         "30m": {"atr": 95.0, "sl_mult": 1.0, "tp1_m": 1.4, "tp2_m": 2.5, "tp3_m": 4.2, "name": "📊 ستاپ نیم‌ساعته سشن وال‌استریت (Session Setup)"},
@@ -1444,7 +1445,7 @@ def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 
         "4h": {"atr": 260.0, "sl_mult": 1.0, "tp1_m": 1.4, "tp2_m": 2.6, "tp3_m": 4.8, "name": "🌊 ستاپ سوئینگ ۴ ساعته (Multi-Session Swing)"},
         "1d": {"atr": 520.0, "sl_mult": 1.0, "tp1_m": 1.4, "tp2_m": 2.8, "tp3_m": 5.0, "name": "👑 ستاپ ماژور روزانه وال‌استریت (Macro Trend Position)"},
     }
-    cfg = scale_map.get(interval, scale_map["1h"])
+    cfg = scale_map.get(interval, scale_map["1m" if interval == "1m" else "1h"])
     atr = cfg["atr"]
 
     # Module 1: Bank Coalition

@@ -801,13 +801,14 @@
     <div class="hero-scalp-card">
       <!-- Timeframe Switcher Bar -->
       <div class="timeframe-pill-bar">
-        <span style="font-size: 0.8rem; color: #fff; font-weight: 800; margin-left: 6px;">⏱️ انتخاب تایم‌فریم ستاپ معامله‌گری:</span>
-        <button class="tf-pill" onclick="switchTimeframe('5m')">5m (اسکالپ فوق‌سریع)</button>
-        <button class="tf-pill" onclick="switchTimeframe('15m')">15m (مومنتوم)</button>
-        <button class="tf-pill" onclick="switchTimeframe('30m')">30m (سشن مارکت)</button>
-        <button class="tf-pill active" onclick="switchTimeframe('1h')">1h (دی‌ترید نهادی)</button>
-        <button class="tf-pill" onclick="switchTimeframe('4h')">4h (سوئینگ چندروزه)</button>
-        <button class="tf-pill" onclick="switchTimeframe('1d')">1D (ماژور کلان)</button>
+        <span style="font-size: 0.8rem; color: #ffd700; font-weight: 800; margin-left: 6px;">⏱️ تایم‌فریم ستاپ معامله‌گری:</span>
+        <button class="tf-pill active" data-tf="1m" onclick="switchTimeframe('1m')">⚡ 1m (میکرو-اسکالپ تک‌تیرانداز)</button>
+        <button class="tf-pill" data-tf="5m" onclick="switchTimeframe('5m')">5m (اسکالپ سریع)</button>
+        <button class="tf-pill" data-tf="15m" onclick="switchTimeframe('15m')">15m (مومنتوم)</button>
+        <button class="tf-pill" data-tf="30m" onclick="switchTimeframe('30m')">30m (سشن مارکت)</button>
+        <button class="tf-pill" data-tf="1h" onclick="switchTimeframe('1h')">1h (دی‌ترید نهادی)</button>
+        <button class="tf-pill" data-tf="4h" onclick="switchTimeframe('4h')">4h (سوئینگ چندروزه)</button>
+        <button class="tf-pill" data-tf="1d" onclick="switchTimeframe('1d')">1D (ماژور کلان)</button>
       </div>
 
       <div class="hero-grid">
@@ -2593,6 +2594,9 @@
             </div>
           </div>
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <span id="bmTfBadge" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1px solid #ffd700; padding: 4px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 800;">
+              ⏱️ تایم فعال: ۱ دقیقه‌ای اسکالپ
+            </span>
             <span id="bmImbalanceBadge" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border: 1px solid #00d2ff; padding: 4px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 800;">
               تراز دلتا: در حال محاسبه...
             </span>
@@ -2615,10 +2619,10 @@
 
             <!-- Multi-Timeframe Switcher Buttons for Bookmap -->
             <div style="display: flex; gap: 4px; align-items: center; background: rgba(0,0,0,0.6); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(255,215,0,0.3);">
-              <span style="font-size: 0.72rem; color: #ffd700; margin-left: 4px; font-weight: 700;">⏱️ تایم‌فریم:</span>
-              <button class="bm-tf-btn" data-tf="1m" onclick="setBookmapTimeframe('1m')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer; transition: all 0.2s;">1m</button>
+              <span style="font-size: 0.72rem; color: #ffd700; margin-left: 4px; font-weight: 700;">⏱️ تایم‌فریم بوک‌مپ:</span>
+              <button class="bm-tf-btn active" data-tf="1m" onclick="setBookmapTimeframe('1m')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1.5px solid #ffd700; background: rgba(255,215,0,0.25); color: #ffd700; font-weight: 800; cursor: pointer; transition: all 0.2s;">1m اسکالپ</button>
               <button class="bm-tf-btn" data-tf="5m" onclick="setBookmapTimeframe('5m')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer; transition: all 0.2s;">5m</button>
-              <button class="bm-tf-btn active" data-tf="15m" onclick="setBookmapTimeframe('15m')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1.5px solid #ffd700; background: rgba(255,215,0,0.25); color: #ffd700; font-weight: 800; cursor: pointer; transition: all 0.2s;">15m</button>
+              <button class="bm-tf-btn" data-tf="15m" onclick="setBookmapTimeframe('15m')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer; transition: all 0.2s;">15m</button>
               <button class="bm-tf-btn" data-tf="1h" onclick="setBookmapTimeframe('1h')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer; transition: all 0.2s;">1h</button>
               <button class="bm-tf-btn" data-tf="4h" onclick="setBookmapTimeframe('4h')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer; transition: all 0.2s;">4h</button>
             </div>
@@ -3352,7 +3356,7 @@
 
   <script>
     // State variables
-    let _activeInterval = '1h';
+    let _activeInterval = '1m';
     let _activeTab = 'radarTab';
     let _macroTargetEpoch = 1791981000; // US CPI release
     let _lastPrice = null;
@@ -3576,8 +3580,10 @@
 
     function switchTimeframe(tf) {
       _activeInterval = tf;
+      // Strict exact match to eliminate 5m vs 15m overlap bug
       document.querySelectorAll('.timeframe-pill-bar .tf-pill').forEach(btn => {
-        btn.classList.toggle('active', btn.textContent.includes(tf));
+        const bTf = btn.getAttribute('data-tf') || (btn.textContent.trim().split(/[\s(]/)[0] || '').replace('⚡', '').trim();
+        btn.classList.toggle('active', bTf === tf);
       });
       // Fetch fresh composite signal for this timeframe
       fetchCompositeSignal(tf);
@@ -3585,9 +3591,12 @@
       if (_activeTab === 'analysisTab') fetchAnalysis360(tf);
       if (_activeTab === 'orderflowTab') fetchOrderflow(tf);
       if (_activeTab === 'guardTab') fetchExecutionGuard();
+      if (_activeTab === 'ninjatraderTab') fetchNinjaTraderData();
+      if (_activeTab === 'sierrachartTab') fetchSierraChartData();
+      if (_activeTab === 'bookmapTab') setBookmapTimeframe(tf);
       // Sync TradingView interval
-      const tvIntervalMap = { '5m': '5', '15m': '15', '30m': '30', '1h': '60', '4h': '240', '1d': 'D' };
-      changeTvInterval(tvIntervalMap[tf] || '60');
+      const tvIntervalMap = { '1m': '1', '5m': '5', '15m': '15', '30m': '30', '1h': '60', '4h': '240', '1d': 'D' };
+      changeTvInterval(tvIntervalMap[tf] || '1');
     }
 
     // 3. FETCH COMPOSITE SIGNAL FOR ACTIVE TIMEFRAME
@@ -4558,7 +4567,13 @@
           btn.style.fontWeight = 'normal';
         }
       });
+      // Reset live points so canvas scale adapts instantly to the new timeframe
+      _bmLivePoints = [];
+      _bmTradeBubbles = [];
       fetchBookmapData();
+      if (_bmViewMode === 'tv') {
+        initBookmapTradingView(tf);
+      }
     }
 
     async function fetchBookmapData() {
@@ -4569,6 +4584,11 @@
         if (!data.ok) return;
 
         const p = Number(data.current_price || _lastPrice || 51240);
+
+        const tfBadgeEl = document.getElementById('bmTfBadge');
+        if (tfBadgeEl) {
+          tfBadgeEl.textContent = `⏱️ تایم: ${data.timeframe_name_fa || _bmTimeframe}`;
+        }
 
         const imbEl = document.getElementById('bmImbalanceBadge');
         if (imbEl) {
@@ -4759,9 +4779,12 @@
       }
     }
 
-    function initBookmapTradingView() {
+    function initBookmapTradingView(tf = _bmTimeframe) {
       const container = document.getElementById('tradingview_bookmap_widget');
       if (!container) return;
+
+      const tvMap = { '1m': '1', '5m': '5', '15m': '15', '1h': '60', '4h': '240' };
+      const tvInt = tvMap[tf] || '1';
 
       if (typeof TradingView !== 'undefined') {
         try {
@@ -4770,7 +4793,7 @@
             "width": "100%",
             "height": 450,
             "symbol": "FOREXCOM:US30",
-            "interval": "5",
+            "interval": tvInt,
             "timezone": "Asia/Tehran",
             "theme": "dark",
             "style": "1",
@@ -4789,7 +4812,7 @@
 
       // Robust iframe fallback that ALWAYS works regardless of scripts or sanctions
       container.innerHTML = `
-        <iframe src="https://s.tradingview.com/widgetembed/?symbol=FOREXCOM%3AUS30&interval=5&theme=dark&style=1&locale=fa_IR&toolbarbg=030712" style="width: 100%; height: 450px; border: none; border-radius: 6px;"></iframe>
+        <iframe src="https://s.tradingview.com/widgetembed/?symbol=FOREXCOM%3AUS30&interval=${tvInt}&theme=dark&style=1&locale=fa_IR&toolbarbg=030712" style="width: 100%; height: 450px; border: none; border-radius: 6px;"></iframe>
       `;
     }
 
@@ -6539,9 +6562,9 @@
       updateLiveClocksAndCountdowns();
 
       // 2. Load the PRIMARY hero view & Master Signal Cockpit immediately (< 200ms)
-      fetchCompositeSignal('1h');
+      fetchCompositeSignal('1m');
       fetchMasterSignalData();
-      initTradingViewChart();
+      initTradingViewChart('1');
 
       // 3. Start Live 60-FPS Bookmap Streaming Engine
       initBookmapStreamPoints(_lastPrice || 51240.0);
