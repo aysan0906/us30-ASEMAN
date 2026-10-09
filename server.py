@@ -1631,13 +1631,23 @@ def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trend
         color = cached_setup["color"]
         setup_title = cached_setup["setup_title"]
     else:
-        # Strict account preservation for $10 balance with 0.01 lot across ALL timeframes:
-        # Stop Loss: 12 to 14 points ($1.20 - $1.40 risk)
-        # Take Profits: TP1 = +24 pts ($2.40), TP2 = +48 pts ($4.80), TP3 = +75 pts ($7.50)
-        sl_pts = 13.0
-        tp1_pts = 24.0
-        tp2_pts = 48.0
-        tp3_pts = 75.0
+        # Strict account preservation for $10 balance with 0.01 lot:
+        # Stop Loss is strictly locked between 12 to 14 points ($1.20 - $1.40 risk) across all timeframes.
+        # Take Profits scale dynamically and proportionally with the timeframe so holding longer yields higher rewards:
+        tf_targets = {
+            "1m":  {"sl": 13.0, "tp1": 24.0,  "tp2": 48.0,   "tp3": 75.0,   "dur": "۲ الی ۱۰ دقیقه (میکرو اسکالپ سریع)"},
+            "5m":  {"sl": 13.5, "tp1": 35.0,  "tp2": 70.0,   "tp3": 110.0,  "dur": "۱۰ الی ۳۰ دقیقه (اسکالپ مومنتوم)"},
+            "15m": {"sl": 14.0, "tp1": 55.0,  "tp2": 110.0,  "tp3": 180.0,  "dur": "۱ الی ۳ ساعت (دی‌ترید سشن)"},
+            "30m": {"sl": 14.0, "tp1": 85.0,  "tp2": 160.0,  "tp3": 260.0,  "dur": "۲ الی ۵ ساعت (مومنتوم بین‌سشن)"},
+            "1h":  {"sl": 14.0, "tp1": 140.0, "tp2": 280.0,  "tp3": 450.0,  "dur": "درون‌روز تا فردا (سوئینگ کوتاه)"},
+            "4h":  {"sl": 14.0, "tp1": 280.0, "tp2": 550.0,  "tp3": 900.0,  "dur": "۲ الی ۵ روز (سوئینگ جامع ماکرو)"},
+            "1d":  {"sl": 14.0, "tp1": 600.0, "tp2": 1200.0, "tp3": 2200.0, "dur": "۱ الی ۳ هفته (پوزیشن وال‌استریت)"}
+        }
+        setup_spec = tf_targets.get(interval, tf_targets["15m"])
+        sl_pts = setup_spec["sl"]
+        tp1_pts = setup_spec["tp1"]
+        tp2_pts = setup_spec["tp2"]
+        tp3_pts = setup_spec["tp3"]
 
         if action == "BUY":
             entry_low = round(p_curr - (1.5 if interval == "1m" else atr * 0.15), 1)
@@ -1741,14 +1751,19 @@ def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trend
         gex_info = elite.get_gex_and_option_walls(p_curr)
         call_w = float(gex_info.get("call_wall", 52000.0))
         put_w = float(gex_info.get("put_wall", 51000.0))
-        if action == "BUY" and tp3_price > call_w:
+        if action == "BUY" and tp3_price > call_w and abs(call_w - p_curr) > tp2_pts + 30.0:
             tp3_price = call_w
             tp3_pts = round(abs(tp3_price - p_curr))
-        elif action == "SELL" and tp3_price < put_w:
+        elif action == "SELL" and tp3_price < put_w and abs(p_curr - put_w) > tp2_pts + 30.0:
             tp3_price = put_w
             tp3_pts = round(abs(p_curr - tp3_price))
     except Exception:
         pass
+
+    # Ensure TP3 is strictly greater than TP2 across all timeframes
+    if tp3_pts <= tp2_pts:
+        tp3_pts = round(tp2_pts * 1.5, 1)
+        tp3_price = round(p_curr + tp3_pts if action == "BUY" else p_curr - tp3_pts, 1)
 
     rr = f"1:{tp2_pts / sl_pts:.1f}"
 
