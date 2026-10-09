@@ -1133,11 +1133,16 @@ def telegram_send(req: US30TelegramSendRequest):
         if not tok or not chat:
             return JSONResponse(status_code=400, content={"success": False, "message": "توکن ربات یا شناسه چت تنظیم نشده است. لطفاً توکن ربات و شناسه چت را در کادرهای بالا وارد کرده و دکمه ذخیره تنظیمات را بزنید."})
 
-        # Fetch current price
+        # Fetch current price (Prioritize Trendo Broker Official Live Tick)
         p_curr = 51240.0
         try:
-            cash_info = dow_cash.freshest()
-            p_curr = float(cash_info.get("best", {}).get("index", 51240.0) or 51240.0)
+            import trendo_engine
+            t_data = trendo_engine.get_trendo_us30_live()
+            if t_data.get("ok"):
+                p_curr = float(t_data.get("bid", 51240.0))
+            else:
+                cash_info = dow_cash.freshest()
+                p_curr = float(cash_info.get("best", {}).get("index", 51240.0) or 51240.0)
         except Exception:
             pass
 
@@ -1361,6 +1366,10 @@ def trendo_levels(direction: str = Query("BUY")):
 
 @app.get("/api/dow/composite-signal")
 def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trendo", description="trendo or forexcom")):
+    broker_clean = str(getattr(broker, "default", broker) or "trendo").lower()
+    if broker_clean not in ["trendo", "forexcom"]:
+        broker_clean = "trendo"
+    broker = broker_clean
     now_ts = time.time()
     cached = _composite_signal_cache.get(interval)
     if cached and (now_ts - cached["time"] < 30.0):

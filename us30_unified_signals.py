@@ -174,17 +174,28 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
         sec_left = int(_LOCKED_SCALP_STATE["expires_at"] - now_epoch)
         lock_status_note = f"🔒 ستاپ قفل‌شده معتبر (اعتبار: {sec_left // 60}:{sec_left % 60:02d})"
     else:
-        # Mint and LOCK a fresh 1m sniper setup for 5 minutes (300 sec)
+        # Mint and LOCK a fresh 1m sniper setup based on Trendo Ask/Bid
+        t_bid = current_price
+        t_ask = current_price + 1.2
+        try:
+            import trendo_engine
+            t_data = trendo_engine.get_trendo_us30_live()
+            if t_data.get("ok"):
+                t_bid = float(t_data.get("bid", current_price))
+                t_ask = float(t_data.get("ask", current_price + 1.2))
+        except Exception:
+            pass
+
         if scalp_is_long:
-            scalp_entry = current_price
-            scalp_sl = round(current_price - micro_sl_pts, 1)
-            scalp_tp1 = round(current_price + micro_tp1_pts, 1)
-            scalp_tp2 = round(current_price + micro_tp2_pts, 1)
+            scalp_entry = t_ask                           # ورود با خط قرمز ترندو (Ask)
+            scalp_sl = round(t_bid - micro_sl_pts, 1)     # استاپ بر مبنای خط آبی ترندو (Bid)
+            scalp_tp1 = round(t_bid + micro_tp1_pts, 1)
+            scalp_tp2 = round(t_bid + micro_tp2_pts, 1)
         else:
-            scalp_entry = current_price
-            scalp_sl = round(current_price + micro_sl_pts, 1)
-            scalp_tp1 = round(current_price - micro_tp1_pts, 1)
-            scalp_tp2 = round(current_price - micro_tp2_pts, 1)
+            scalp_entry = t_bid                           # ورود با خط آبی ترندو (Bid)
+            scalp_sl = round(t_ask + micro_sl_pts, 1)     # استاپ بر مبنای خط قرمز ترندو (Ask)
+            scalp_tp1 = round(t_bid - micro_tp1_pts, 1)
+            scalp_tp2 = round(t_bid - micro_tp2_pts, 1)
 
         _LOCKED_SCALP_STATE = {
             "active": True,
@@ -249,21 +260,30 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
     swing_dir_str = "خرید (LONG)" if swing_is_long else "فروش (SHORT)"
     swing_dir_emoji = "🟢" if swing_is_long else "🔴"
 
+    t_bid = current_price
+    try:
+        import trendo_engine
+        t_data = trendo_engine.get_trendo_us30_live()
+        if t_data.get("ok"):
+            t_bid = float(t_data.get("bid", current_price))
+    except Exception:
+        pass
+
     if swing_is_long:
-        swing_entry = current_price
-        swing_sl = round(current_price - 280.0, 1)
+        swing_entry = t_bid
+        swing_sl = round(t_bid - 280.0, 1)
         swing_sl_pts = 280
-        swing_tp1 = round(current_price + 550.0, 1)
+        swing_tp1 = round(t_bid + 550.0, 1)
         swing_tp1_pts = 550
-        swing_tp2 = round(current_price + 1450.0, 1)
+        swing_tp2 = round(t_bid + 1450.0, 1)
         swing_tp2_pts = 1450
     else:
-        swing_entry = current_price
-        swing_sl = round(current_price + 280.0, 1)
+        swing_entry = t_bid
+        swing_sl = round(t_bid + 280.0, 1)
         swing_sl_pts = 280
-        swing_tp1 = round(current_price - 550.0, 1)
+        swing_tp1 = round(t_bid - 550.0, 1)
         swing_tp1_pts = 550
-        swing_tp2 = round(current_price - 1450.0, 1)
+        swing_tp2 = round(t_bid - 1450.0, 1)
         swing_tp2_pts = 1450
 
     swing_signal = {
@@ -330,6 +350,7 @@ def format_us30_clean_telegram_signal(sig: Dict[str, Any], is_swing: bool = Fals
 
     msg = f"""💎 <b>سیگنال جامع {sig_type_fa} [#US30]</b>
 ━━━━━━━━━━━━━━━━━━━━
+🏢 <b>بروکر مرجع:</b> <code>ترندو آنلاین (Trendo Live Feed)</code>
 🧭 <b>جهت معامله:</b> {dir_emoji} <b>{direction}</b>
 ⏱️ <b>تایم‌فریم معاملاتی:</b> <code>{tf}</code>
 💰 <b>نقطه ورود:</b> <code>{entry_fmt}</code>
