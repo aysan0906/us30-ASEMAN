@@ -39,7 +39,17 @@ _LOCKED_SCALP_STATE = {
 }
 
 
-def get_us30_live_price() -> float:
+def get_us30_live_price(prefer_trendo: bool = True) -> float:
+    if prefer_trendo:
+        try:
+            import trendo_engine
+            t_data = trendo_engine.get_trendo_us30_live()
+            if t_data.get("ok"):
+                p = float(t_data.get("bid", 0.0) or 0.0)
+                if p > 10000:
+                    return p
+        except Exception:
+            pass
     try:
         from us30_engine import _live_dow_cash
         lv = _live_dow_cash()
@@ -48,7 +58,7 @@ def get_us30_live_price() -> float:
             return p
     except Exception:
         pass
-    return 50850.0
+    return 51280.0
 
 def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str, Any]:
     now_tehran = datetime.now(TEHRAN_TZ)

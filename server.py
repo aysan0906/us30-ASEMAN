@@ -1342,22 +1342,49 @@ _composite_signal_cache: Dict[str, Dict[str, Any]] = {}
 _LOCKED_COMPOSITE_SETUPS: Dict[str, Dict[str, Any]] = {}
 
 
+
+@app.get("/api/trendo/live")
+def trendo_live_quote():
+    try:
+        import trendo_engine
+        return trendo_engine.get_trendo_us30_live()
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+@app.get("/api/trendo/levels")
+def trendo_levels(direction: str = Query("BUY")):
+    try:
+        import trendo_engine
+        return trendo_engine.compute_trendo_sniper_levels(direction)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
 @app.get("/api/dow/composite-signal")
-def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 1h, 4h, 1d")):
+def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trendo", description="trendo or forexcom")):
     now_ts = time.time()
     cached = _composite_signal_cache.get(interval)
     if cached and (now_ts - cached["time"] < 30.0):
         return cached["data"]
 
-    # 1. Fetch live price strictly from FOREXCOM:US30
+    # 1. Fetch live price (Direct from Trendo Broker or Forex.com)
+    trendo_meta = {}
     try:
-        t_data = engine.ticker(interval)
-        p_curr = float(t_data.get("price", 0.0) or 0.0)
-        if p_curr <= 0:
-            cash_info = dow_cash.freshest()
-            p_curr = float(cash_info.get("best", {}).get("index", 51250.0) or 51250.0)
+        import trendo_engine
+        trendo_meta = trendo_engine.get_trendo_us30_live()
     except Exception:
-        p_curr = 51250.0
+        pass
+
+    if broker == "trendo" and trendo_meta.get("ok"):
+        p_curr = float(trendo_meta.get("bid", 51280.0))
+    else:
+        try:
+            t_data = engine.ticker(interval)
+            p_curr = float(t_data.get("price", 0.0) or 0.0)
+            if p_curr <= 0:
+                cash_info = dow_cash.freshest()
+                p_curr = float(cash_info.get("best", {}).get("index", 51250.0) or 51250.0)
+        except Exception:
+            p_curr = 51250.0
 
     # 2. Bank Coalition (60s shared cache)
     global _coalition_shared_cache, _macro_shared_cache
@@ -1893,6 +1920,8 @@ def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 
         "session_vwap": validation.get("session_vwap", round(p_curr - 15, 1)),
         "filters_passed": validation.get("filters_passed", f"تایید {passed_count} از ۱۵ ماژول نهادی"),
         "triggers": triggers,
+        "broker": broker,
+        "trendo_info": trendo_meta if trendo_meta.get("ok") else None,
         "updated_at": time.strftime("%Y-%m-%d %H:%M:%S UTC")
     }
     _composite_signal_cache[interval] = {"time": now_ts, "data": response_payload}

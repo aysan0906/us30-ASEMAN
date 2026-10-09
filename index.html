@@ -799,6 +799,44 @@
 
     <!-- COMPREHENSIVE COMPOSITE SIGNAL HERO BANNER -->
     <div class="hero-scalp-card">
+      <!-- TRENDO BROKER OFFICIAL TICK FEED & SYNC BAR -->
+      <div style="background: rgba(10, 16, 32, 0.95); border: 1.5px solid rgba(0, 210, 255, 0.4); border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.3rem;">🔵</span>
+            <div>
+              <strong style="color: #00d2ff; font-size: 0.9rem;">فید رسمی و مستقیم تیک‌های بروکر ترندو (Trendo Live Ticks)</strong>
+              <div style="font-size: 0.72rem; color: #94a3b8;" id="trendoSessionDesc">سشن لندن / آسیا (اسپرد استاندارد ۱.۲ پوینت)</div>
+            </div>
+          </div>
+          <!-- Live Bid (Blue Line - خط آبی چارت) -->
+          <div style="background: rgba(0, 210, 255, 0.12); border: 1.5px solid #00d2ff; border-radius: 6px; padding: 5px 14px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 0.74rem; color: #94a3b8; font-weight: 700;">خط آبی چارت (Bid):</span>
+            <span id="trendoBidVal" class="mono" style="color: #00d2ff; font-weight: 900; font-size: 1.15rem;">51,281.80</span>
+          </div>
+          <!-- Live Ask (Red Line - خط قرمز خرید) -->
+          <div style="background: rgba(255, 51, 102, 0.12); border: 1.5px solid #ff3366; border-radius: 6px; padding: 5px 14px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 0.74rem; color: #94a3b8; font-weight: 700;">خط قرمز خرید (Ask):</span>
+            <span id="trendoAskVal" class="mono" style="color: #ff3366; font-weight: 900; font-size: 1.15rem;">51,283.00</span>
+          </div>
+          <!-- Live Spread -->
+          <div style="background: rgba(255, 215, 0, 0.12); border: 1px solid #ffd700; border-radius: 6px; padding: 5px 12px; display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 0.74rem; color: #ffd700; font-weight: 700;">اسپرد زنده:</span>
+            <span id="trendoSpreadVal" class="mono" style="color: #ffd700; font-weight: 900; font-size: 0.95rem;">1.20 pt</span>
+          </div>
+        </div>
+
+        <!-- Broker Mode Toggle Buttons -->
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <span style="font-size: 0.74rem; color: #cbd5e1; font-weight: 700;">منبع قیمت:</span>
+          <button id="btnBrokerTrendo" onclick="setBrokerMode('trendo')" style="background: linear-gradient(135deg, rgba(0, 210, 255, 0.25), rgba(0, 119, 182, 0.35)); color: #00d2ff; border: 1.5px solid #00d2ff; padding: 5px 14px; border-radius: 6px; font-size: 0.76rem; font-weight: 800; cursor: pointer; transition: all 0.2s;">
+            🔵 ترندو آنلاین (فعال)
+          </button>
+          <button id="btnBrokerForex" onclick="setBrokerMode('forexcom')" style="background: rgba(255, 255, 255, 0.05); color: #94a3b8; border: 1px solid rgba(255, 255, 255, 0.15); padding: 5px 14px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+            🟢 فارکس‌کام
+          </button>
+        </div>
+      </div>
       <!-- Timeframe Switcher Bar -->
       <div class="timeframe-pill-bar">
         <span style="font-size: 0.8rem; color: #ffd700; font-weight: 800; margin-left: 6px;">⏱️ تایم‌فریم ستاپ معامله‌گری:</span>
@@ -3599,10 +3637,74 @@
       changeTvInterval(tvIntervalMap[tf] || '1');
     }
 
+
+    // ========================================================
+    // TRENDO BROKER DIRECT TICK FEED & CALIBRATION
+    // ========================================================
+    let _activeBroker = 'trendo';
+
+    function setBrokerMode(b) {
+      _activeBroker = b;
+      const bTr = document.getElementById('btnBrokerTrendo');
+      const bFx = document.getElementById('btnBrokerForex');
+      if (b === 'trendo') {
+        if (bTr) {
+          bTr.style.background = 'linear-gradient(135deg, rgba(0, 210, 255, 0.25), rgba(0, 119, 182, 0.35))';
+          bTr.style.color = '#00d2ff';
+          bTr.style.borderColor = '#00d2ff';
+          bTr.textContent = '🔵 ترندو آنلاین (فعال)';
+        }
+        if (bFx) {
+          bFx.style.background = 'rgba(255, 255, 255, 0.05)';
+          bFx.style.color = '#94a3b8';
+          bFx.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+          bFx.textContent = '🟢 فارکس‌کام';
+        }
+      } else {
+        if (bFx) {
+          bFx.style.background = 'linear-gradient(135deg, rgba(0, 230, 118, 0.25), rgba(0, 180, 80, 0.35))';
+          bFx.style.color = '#00e676';
+          bFx.style.borderColor = '#00e676';
+          bFx.textContent = '🟢 فارکس‌کام (فعال)';
+        }
+        if (bTr) {
+          bTr.style.background = 'rgba(255, 255, 255, 0.05)';
+          bTr.style.color = '#94a3b8';
+          bTr.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+          bTr.textContent = '🔵 ترندو';
+        }
+      }
+      fetchCompositeSignal(_activeInterval);
+    }
+
+    async function fetchTrendoLiveTicks() {
+      try {
+        const res = await fetch('/api/trendo/live');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.ok) return;
+
+        const bidEl = document.getElementById('trendoBidVal');
+        const askEl = document.getElementById('trendoAskVal');
+        const spEl = document.getElementById('trendoSpreadVal');
+        const sessEl = document.getElementById('trendoSessionDesc');
+
+        if (bidEl) bidEl.textContent = Number(data.bid).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        if (askEl) askEl.textContent = Number(data.ask).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        if (spEl) spEl.textContent = `${data.spread} pt`;
+        if (sessEl) sessEl.textContent = `${data.session_label} (اسپرد دقیق ترندو)`;
+      } catch (e) {
+        console.warn('Error fetching Trendo tick:', e);
+      }
+    }
+
+    // Poll Trendo ticks every 2.5 seconds
+    setInterval(fetchTrendoLiveTicks, 2500);
+
     // 3. FETCH COMPOSITE SIGNAL FOR ACTIVE TIMEFRAME
     async function fetchCompositeSignal(interval = _activeInterval) {
       try {
-        const res = await fetch(`/api/dow/composite-signal?interval=${interval}`);
+        const res = await fetch(`/api/dow/composite-signal?interval=${interval}&broker=${_activeBroker}`);
         if (!res.ok) return;
         const data = await res.json();
         if (!data.ok) return;
@@ -6565,6 +6667,7 @@
       updateLiveClocksAndCountdowns();
 
       // 2. Load the PRIMARY hero view & Master Signal Cockpit immediately (< 20ms)
+      fetchTrendoLiveTicks();
       fetchCompositeSignal('1m');
       fetchMasterSignalData();
       setTimeout(() => {
