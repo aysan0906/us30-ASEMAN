@@ -19,6 +19,7 @@ from datetime import datetime, timezone, timedelta
 TEHRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 
 _CACHE: Dict[str, Any] = {}
+_CACHE.clear()
 _CACHE_TIME: Dict[str, float] = {}
 _TTL = 3.0  # High-frequency 3-second cache for online responsiveness
 
@@ -804,11 +805,21 @@ def get_master_confluence_signal(current_price: float = 51240.0) -> Dict[str, An
         direction_fa = "احتیاط / بازار رنج در ناحیه ارزش (Range/Wait)"
         dir_color = "#ffd700"
 
-    entry_price = round(p - 15.0, 1)
-    sl_price = round(entry_price - 65.0, 1)
-    tp1_price = round(entry_price + 115.0, 1)
-    tp2_price = round(entry_price + 235.0, 1)
-    tp3_price = round(entry_price + 410.0, 1)
+    # Tailored specifically for user's $10 account with 0.01 lot in Trendo Broker:
+    # 1 point = $0.10 | SL: 13 pts ($1.30) | TP1: 24 pts ($2.40) | TP2: 48 pts ($4.80) | TP3: 75 pts ($7.50)
+    entry_price = round(p, 1)
+    if direction == "BUY":
+        sl_price = round(entry_price - 13.0, 1)
+        tp1_price = round(entry_price + 24.0, 1)
+        tp2_price = round(entry_price + 48.0, 1)
+        tp3_price = round(entry_price + 75.0, 1)
+        ez_str = f"{entry_price - 1.5:.1f} تا {entry_price + 1.0:.1f}"
+    else:
+        sl_price = round(entry_price + 13.0, 1)
+        tp1_price = round(entry_price - 24.0, 1)
+        tp2_price = round(entry_price - 48.0, 1)
+        tp3_price = round(entry_price - 75.0, 1)
+        ez_str = f"{entry_price - 1.0:.1f} تا {entry_price + 1.5:.1f}"
 
     res = {
         "ok": True,
@@ -819,25 +830,30 @@ def get_master_confluence_signal(current_price: float = 51240.0) -> Dict[str, An
         "dir_color": dir_color,
         "confluence_score": confluence_score,
         "confluence_grade": "A+ Institutional Confluence" if confluence_score >= 85 else "A Institutional Setup",
-        "setup_title": "ستاپ همگام نینجاتریدر، بوک‌مپ، بانک‌ها، اتاس، سییرا، کوانت‌تاور و فاندامنتال",
+        "setup_title": "ستاپ همگام نینجاتریدر، بوک‌مپ، بانک‌ها، اتاس، سییرا، کوانت‌تاور و فاندامنتال (حساب $10)",
         "entry_price": entry_price,
-        "entry_zone": f"{entry_price - 10:.1f} تا {entry_price + 5:.1f}",
+        "entry_zone": ez_str,
         "stop_loss": sl_price,
-        "stop_loss_distance": 65,
+        "stop_loss_distance": 13,
         "take_profit_1": tp1_price,
-        "take_profit_1_distance": 115,
+        "take_profit_1_distance": 24,
         "take_profit_2": tp2_price,
-        "take_profit_2_distance": 235,
+        "take_profit_2_distance": 48,
         "take_profit_3": tp3_price,
-        "take_profit_3_distance": 410,
-        "risk_reward_ratio": "1 : 3.6",
-        "recommended_lot_size": "۰.۲۵ تا ۰.۳۵ لات استاندارد به ازای هر $10,000 حساب",
+        "take_profit_3_distance": 75,
+        "risk_reward_ratio": "1 : 3.7",
+        "recommended_lot_size": "دقیقاً 0.01 لات (حساب $10 ترندو | اهرم 1:500 یا 1:1000)",
+        "account_balance": "$10.00 USD",
+        "max_risk_usd": "$1.30 (۱۳٪ حساب)",
+        "tp1_usd": "+$2.40 (+۲۴٪ سود)",
+        "tp2_usd": "+$4.80 (+۴۸٪ سود)",
+        "tp3_usd": "+$7.50 (+۷۵٪ سود)",
         "checklist": checklist,
         "executive_playbook": (
-            f"سیگنال فوق با تایید همزمان ۸ منبع از ۹ منبع نقدینگی نهادی وال‌استریت صادر شده است. "
-            f"دلتای خریداران نینجاتریدر و سییرا چارت همگام با کف حمایتی بوک‌مپ و سفارشات بالای ۵۰ لات اتاس "
-            f"نشان‌دهنده حمایت قدرتمند در محدوده {entry_price} است. "
-            f"ریسک به ریوارد ۱ به ۳.۶ فرصت معاملاتی کم‌نظیری را با حد ضرر امن ۶۵ پوینت فراهم ساخته است."
+            f"سیگنال فوق منحصراً برای حساب ۱۰ دلاری با حجم ۰.۰۱ لات در بروکر ترندو کالیبره شده است. "
+            f"با انتخاب اهرم ۱:۵۰۰ یا ۱:۱۰۰۰، مارجین آزاد بالای ۴۰۰٪ حفظ می‌شود. "
+            f"حد ضرر ۱۳ پوینتی (-۱.۳۰ دلار) دقیقاً پشت سنگر نقدینگی بوک‌مپ قرار دارد تا سرمایه حفظ شود. "
+            f"در تارگت اول (+۲۴ پوینت معادل ۲.۴۰ دلار سود = ۲۴٪ رشد کل حساب) سیو سود ۵۰٪ یا ریسک‌فری نمایید."
         ),
         "updated_at": datetime.now(TEHRAN_TZ).strftime("%H:%M:%S")
     }

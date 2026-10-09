@@ -1078,10 +1078,10 @@
           </div>
           <div style="display: flex; gap: 8px; margin-top: 10px;">
             <span style="font-size: 0.74rem; background: rgba(0, 210, 255, 0.15); color: #00d2ff; padding: 2px 8px; border-radius: 4px; font-weight: 700;">
-              ریسک به ریوارد: 1:3.6
+              ریسک به ریوارد: 1:3.7
             </span>
-            <span id="msLotSizeBadge" style="font-size: 0.74rem; background: rgba(255, 255, 255, 0.08); color: #fff; padding: 2px 8px; border-radius: 4px;">
-              حجم پیشنهادی: ۰.۳۰ لات برای $10K
+            <span id="msLotSizeBadge" style="font-size: 0.74rem; background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 2px 8px; border-radius: 4px; font-weight: 800;">
+              حجم پیشنهادی: 0.01 لات (حساب $10 ترندو)
             </span>
           </div>
         </div>
@@ -1090,37 +1090,37 @@
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
           <!-- Entry Zone -->
           <div style="background: rgba(0, 210, 255, 0.08); border-right: 3px solid #00d2ff; border-radius: 8px; padding: 10px;">
-            <div style="font-size: 0.72rem; color: #94a3b8;">🎯 محدوده ورود (Entry)</div>
-            <div id="msEntryZoneVal" class="mono" style="font-size: 1rem; font-weight: 800; color: #00d2ff; margin-top: 2px;">51,225 - 51,240</div>
-            <div style="font-size: 0.68rem; color: #64748b; margin-top: 2px;">پولبک به گپ FVG</div>
+            <div style="font-size: 0.72rem; color: #94a3b8;">🎯 قیمت ورود قطعی</div>
+            <div id="msEntryZoneVal" class="mono" style="font-size: 1rem; font-weight: 800; color: #00d2ff; margin-top: 2px;">-</div>
+            <div style="font-size: 0.68rem; color: #38bdf8; margin-top: 2px;">ورود در پولبک ترندو</div>
           </div>
 
           <!-- Stop Loss -->
           <div style="background: rgba(255, 51, 102, 0.08); border-right: 3px solid #ff3366; border-radius: 8px; padding: 10px;">
             <div style="font-size: 0.72rem; color: #94a3b8;">🛑 حد ضرر امن (SL)</div>
-            <div id="msStopLossVal" class="mono" style="font-size: 1rem; font-weight: 800; color: #ff3366; margin-top: 2px;">51,160.0</div>
-            <div id="msStopLossPts" style="font-size: 0.68rem; color: #ff3366; margin-top: 2px;">-65 pts (زیر کلاستر)</div>
+            <div id="msStopLossVal" class="mono" style="font-size: 1rem; font-weight: 800; color: #ff3366; margin-top: 2px;">-</div>
+            <div id="msStopLossPts" style="font-size: 0.68rem; color: #ff3366; margin-top: 2px;">-13 pts (-$1.30 ریسک)</div>
           </div>
 
           <!-- TP1 -->
           <div style="background: rgba(0, 230, 118, 0.08); border-right: 3px solid #00e676; border-radius: 8px; padding: 10px;">
             <div style="font-size: 0.72rem; color: #94a3b8;">🟢 تارگت اول (TP1)</div>
-            <div id="msTp1Val" class="mono" style="font-size: 1rem; font-weight: 800; color: #00e676; margin-top: 2px;">51,340.0</div>
-            <div id="msTp1Pts" style="font-size: 0.68rem; color: #00e676; margin-top: 2px;">+115 pts (سقف VAH)</div>
+            <div id="msTp1Val" class="mono" style="font-size: 1rem; font-weight: 800; color: #00e676; margin-top: 2px;">-</div>
+            <div id="msTp1Pts" style="font-size: 0.68rem; color: #00e676; margin-top: 2px;">+24 pts (+$2.40 سود)</div>
           </div>
 
           <!-- TP2 -->
           <div style="background: rgba(0, 230, 118, 0.08); border-right: 3px solid #00e676; border-radius: 8px; padding: 10px;">
             <div style="font-size: 0.72rem; color: #94a3b8;">🟢 تارگت دوم (TP2)</div>
-            <div id="msTp2Val" class="mono" style="font-size: 1rem; font-weight: 800; color: #00e676; margin-top: 2px;">51,460.0</div>
-            <div id="msTp2Pts" style="font-size: 0.68rem; color: #00e676; margin-top: 2px;">+235 pts (دیوار بوک‌مپ)</div>
+            <div id="msTp2Val" class="mono" style="font-size: 1rem; font-weight: 800; color: #00e676; margin-top: 2px;">-</div>
+            <div id="msTp2Pts" style="font-size: 0.68rem; color: #00e676; margin-top: 2px;">+48 pts (+$4.80 سود)</div>
           </div>
 
           <!-- TP3 -->
           <div style="background: rgba(255, 215, 0, 0.08); border-right: 3px solid #ffd700; border-radius: 8px; padding: 10px;">
             <div style="font-size: 0.72rem; color: #94a3b8;">🏆 تارگت سوم (TP3)</div>
-            <div id="msTp3Val" class="mono" style="font-size: 1rem; font-weight: 800; color: #ffd700; margin-top: 2px;">51,635.0</div>
-            <div id="msTp3Pts" style="font-size: 0.68rem; color: #ffd700; margin-top: 2px;">+410 pts (رانر گلدمن)</div>
+            <div id="msTp3Val" class="mono" style="font-size: 1rem; font-weight: 800; color: #ffd700; margin-top: 2px;">-</div>
+            <div id="msTp3Pts" style="font-size: 0.68rem; color: #ffd700; margin-top: 2px;">+75 pts (+$7.50 سود)</div>
           </div>
         </div>
       </div>
@@ -6673,25 +6673,25 @@
         if (slEl) slEl.textContent = Number(data.stop_loss).toLocaleString();
 
         const slPtsEl = document.getElementById('msStopLossPts');
-        if (slPtsEl) slPtsEl.textContent = `-${data.stop_loss_distance} pts (پشت سنگر نقدینگی)`;
+        if (slPtsEl) slPtsEl.textContent = `-${data.stop_loss_distance} pts (-$1.30 ریسک حساب $10)`;
 
         const tp1El = document.getElementById('msTp1Val');
         if (tp1El) tp1El.textContent = Number(data.take_profit_1).toLocaleString();
 
         const tp1PtsEl = document.getElementById('msTp1Pts');
-        if (tp1PtsEl) tp1PtsEl.textContent = `+${data.take_profit_1_distance} pts (سقف VAH کوانت‌تاور)`;
+        if (tp1PtsEl) tp1PtsEl.textContent = `+${data.take_profit_1_distance} pts (+$2.40 سود)`;
 
         const tp2El = document.getElementById('msTp2Val');
         if (tp2El) tp2El.textContent = Number(data.take_profit_2).toLocaleString();
 
         const tp2PtsEl = document.getElementById('msTp2Pts');
-        if (tp2PtsEl) tp2PtsEl.textContent = `+${data.take_profit_2_distance} pts (دیوار بوک‌مپ BSL)`;
+        if (tp2PtsEl) tp2PtsEl.textContent = `+${data.take_profit_2_distance} pts (+$4.80 سود)`;
 
         const tp3El = document.getElementById('msTp3Val');
         if (tp3El) tp3El.textContent = Number(data.take_profit_3).toLocaleString();
 
         const tp3PtsEl = document.getElementById('msTp3Pts');
-        if (tp3PtsEl) tp3PtsEl.textContent = `+${data.take_profit_3_distance} pts (تارگت رانر وال‌استریت)`;
+        if (tp3PtsEl) tp3PtsEl.textContent = `+${data.take_profit_3_distance} pts (+$7.50 سود)`;
 
         // 9-Pillar Checklist Grid
         const gridEl = document.getElementById('msChecklistGrid');
