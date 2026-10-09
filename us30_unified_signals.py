@@ -129,8 +129,8 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
     scalp_dir_str = "خرید (LONG)" if scalp_is_long else "فروش (SHORT)"
     scalp_dir_emoji = "🟢" if scalp_is_long else "🔴"
 
-    # Safe structural stop loss: 12.0 points behind Bookmap L3 Bid shelf (-$1.20 in 0.01 lot)
-    micro_sl_pts = 12.0
+    # Safe structural stop loss: 13.0 points (12-14 pt range / -$1.30 in 0.01 lot for $10 account)
+    micro_sl_pts = 13.0
     micro_tp1_pts = 24.0
     micro_tp2_pts = 48.0
     now_epoch = time.time()
@@ -198,7 +198,7 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
             scalp_tp2 = round(t_bid - micro_tp2_pts, 1)
 
         _LOCKED_SCALP_STATE = {
-            "active": True,
+            "active": False,
             "entry": scalp_entry,
             "sl": scalp_sl,
             "tp1": scalp_tp1,

@@ -851,134 +851,40 @@ def get_us30_telegram_config() -> Dict[str, Any]:
     }
 
 def format_us30_composite_telegram(data: Dict[str, Any]) -> str:
-    now_utc = datetime.now(timezone.utc)
-    tehran_time = now_utc + timedelta(hours=3, minutes=30)
-    tehran_str = tehran_time.strftime("%H:%M:%S (%Y/%m/%d)")
-    valid_until = (tehran_time + timedelta(minutes=45)).strftime("%H:%M")
+    tehran_str = datetime.now(timezone(timedelta(hours=3, minutes=30))).strftime("%Y/%m/%d ساعت %H:%M:%S")
 
     last_price = float(data.get("price") or 51570.0)
     action = data.get("action", "BUY")
-    action_fa = "🚀 خرید قدرتمند نهادی (STRONG BUY)" if action == "BUY" else ("🔻 فروش قدرتمند نهادی (STRONG SELL)" if action == "SELL" else "⚪ خنثی / بدون پوزیشن")
-    grade = data.get("grade", "A+")
-    score = data.get("score", 90)
-    interval = data.get("interval", "1h")
-    setup_name = data.get("setup_name", "ستاپ دی‌ترید ۱ ساعته نهادی")
-
+    dir_str = "🟢 خرید (LONG)" if action == "BUY" else ("🔴 فروش (SHORT)" if action == "SELL" else "⚪ خنثی / بدون پوزیشن")
+    interval = data.get("interval", "15m")
     entry_zone = data.get("entry_zone", f"${last_price:,.1f}")
-    sl = float(data.get("stop_loss") or (last_price - 135))
-    sl_pts = data.get("stop_loss_pts", 135)
-    tp1 = float(data.get("tp1") or (last_price + 189))
-    tp1_pts = data.get("tp1_pts", 189)
-    tp2 = float(data.get("tp2") or (last_price + 351))
-    tp2_pts = data.get("tp2_pts", 351)
-    tp3 = float(data.get("tp3") or (last_price + 608))
-    tp3_pts = data.get("tp3_pts", 608)
-    rr = data.get("risk_reward", "1:2.6")
+    sl = float(data.get("stop_loss") or (last_price - 12.0))
+    sl_pts = int(data.get("stop_loss_pts", 12))
+    tp1 = float(data.get("tp1") or (last_price + 24.0))
+    tp1_pts = int(data.get("tp1_pts", 24))
+    tp2 = float(data.get("tp2") or (last_price + 48.0))
+    tp2_pts = int(data.get("tp2_pts", 48))
 
-    checklist = data.get("checklist", [])
-    chk_lines = ""
-    for c in checklist:
-        chk_lines += f"\n✅ {c.get('name')}: <code>{c.get('badge')}</code>"
+    sl_usd = round(sl_pts * 0.10, 2)
+    tp1_usd = round(tp1_pts * 0.10, 2)
 
-    val = data.get("validation", {})
-    f_list = val.get("filters", [])
-    val_lines = ""
-    for f in f_list:
-        val_lines += f"\n🛡️ {f.get('name')}: <code>{f.get('badge')}</code>"
-
-    trig = data.get("triggers", {})
-    sb_badge = trig.get("silver_bullet", {}).get("badge", "⏱️ سیلور بولت: در انتظار")
-    ema_badge = trig.get("ema_fan", {}).get("badge", "⚪ روبان میانگین‌ها: نرمال")
-    adr_badge = trig.get("adr", {}).get("badge", "🟢 نوسان روزانه: مجاز")
-    adr_rem = trig.get("adr", {}).get("remaining_pts", 180)
-
-    trig_lines = f"""
-🎯 <b>ماشه‌های تکنیکال و نوسان روزانه (Execution Triggers):</b>
-⏱️ <b>پنجره سیلور بولت:</b> <code>{sb_badge}</code>
-📈 <b>روبان مومنتوم EMA:</b> <code>{ema_badge}</code>
-📊 <b>ظرفیت نوسان روزانه ADR:</b> <code>{adr_badge}</code> (باقی‌مانده: {adr_rem} پوینت)
-"""
-
-    msg = f"""
-👑 <b>سیگنال تجمیعی ۵ ماژول داو جونز | US30 Smart Money</b>
+    return f"""💎 <b>سیگنال داوجونز [#US30]</b>
 ━━━━━━━━━━━━━━━━━━━━
-💰 <b>قیمت لحظه‌ای شاخص داوجونز:</b> <code>${last_price:,.1f}</code>
-🧭 <b>سیگنال سیستم:</b> {action_fa}
-⭐ <b>درجه کیفی و اطمینان:</b> <code>Grade {grade}</code> (امتیاز: {score}/100)
-🏛️ <b>تایم‌فریم معاملاتی:</b> <code>{interval} ({setup_name})</code>
+🏢 <b>بروکر مرجع:</b> <code>ترندو آنلاین (Trendo Live Feed)</code>
+🧭 <b>جهت معامله:</b> <b>{dir_str}</b>
+⏱️ <b>تایم‌فریم:</b> <code>{interval}</code>
+💰 <b>قیمت لحظه صدور:</b> <code>${last_price:,.1f}</code>
+🎯 <b>قیمت ورود قطعی:</b> <code>{entry_zone}</code>
+🛑 <b>حد ضرر (SL):</b> <code>${sl:,.1f} (-{sl_pts} pt / -${sl_usd:.2f} در 0.01 لات)</code>
+🎯 <b>حد سود اول (TP1):</b> <code>${tp1:,.1f} (+{tp1_pts} pt / +${tp1_usd:.2f} در 0.01 لات)</code>
+🎯 <b>حد سود دوم (TP2):</b> <code>${tp2:,.1f} (+{tp2_pts} pt)</code>
+📦 <b>حجم و اهرم پیشنهادی:</b> <code>0.01 لات | اهرم 1:500 یا 1:1000 ترندو</code>
+⏰ <b>تاریخ و ساعت صدور:</b> <code>{tehran_str} (ایران 🇮🇷)</code>
+⏳ <b>انقضا / اعتبار ستاپ:</b> <code>تا زمان برخورد به حد سود یا حد ضرر</code>
+━━━━━━━━━━━━━━━━━━━━""".strip()
 
-⚡ <b>سطوح معاملاتی دقیق (Execution Levels):</b>
-⏰ <b>زمان صدور به وقت ایران 🇮🇷:</b> <code>ساعت {tehran_str}</code>
-⏳ <b>افق اعتبار ستاپ:</b> <code>تا ساعت {valid_until} به وقت ایران</code>
-🔹 <b>محدوده بهینه ورود:</b> <code>{entry_zone}</code>
-🛑 <b>حد ضرر ساختاری (SL):</b> <code>${sl:,.1f} (-{sl_pts} پوینت)</code>
-🎯 <b>تارگت اول (TP1):</b> <code>${tp1:,.1f} (+{tp1_pts} پوینت)</code> <i>[سیو ۵۰٪ سود + ریسک‌فری]</i>
-🎯 <b>تارگت دوم (TP2):</b> <code>${tp2:,.1f} (+{tp2_pts} پوینت)</code> <i>[تارگت ساختاری]</i>
-🎯 <b>تارگت سوم (TP3):</b> <code>${tp3:,.1f} (+{tp3_pts} پوینت)</code> <i>[استخر نقدینگی نهایی]</i>
-⚖️ <b>ریسک به ریوارد:</b> <code>{rr}</code>
-
-🔍 <b>تاییدیه ۵ ماژول متصل به سیگنال:</b>{chk_lines}
-
-🛡️ <b>تاییدیه ۴ فیلتر اعتبارسنجی نهایی:</b>{val_lines}
-{trig_lines}━━━━━━━━━━━━━━━━━━━━
-<i>⚠️ مدیریت سرمایه الزامی است (حداکثر ۱.۵٪ ریسک بر مبنای فرمول کِلی)</i>
-"""
-    return msg.strip()
-
-def format_us30_telegram_signal(data: Dict[str, Any]) -> str:
-    now_utc = datetime.now(timezone.utc)
-    tehran_time = now_utc + timedelta(hours=3, minutes=30)
-    tehran_str = tehran_time.strftime("%H:%M:%S (%Y/%m/%d)")
-    valid_until = (tehran_time + timedelta(minutes=45)).strftime("%H:%M")
-
-    price_info = data.get("price", {})
-    last_price = float(price_info.get("last") or 51585.0)
-    sig = data.get("signal", {})
-    plan = sig.get("plan", {})
-    direction = int(sig.get("direction", 0) or 0)
-    grade = sig.get("grade", "B")
-    score = float(sig.get("score") or 0.0)
-    conf = float(sig.get("confidence") or 75.0)
-
-    entry = float(plan.get("entry") or last_price)
-    sl = float(plan.get("stop") or (entry - 85 if direction >= 0 else entry + 85))
-    tp1 = float(plan.get("tp1") or (entry + 45 if direction >= 0 else entry - 45))
-    tp2 = float(plan.get("tp2") or (entry + 110 if direction >= 0 else entry - 110))
-    tp3 = float(plan.get("tp3") or (entry + 220 if direction >= 0 else entry - 220))
-
-    sl_pts = abs(round(entry - sl, 1))
-    tp1_pts = abs(round(tp1 - entry, 1))
-    tp2_pts = abs(round(tp2 - entry, 1))
-    tp3_pts = abs(round(tp3 - entry, 1))
-
-    action_emoji = "🚀 خرید تهاجمی (LONG)" if direction > 0 else ("🔻 فروش تهاجمی (SHORT)" if direction < 0 else "⚪ خنثی / بدون پوزیشن")
-    grade_emoji = "👑" if grade == "A+" else ("⭐" if grade == "A" else "⚡")
-
-    msg = f"""
-{grade_emoji} <b>سیگنال نهادی اختصاصی داو جونز | US30 Smart Money</b>
-━━━━━━━━━━━━━━━━━━━━
-💰 <b>قیمت شاخص داو جونز:</b> <code>${last_price:,.1f}</code>
-🧭 <b>سیگنال سیستم:</b> {action_emoji}
-⭐ <b>درجه کیفی و اطمینان:</b> <code>Grade {grade}</code> ({conf:.0f}٪ | امتیاز: {score:.1f})
-🏛️ <b>سشن بازار:</b> <code>{data.get("market", {}).get("status_fa", "بازار نقدی وال‌استریت")}</code>
-
-⚡ <b>سطوح معاملاتی دقیق (Execution Levels):</b>
-⏰ <b>زمان صدور به وقت ایران 🇮🇷:</b> <code>ساعت {tehran_str}</code>
-⏳ <b>افق اعتبار ستاپ:</b> <code>تا ساعت {valid_until} به وقت ایران</code>
-🔹 <b>محدوده بهینه ورود:</b> <code>${entry:,.1f}</code>
-🛑 <b>حد ضرر ساختاری (SL):</b> <code>${sl:,.1f} ({sl_pts:,.0f} پوینت)</code>
-🎯 <b>تارگت اول (TP1):</b> <code>${tp1:,.1f} (+{tp1_pts:,.0f} پوینت)</code> <i>[سیو ۵۰٪ سود + ریسک‌فری]</i>
-🎯 <b>تارگت دوم (TP2):</b> <code>${tp2:,.1f} (+{tp2_pts:,.0f} پوینت)</code> <i>[تارگت ساختاری]</i>
-🎯 <b>تارگت سوم (TP3):</b> <code>${tp3:,.1f} (+{tp3_pts:,.0f} پوینت)</code> <i>[استخر نقدینگی نهایی]</i>
-⚖️ <b>ریسک به ریوارد:</b> <code>1 : {round(tp2_pts / max(sl_pts, 1), 2)}</code>
-
-🛡️ <b>دستورالعمل هوشمند مدیریت سرمایه و حجم لات:</b>
-• در صورت ورود، به محض لمس <b>تارگت اول ({tp1_pts:,.0f}+ پوینت)</b>، نیمی از پوزیشن را بسته و استاپ را روی نقطه ورود (Breakeven) قرار دهید تا معامله کاملاً بدون ریسک شود.
-━━━━━━━━━━━━━━━━━━━━
-📊 <b>مشاهده آنلاین چارت داو جونز:</b> <a href="https://www.tradingview.com/chart/?symbol=TVC:DJI">TradingView Chart ↗️</a>
-⏰ <i>زمان تحلیل (ایران 🇮🇷): {tehran_str}</i>
-"""
-    return msg.strip()
+format_us30_telegram_signal = format_us30_composite_telegram
+format_us30_master_signal_telegram = format_us30_composite_telegram
 
 def dispatch_to_telegram_raw(token: str, chat: str, message: str) -> Dict[str, Any]:
     try:
@@ -1167,13 +1073,13 @@ def telegram_send(req: US30TelegramSendRequest):
             sig = unif.get("scalp", {})
             msg = uus.format_us30_minimal_telegram_signal(sig, is_swing=False)
             sig_name = "میکرو-اسکالپ تک‌تیرانداز (1m Sniper)"
-            tp1_val = sig.get("tp1", p_curr + 22.0)
-            tp2_val = sig.get("tp2", p_curr + 55.0)
-            sl_val = sig.get("stop_loss", p_curr - 7.0)
-            dur = sig.get("holding_duration", "۲ الی ۱۰ دقیقه (خروج سریع)")
+            tp1_val = sig.get("tp1", p_curr + 24.0)
+            tp2_val = sig.get("tp2", p_curr + 48.0)
+            sl_val = sig.get("stop_loss", p_curr - 12.0)
+            dur = sig.get("holding_duration", "۳ الی ۱۰ دقیقه (خروج سریع)")
             tf = "1m"
-            tp_pts = 22
-            sl_pts = 7
+            tp_pts = 24
+            sl_pts = 12
 
         res = dispatch_to_telegram_raw(tok, chat, msg)
         if not res.get("ok"):
@@ -1657,11 +1563,13 @@ def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trend
         color = cached_setup["color"]
         setup_title = cached_setup["setup_title"]
     else:
-        # Mint fresh setup and LOCK it for lock_validity_sec
-        sl_pts = 7 if interval == "1m" else round(atr * cfg["sl_mult"])
-        tp1_pts = 22 if interval == "1m" else round(atr * cfg["tp1_m"])
-        tp2_pts = 55 if interval == "1m" else round(atr * cfg["tp2_m"])
-        tp3_pts = 85 if interval == "1m" else round(atr * cfg["tp3_m"])
+        # Strict account preservation for $10 balance with 0.01 lot across ALL timeframes:
+        # Stop Loss: 12 to 14 points ($1.20 - $1.40 risk)
+        # Take Profits: TP1 = +24 pts ($2.40), TP2 = +48 pts ($4.80), TP3 = +75 pts ($7.50)
+        sl_pts = 13.0
+        tp1_pts = 24.0
+        tp2_pts = 48.0
+        tp3_pts = 75.0
 
         if action == "BUY":
             entry_low = round(p_curr - (1.5 if interval == "1m" else atr * 0.15), 1)
@@ -1732,18 +1640,17 @@ def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trend
             setup_title = "🎯 ستاپ سیلور بولت نیویورک (ICT Silver Bullet) + " + setup_title
             score = min(99, score + 3)
 
-        adr_info = triggers.get("adr", {})
-        if adr_info.get("is_exhausted"):
-            # Dynamic ADR clipping to prevent target overshoot
-            rem_cap = adr_info.get("remaining_pts", 50.0)
-            tp2_pts = min(tp2_pts, round(rem_cap * 0.9))
-            tp3_pts = min(tp3_pts, round(rem_cap * 1.2))
-            if action == "BUY":
-                tp2_price = round(p_curr + tp2_pts, 1)
-                tp3_price = round(p_curr + tp3_pts, 1)
-            elif action == "SELL":
-                tp2_price = round(p_curr - tp2_pts, 1)
-                tp3_price = round(p_curr - tp3_pts, 1)
+        # Never clip targets to 0! Ensure robust minimum targets for TP2 and TP3
+        if tp2_pts < 35.0:
+            tp2_pts = 48.0
+        if tp3_pts < 50.0:
+            tp3_pts = 75.0
+        if action == "BUY":
+            tp2_price = round(p_curr + tp2_pts, 1)
+            tp3_price = round(p_curr + tp3_pts, 1)
+        elif action == "SELL":
+            tp2_price = round(p_curr - tp2_pts, 1)
+            tp3_price = round(p_curr - tp3_pts, 1)
     except Exception as ex:
         print(f"[SIGNAL VALIDATION ERR] {ex}")
         triggers = {}
