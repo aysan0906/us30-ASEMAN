@@ -1243,6 +1243,7 @@ def journal_live():
         sn_net_pts = sn_tp_pts - sn_sl_pts
         sn_wr = round((len(sn_wins) / sn_tot) * 100, 1) if sn_tot > 0 else 0.0
         sn_net_usd = round(sn_net_pts * 0.10, 2)
+        sn_pf = round(sn_tp_pts / max(1.0, float(sn_sl_pts)), 2) if sn_sl_pts > 0 else (round(sn_tp_pts / 1.0, 2) if sn_tp_pts > 0 else 0.0)
 
         return {
             "ok": True,
@@ -1263,7 +1264,13 @@ def journal_live():
                 "losses": len(sn_loss),
                 "win_rate": sn_wr,
                 "net_pts": sn_net_pts,
-                "net_usd_001_lot": sn_net_usd
+                "net_usd_001_lot": sn_net_usd,
+                "profit_factor": sn_pf,
+                "total_tp_pts": sn_tp_pts,
+                "total_sl_pts": sn_sl_pts,
+                "safe_sl_desc": "۱۲ تا ۱۴ پوینت ($۱.۲۰ - $۱.۴۰)",
+                "target_desc": "تارگت اول +۲۴ pt | تارگت دوم +۴۸ pt",
+                "grade": "GRADE A+ (اعتبار نهادی)"
             }
         }
     except Exception as e:
