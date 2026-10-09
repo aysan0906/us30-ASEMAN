@@ -751,17 +751,21 @@ def validate_us30_signal_confluence(p_curr: float, raw_action: str, raw_score: i
         smt_badge = "⚪ تعادل شاخص‌های دوقلو"
         smt_desc = f"شاخص S&P 500 در محدوده رنج ({spy_chg:+,.2f}٪)؛ واگرایی خاصی ثبت نشده است."
 
-    # 4. Filter 4: News Spike Breaker & Spread Guard
-    now_utc, tehran, _ = _get_tehran_and_ny_time()
-    t_min = tehran.minute
-    is_news_spike_risk = (t_min >= 57 or t_min <= 4) and (tehran.hour in [16, 17, 18, 21])
-    if is_news_spike_risk:
+    # 4. Filter 4: News Spike Breaker & Spread Guard (Only lock if actual High-Impact News is within 15 minutes)
+    try:
+        macro_info = get_macro_economic_shield()
+        mins_to_next = float(macro_info.get("minutes_to_next", 9999) or 9999)
+        has_real_imp_news = macro_info.get("status") in ["LOCKED", "CAUTION"] and (mins_to_next <= 15)
+    except Exception:
+        has_real_imp_news = False
+
+    if has_real_imp_news:
         news_status = "locked"
-        news_badge = "⛔ قفل فیوز اسپایک اخبار"
-        news_desc = "پنجره انتشار داده‌های بااهمیت آمریکا؛ قفل موقت اسپرد و نوسان جهت حفظ سرمایه."
+        news_badge = "⛔ قفل فیوز رویداد کلان تقویم"
+        news_desc = f"کمتر از ۱۵ دقیقه تا رویداد پرریسک اقتصادی آمریکا؛ قفل موقت اسپرد جهت حفظ سرمایه."
     else:
         news_status = "pass"
-        news_badge = "🟢 فیوز سبز (اسپرد امن)"
+        news_badge = "🟢 فیوز سبز (بدون رویداد پرریسک)"
         news_desc = "بدون خطر جهش ناگهانی اسپرد؛ فاصله زمانی امن از اخبار بحرانی اقتصادی."
 
     # 5. Filter 5: Top 5 Dow Heavyweights Directional Filter (UNH, GS, MSFT, CAT, HD)

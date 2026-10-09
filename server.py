@@ -178,7 +178,8 @@ def analyze(
 ):
     global _analysis_cache
     now = time.time()
-    cache_key = f"{interval}:{bars}:{int(fresh)}"
+    fresh_bool = bool(getattr(fresh, "default", fresh))
+    cache_key = f"{interval}:{bars}:{int(fresh_bool)}"
     if not fresh and cache_key in _analysis_cache and (now - _analysis_cache[cache_key]["time"] < 60.0):
         return _analysis_cache[cache_key]["data"]
 
@@ -186,7 +187,7 @@ def analyze(
         data = engine.build_analysis(
             interval=interval,
             bars=min(bars, 100),
-            force=fresh,
+            force=fresh_bool,
             with_coalition=False,
             equity=equity,
             risk_pct=risk_pct,
@@ -1251,6 +1252,11 @@ def journal_live():
                         except Exception:
                             pass
 
+        # Sort newest first and assign Row #1 to the newest
+        recs_rev = list(reversed(recs))
+        for idx, r in enumerate(recs_rev):
+            r["row_num"] = idx + 1
+
         total = len(recs)
         wins = [r for r in recs if r.get("status") == "WIN"]
         losses = [r for r in recs if r.get("status") == "LOSS"]
@@ -1260,10 +1266,21 @@ def journal_live():
         net_pts = total_tp - total_sl
         win_rate = round((len(wins) / total) * 100, 1) if total > 0 else 0.0
 
+        # Dedicated 1m Sniper Micro-Scalp Statistics
+        sniper_recs = [r for r in recs if r.get("timeframe") == "1m" or "اسکالپ" in str(r.get("signal_type", ""))]
+        sn_tot = len(sniper_recs)
+        sn_wins = [r for r in sniper_recs if r.get("status") == "WIN"]
+        sn_loss = [r for r in sniper_recs if r.get("status") == "LOSS"]
+        sn_tp_pts = sum(r.get("pnl_pts", 0) for r in sn_wins)
+        sn_sl_pts = abs(sum(r.get("pnl_pts", 0) for r in sn_loss))
+        sn_net_pts = sn_tp_pts - sn_sl_pts
+        sn_wr = round((len(sn_wins) / sn_tot) * 100, 1) if sn_tot > 0 else 0.0
+        sn_net_usd = round(sn_net_pts * 0.10, 2)
+
         return {
             "ok": True,
             "is_paused": _journal_is_paused,
-            "records": list(reversed(recs)),
+            "records": recs_rev,
             "stats": {
                 "total_signals": total,
                 "total_tp_pts": total_tp,
@@ -1272,6 +1289,14 @@ def journal_live():
                 "win_rate": win_rate,
                 "wins_count": len(wins),
                 "losses_count": len(losses)
+            },
+            "sniper_1m_stats": {
+                "total": sn_tot,
+                "wins": len(sn_wins),
+                "losses": len(sn_loss),
+                "win_rate": sn_wr,
+                "net_pts": sn_net_pts,
+                "net_usd_001_lot": sn_net_usd
             }
         }
     except Exception as e:
@@ -2243,20 +2268,99 @@ def us30_sentinel_auto_loop():
                         pass
 
             if real_tok and real_chat and cfg.get("auto_pilot", True) and _us30_sentinel_stats.get("is_running", True):
-                sig_data = dow_composite_signal("1h")
-                score = sig_data.get("score", 0)
-                action = sig_data.get("action", "WAIT")
-                min_score = cfg.get("min_score", 70)
-                if action in ["BUY", "SELL"] and score >= min_score:
-                    now_ts = time.time()
-                    last_sent = _us30_sentinel_stats.get("last_sent_epoch", 0)
-                    interval_secs = cfg.get("interval_minutes", 20) * 60
-                    if now_ts - last_sent > interval_secs:
-                        msg = format_us30_composite_telegram(sig_data)
-                        dispatch_to_telegram_raw(real_tok, real_chat, msg)
-                        _us30_sentinel_stats["signals_sent_total"] += 1
-                        _us30_sentinel_stats["last_sent_epoch"] = now_ts
-                        _us30_sentinel_stats["last_signal_time"] = time.strftime("%Y-%m-%d %H:%M:%S UTC")
+                now_ts = time.time()
+                last_sent = _us30_sentinel_stats.get("last_sent_epoch", 0)
+                interval_secs = cfg.get("interval_minutes", 10) * 60
+                min_score = cfg.get("min_score", 75)
+
+                if now_ts - last_sent > interval_secs:
+                    # Multi-Timeframe Scanner: Scan 1m, 5m, 15m, 1h, 4h
+                    candidate_tf = ["1m", "5m", "15m", "1h", "4h"]
+                    best_sig = None
+                    best_score = -1
+                    best_tf = "15m"
+
+                    for tf in candidate_tf:
+                        try:
+                            s_data = dow_composite_signal(tf, broker="trendo")
+                            sc = int(s_data.get("score", 0))
+                            act = s_data.get("action", "WAIT")
+                            if act in ["BUY", "SELL"] and sc >= min_score and sc > best_score:
+                                best_score = sc
+                                best_sig = s_data
+                                best_tf = tf
+                        except Exception:
+                            pass
+
+                    if best_sig:
+                        import us30_unified_signals as uus
+                        if best_tf == "1m":
+                            unif = uus.get_us30_unified_signals()
+                            sig_body = unif.get("scalp", {})
+                            msg = uus.format_us30_clean_telegram_signal(sig_body, is_swing=False)
+                            entry_val = sig_body.get("entry", best_sig.get("price"))
+                            sl_val = sig_body.get("stop_loss", best_sig.get("stop_loss"))
+                            tp1_val = sig_body.get("tp1", best_sig.get("tp1"))
+                            tp2_val = sig_body.get("tp2", best_sig.get("tp2"))
+                            dur_val = "۲ الی ۱۰ دقیقه (خروج سریع)"
+                        elif best_tf == "4h":
+                            unif = uus.get_us30_unified_signals()
+                            sig_body = unif.get("swing", {})
+                            msg = uus.format_us30_clean_telegram_signal(sig_body, is_swing=True)
+                            entry_val = sig_body.get("entry", best_sig.get("price"))
+                            sl_val = sig_body.get("stop_loss", best_sig.get("stop_loss"))
+                            tp1_val = sig_body.get("tp1", best_sig.get("tp1"))
+                            tp2_val = sig_body.get("tp2", best_sig.get("tp2"))
+                            dur_val = "۲ تا ۵ روز"
+                        else:
+                            entry_val = best_sig.get("price")
+                            sl_val = best_sig.get("stop_loss")
+                            tp1_val = best_sig.get("tp1")
+                            tp2_val = best_sig.get("tp2")
+                            dur_val = "۱۵ دقیقه تا ۱ ساعت"
+                            cur_p = best_sig.get("price")
+                            tehran_t = datetime.now(timezone(timedelta(hours=3, minutes=30))).strftime("%Y/%m/%d ساعت %H:%M:%S")
+                            msg = f"""💎 <b>سیگنال داوجونز [#US30]</b>
+━━━━━━━━━━━━━━━━━━━━
+🏢 <b>بروکر مرجع:</b> <code>ترندو آنلاین (Trendo Live Feed)</code>
+🧭 <b>جهت معامله:</b> {'🟢 خرید (LONG)' if best_sig.get('action') == 'BUY' else '🔴 فروش (SHORT)'}
+⏱️ <b>تایم‌فریم:</b> <code>{best_tf}</code>
+💰 <b>قیمت لحظه صدور:</b> <code>${cur_p:,.1f}</code>
+🎯 <b>قیمت ورود قطعی:</b> <code>{best_sig.get('entry_zone')}</code>
+🛑 <b>حد ضرر (SL):</b> <code>${sl_val:,.1f} (-{best_sig.get('stop_loss_pts')} pt)</code>
+🎯 <b>حد سود اول (TP1):</b> <code>${tp1_val:,.1f} (+{best_sig.get('tp1_pts')} pt)</code>
+🎯 <b>حد سود دوم (TP2):</b> <code>${tp2_val:,.1f} (+{best_sig.get('tp2_pts')} pt)</code>
+📦 <b>حجم و اهرم پیشنهادی:</b> <code>0.01 لات | اهرم 1:500 یا 1:1000 ترندو</code>
+⏰ <b>تاریخ و ساعت صدور:</b> <code>{tehran_t} (ایران 🇮🇷)</code>
+⏳ <b>انقضا / اعتبار ستاپ:</b> <code>تا زمان برخورد به حد سود یا حد ضرر</code>
+━━━━━━━━━━━━━━━━━━━━"""
+
+                        res = dispatch_to_telegram_raw(real_tok, real_chat, msg)
+                        if res.get("ok"):
+                            _us30_sentinel_stats["signals_sent_total"] += 1
+                            _us30_sentinel_stats["last_sent_epoch"] = now_ts
+                            _us30_sentinel_stats["last_signal_time"] = time.strftime("%Y-%m-%d %H:%M:%S UTC")
+
+                            # AUTOMATICALLY REGISTER IN JOURNAL!
+                            tehran_now = datetime.now(timezone(timedelta(hours=3, minutes=30)))
+                            journal_rec = {
+                                "id": f"US30-{int(now_ts)}",
+                                "time": tehran_now.strftime("%H:%M:%S"),
+                                "date": tehran_now.strftime("%Y/%m/%d"),
+                                "signal_type": "میکرو-اسکالپ تک‌تیرانداز 1m" if best_tf == "1m" else ("سوئینگ جامع 4H" if best_tf == "4h" else f"اسکالپ {best_tf}"),
+                                "timeframe": best_tf,
+                                "direction": best_sig.get("action", "BUY"),
+                                "entry": entry_val,
+                                "sl": sl_val,
+                                "tp1": tp1_val,
+                                "tp2": tp2_val,
+                                "holding_duration": dur_val,
+                                "status": "OPEN",
+                                "pnl_pts": 0,
+                                "lot_size": 0.01,
+                                "broker": "Trendo"
+                            }
+                            append_dispatched_signal(journal_rec)
         except Exception as e:
             _us30_sentinel_stats["last_error"] = str(e)
         time.sleep(60)

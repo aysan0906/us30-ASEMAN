@@ -888,9 +888,9 @@
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px;">
             <!-- Entry -->
             <div class="target-box" style="border-right: 3px solid #00d2ff;">
-              <div class="target-title">محدوده بهینه ورود</div>
-              <div class="target-val" id="heroEntryZone" style="color: #00d2ff; font-size: 0.92rem;">51,573 - 51,614</div>
-              <div class="target-pts" style="color: #64748b;">پولبک به اوردربلاک</div>
+              <div class="target-title">قیمت ورود قطعی</div>
+              <div class="target-val" id="heroEntryZone" style="color: #00d2ff; font-size: 0.92rem;">-</div>
+              <div class="target-pts" id="heroEntrySub" style="color: #38bdf8;">با رسیدن خط ترندو اردر بزنید</div>
             </div>
 
             <!-- Stop Loss -->
@@ -1023,6 +1023,18 @@
     <!-- ======================================================== -->
     <!-- MASTER INSTITUTIONAL SIGNAL COCKPIT (9-PILLAR CONFLUENCE) -->
     <!-- ======================================================== -->
+    <!-- COLLAPSIBLE ACCORDION FOR MASTER SIGNAL COCKPIT -->
+    <div onclick="toggleMasterCockpitAccordion()" style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, rgba(255, 215, 0, 0.09), rgba(0, 210, 255, 0.05)); border: 1px solid rgba(255, 215, 0, 0.35); border-radius: 10px; padding: 11px 18px; margin-top: 14px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#ffd700'" onmouseout="this.style.borderColor='rgba(255, 215, 0, 0.35)'">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.25rem;">👑</span>
+        <strong style="color: #ffd700; font-size: 0.95rem;">کادر تخصصی سیگنال‌دهی همگرا (Master Institutional Signal Cockpit)</strong>
+        <span style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800;">سنتز ۹ پلتفرم</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px; color: #cbd5e1; font-size: 0.82rem;">
+        <span id="msToggleLabel">بستن / باز کردن کادر</span>
+        <span id="msToggleChevron" style="font-size: 1.1rem; color: #ffd700; transition: transform 0.3s;">▼</span>
+      </div>
+    </div>
     <div class="master-signal-cockpit" id="masterSignalCockpit" style="margin-top: 18px; margin-bottom: 24px; background: radial-gradient(circle at top right, rgba(0, 210, 255, 0.15), rgba(10, 15, 30, 0.98) 60%), linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(0, 230, 118, 0.08)); border: 1.5px solid rgba(255, 215, 0, 0.55); border-radius: 16px; padding: 22px; box-shadow: 0 15px 45px rgba(0, 0, 0, 0.75), 0 0 30px rgba(255, 215, 0, 0.15); position: relative; overflow: hidden;">
       
       <!-- Ambient Header Glow & Title -->
@@ -1344,8 +1356,19 @@
       </div>
     </div>
 
-    <!-- 14 MODULE NAVIGATION TABS -->
-    <div class="tab-nav-grid">
+    <!-- COLLAPSIBLE ACCORDION FOR 21 MODULES -->
+    <div onclick="toggleModulesAccordion()" style="display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; padding: 12px 18px; margin-top: 14px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='rgba(0,210,255,0.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.12)'">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.25rem;">📂</span>
+        <strong style="color: #fff; font-size: 0.95rem;">فهرست ۲۱ ماژول و ابزار تحلیلی وال‌استریت (کلیک برای باز/بسته‌شدن)</strong>
+        <span id="modulesCountBadge" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border: 1px solid rgba(0,210,255,0.3); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700;">۲۱ ماژول فعال</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px; color: #94a3b8; font-size: 0.82rem;">
+        <span id="modToggleLabel">مشاهده همه تب‌ها</span>
+        <span id="modToggleChevron" style="font-size: 1.1rem; color: #00d2ff; transition: transform 0.3s;">▼</span>
+      </div>
+    </div>
+    <div class="tab-nav-grid" id="mainTabNavGrid" style="display: grid;">
       <button class="tab-card-btn active" id="btnNavRadar" onclick="switchTab('radarTab', this)">
         <div class="tab-card-icon">🎯</div>
         <div class="tab-card-name">۱. لیدرهای داو ۳۰</div>
@@ -2632,6 +2655,9 @@
             </div>
           </div>
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <span id="bmL3TierBadge" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(0, 210, 255, 0.2)); color: #ffd700; border: 1px solid #ffd700; padding: 4px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 800;">
+              👑 سطح ۳ نهادی (Level 3 MBO)
+            </span>
             <span id="bmTfBadge" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1px solid #ffd700; padding: 4px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 800;">
               ⏱️ تایم فعال: ۱ دقیقه‌ای اسکالپ
             </span>
@@ -3732,6 +3758,12 @@
 
         // Levels
         document.getElementById('heroEntryZone').textContent = data.entry_zone;
+        const entrySub = document.getElementById('heroEntrySub');
+        if (entrySub) {
+          entrySub.textContent = data.action === 'BUY'
+            ? 'با رسیدن خط قرمز به این عدد BUY بزنید'
+            : (data.action === 'SELL' ? 'با رسیدن خط آبی به این عدد SELL بزنید' : 'منتظر تاییدیه ورود');
+        }
         document.getElementById('heroStopLoss').textContent = Number(data.stop_loss).toLocaleString();
         document.getElementById('heroStopLossPts').textContent = `-${data.stop_loss_pts} pts`;
 
@@ -3883,6 +3915,40 @@
     setInterval(pollLiveQuotes, 900);
     // Refresh composite signal every 3 seconds
     setInterval(() => fetchCompositeSignal(_activeInterval), 3000);
+
+    // TOGGLE ACCORDION FOR 21 MODULES
+    function toggleModulesAccordion() {
+      const grid = document.getElementById('mainTabNavGrid');
+      const chevron = document.getElementById('modToggleChevron');
+      const label = document.getElementById('modToggleLabel');
+      if (!grid) return;
+      if (grid.style.display === 'none') {
+        grid.style.display = 'grid';
+        if (chevron) chevron.textContent = '▼';
+        if (label) label.textContent = 'بستن تب‌ها';
+      } else {
+        grid.style.display = 'none';
+        if (chevron) chevron.textContent = '◀';
+        if (label) label.textContent = 'مشاهده همه تب‌ها';
+      }
+    }
+
+    // TOGGLE ACCORDION FOR MASTER SIGNAL COCKPIT
+    function toggleMasterCockpitAccordion() {
+      const box = document.getElementById('masterSignalCockpit');
+      const chevron = document.getElementById('msToggleChevron');
+      const label = document.getElementById('msToggleLabel');
+      if (!box) return;
+      if (box.style.display === 'none') {
+        box.style.display = 'block';
+        if (chevron) chevron.textContent = '▼';
+        if (label) label.textContent = 'بستن کادر';
+      } else {
+        box.style.display = 'none';
+        if (chevron) chevron.textContent = '◀';
+        if (label) label.textContent = 'مشاهده کادر';
+      }
+    }
 
     // 6. MACRO WHAT-IF SCENARIO SIMULATOR
     function simulateMacroScenario(scenario) {
@@ -5787,10 +5853,30 @@
           if (tgNetPtsEl) tgNetPtsEl.textContent = `خالص: ${st.net_pts >= 0 ? '+' : ''}${Number(st.net_pts).toLocaleString()} pts`;
         }
 
-        // 2. Render Dispatched Signals Table with 10 Synchronized Unified Fields
+        // 1.5 Update Dedicated 1m Sniper Statistics
+        if (data.sniper_1m_stats) {
+          const sn = data.sniper_1m_stats;
+          const snTotEl = document.getElementById('snTotalSignals');
+          if (snTotEl) snTotEl.textContent = `${sn.total} سیگنال (${sn.wins} تارگت / ${sn.losses} استاپ)`;
+
+          const snWrEl = document.getElementById('snWinRate');
+          if (snWrEl) snWrEl.textContent = `${sn.win_rate}%`;
+
+          const snPtsEl = document.getElementById('snNetPts');
+          if (snPtsEl) snPtsEl.textContent = `${sn.net_pts >= 0 ? '+' : ''}${sn.net_pts.toLocaleString()} پوینت`;
+
+          const snUsdEl = document.getElementById('snNetUsd');
+          if (snUsdEl) {
+            snUsdEl.textContent = `${sn.net_usd_001_lot >= 0 ? '+' : ''}$${sn.net_usd_001_lot.toFixed(2)} دلار`;
+            snUsdEl.style.color = sn.net_usd_001_lot >= 0 ? '#00e676' : '#ff3366';
+          }
+        }
+
+        // 2. Render Dispatched Signals Table with 10 Synchronized Unified Fields (Row #1 is the newest)
         const tbody = document.getElementById('journalTableBody');
         if (tbody && data.records) {
-          tbody.innerHTML = data.records.map(r => {
+          tbody.innerHTML = data.records.map((r, idx) => {
+            const rowNumber = r.row_num || (idx + 1);
             const isWin = r.status === 'WIN' || r.pnl_pts > 0;
             const resColor = isWin ? '#00e676' : '#ff3366';
             const isBuy = r.direction === 'BUY';
@@ -5813,7 +5899,7 @@
 
             return `
               <tr>
-                <td class="mono" style="font-weight: 700; color: #ffd700;">${r.id}</td>
+                <td class="mono" style="font-weight: 700; color: #ffd700;">#${rowNumber} <span style="font-size:0.7rem; color:#94a3b8;">(${r.id})</span></td>
                 <td>${typeBadge}</td>
                 <td><span style="background: rgba(255,255,255,0.06); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-family: var(--font-mono);">${r.timeframe || (isSwing ? '4H' : '15m')}</span></td>
                 <td>${dirBadge}</td>

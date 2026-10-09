@@ -52,37 +52,47 @@ def get_ninjatrader_live(current_price: float = 51240.0, timeframe: str = "15m")
     for i in range(10, 0, -1):
         lvl_p = round(p + (i * step), 1)
         ask_lots = int(85 + abs(math.sin(now * 0.1 + i) * 160) + (140 if i in [3, 7] else 0))
+        ask_pct = min(100, int((ask_lots / 320) * 100))
         super_dom.append({
             "price": lvl_p,
             "ask_vol": ask_lots,
             "bid_vol": 0,
             "side": "ASK",
             "is_current": False,
-            "bar_pct": min(100, int((ask_lots / 320) * 100))
+            "bar_pct": ask_pct,
+            "ask_bar_pct": ask_pct,
+            "bid_bar_pct": 0
         })
 
     # Current Price Row
     curr_ask = int(45 + math.sin(now) * 20)
     curr_bid = int(55 + math.cos(now) * 25)
+    curr_bid_pct = min(100, int((curr_bid / 100) * 100))
+    curr_ask_pct = min(100, int((curr_ask / 100) * 100))
     super_dom.append({
         "price": p,
         "ask_vol": curr_ask,
         "bid_vol": curr_bid,
         "side": "CURRENT",
         "is_current": True,
-        "bar_pct": 50
+        "bar_pct": 50,
+        "bid_bar_pct": curr_bid_pct,
+        "ask_bar_pct": curr_ask_pct
     })
 
     for i in range(1, 11):
         lvl_p = round(p - (i * step), 1)
         bid_lots = int(95 + abs(math.cos(now * 0.1 + i) * 170) + (160 if i in [4, 8] else 0))
+        bid_pct = min(100, int((bid_lots / 320) * 100))
         super_dom.append({
             "price": lvl_p,
             "ask_vol": 0,
             "bid_vol": bid_lots,
             "side": "BID",
             "is_current": False,
-            "bar_pct": min(100, int((bid_lots / 320) * 100))
+            "bar_pct": bid_pct,
+            "bid_bar_pct": bid_pct,
+            "ask_bar_pct": 0
         })
 
     # 2. Footprint Candlestick Clusters (Last 6 candles with Bid x Ask volume)
@@ -175,13 +185,19 @@ def get_ninjatrader_live(current_price: float = 51240.0, timeframe: str = "15m")
         },
         "vwap": {
             "session_vwap": vwap,
+            "mid": vwap,
             "upper_band_1": upper_band_1,
+            "upper_1sd": upper_band_1,
             "upper_band_2": upper_band_2,
+            "upper_2sd": upper_band_2,
             "lower_band_1": lower_band_1,
+            "lower_1sd": lower_band_1,
             "lower_band_2": lower_band_2,
+            "lower_2sd": lower_band_2,
             "bias_fa": "🟢 قیمت بالای VWAP سشن تثبیت شده (سوگیری صعودی)"
         },
-        "order_flow_verdict": f"سیستم نینجاتریدر در تایم‌فریم {cfg['name']} نشان می‌دهد انباشت تقاضای مارکت در کف‌های اصلاحی فعال است و قیمت بین سقف اول باند و VWAP در گردش است.",
+        "summary_fa": f"سیستم نینجاتریدر در تایم‌فریم {cfg['name']} نشان می‌دهد دلتای خریداران در کف‌های اصلاحی فعال است و قیمت بالاتر از خط میانگین وزنی VWAP قرار دارد.",
+        "order_flow_verdict": f"سیستم نینجاتریدر در تایم‌فریم {cfg['name']} نشان می‌دهد دلتای خریداران در کف‌های اصلاحی فعال است و قیمت بالاتر از خط میانگین وزنی VWAP قرار دارد.",
         "updated_at": datetime.now(TEHRAN_TZ).strftime("%H:%M:%S")
     }
 
@@ -655,6 +671,13 @@ def get_sierrachart_live(current_price: float = 51240.0, timeframe: str = "15m")
 # 6. MASTER INSTITUTIONAL SIGNAL ENGINE (9-PILLAR CONFLUENCE COCKPIT)
 # =============================================================================
 def get_master_confluence_signal(current_price: float = 51240.0) -> Dict[str, Any]:
+    try:
+        import trendo_engine
+        t_data = trendo_engine.get_trendo_us30_live()
+        if t_data.get("ok"):
+            current_price = float(t_data.get("bid", current_price))
+    except Exception:
+        pass
     """
     Synthesize all 9 institutional pillars into ONE unified master signal:
     1. NinjaTrader (Footprint & CVD)

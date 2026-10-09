@@ -129,10 +129,10 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
     scalp_dir_str = "خرید (LONG)" if scalp_is_long else "فروش (SHORT)"
     scalp_dir_emoji = "🟢" if scalp_is_long else "🔴"
 
-    # Ultra-tight technical stop loss: 7.0 points (safe from spread, high R:R)
-    micro_sl_pts = 7.0
-    micro_tp1_pts = 22.0
-    micro_tp2_pts = 55.0
+    # Safe structural stop loss: 12.0 points behind Bookmap L3 Bid shelf (-$1.20 in 0.01 lot)
+    micro_sl_pts = 12.0
+    micro_tp1_pts = 24.0
+    micro_tp2_pts = 48.0
     now_epoch = time.time()
 
     global _LOCKED_SCALP_STATE
@@ -205,7 +205,7 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
             "tp2": scalp_tp2,
             "direction": "LONG" if scalp_is_long else "SHORT",
             "created_at": now_epoch,
-            "expires_at": now_epoch + 300,  # 5 minutes locked
+            "expires_at": now_epoch + 1200,  # 5 minutes locked
             "time_str": tehran_time_str,
             "date_str": tehran_date_str
         }
@@ -223,7 +223,13 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
         "entry_fmt": f"${scalp_entry:,.1f}",
         "stop_loss": scalp_sl,
         "stop_loss_pts": int(micro_sl_pts),
-        "stop_loss_fmt": f"${scalp_sl:,.1f} (-{int(micro_sl_pts)} پوینت / فوق‌باریک)",
+        "current_price_issued": current_price,
+        "stop_loss_fmt": f"${scalp_sl:,.1f} (-{int(micro_sl_pts)} پوینت / -$1.20 در 0.01 لات)",
+        "tp1_fmt": f"${scalp_tp1:,.1f} (+{int(micro_tp1_pts)} پوینت / +$2.40 در 0.01 لات)",
+        "tp2_fmt": f"${scalp_tp2:,.1f} (+{int(micro_tp2_pts)} پوینت / +$4.80 در 0.01 لات)",
+        "leverage_recommended": "1:500 یا 1:1000 ترندو",
+        "lot_recommended": "0.01 لات استاندارد (مارجین امن حساب ۱۰ دلاری)",
+        "entry_instruction_fa": f"به محض رسیدن قیمت خط قرمز ترندو به {scalp_entry:,.1f} دکمه Buy را لمس کنید" if scalp_is_long else f"به محض رسیدن خط آبی ترندو به {scalp_entry:,.1f} دکمه Sell را لمس کنید",
         "tp1": scalp_tp1,
         "tp1_pts": int(micro_tp1_pts),
         "tp1_fmt": f"${scalp_tp1:,.1f} (+{int(micro_tp1_pts)} پوینت)",
@@ -336,8 +342,8 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
     }
 
 def format_us30_clean_telegram_signal(sig: Dict[str, Any], is_swing: bool = False) -> str:
-    sig_type_fa = sig.get("signal_type_fa", "سوئینگ داوجونز" if is_swing else "اسکالپ داوجونز")
-    tf = sig.get("timeframe", "4H" if is_swing else "15m")
+    sig_type_fa = sig.get("signal_type_fa", "سوئینگ داوجونز" if is_swing else "میکرو-اسکالپ تک‌تیرانداز 1m")
+    tf = sig.get("timeframe", "4H" if is_swing else "1m (تک‌تیرانداز پیش‌دستانه)")
     direction = sig.get("direction", "خرید (LONG)")
     dir_emoji = sig.get("direction_emoji", "🟢")
     entry_fmt = sig.get("entry_fmt", "-")
@@ -346,21 +352,29 @@ def format_us30_clean_telegram_signal(sig: Dict[str, Any], is_swing: bool = Fals
     tp2_fmt = sig.get("tp2_fmt", "-")
     date_tehran = sig.get("date_tehran", "")
     time_tehran = sig.get("time_tehran", "")
-    duration = sig.get("holding_duration", "۲ تا ۵ روز" if is_swing else "۳۰ دقیقه تا ۲ ساعت")
+    duration = sig.get("holding_duration", "۲ تا ۵ روز" if is_swing else "۳ الی ۱۰ دقیقه")
+    cur_p = sig.get("current_price_issued", sig.get("entry", 51250.0))
 
-    msg = f"""💎 <b>سیگنال جامع {sig_type_fa} [#US30]</b>
+    if not is_swing:
+        risk_lot_note = """📦 <b>حجم و اهرم پیشنهادی:</b> <code>0.01 لات | اهرم 1:500 یا 1:1000 ترندو</code>
+💵 <b>محاسبه حساب $10:</b> <code>ریسک -$1.20 | سود تارگت اول +$2.40</code>"""
+    else:
+        risk_lot_note = """📦 <b>حجم پیشنهادی:</b> <code>0.01 لات به ازای هر $50 بالانس</code>"""
+
+    msg = f"""💎 <b>سیگنال داوجونز [#US30]</b>
 ━━━━━━━━━━━━━━━━━━━━
 🏢 <b>بروکر مرجع:</b> <code>ترندو آنلاین (Trendo Live Feed)</code>
 🧭 <b>جهت معامله:</b> {dir_emoji} <b>{direction}</b>
-⏱️ <b>تایم‌فریم معاملاتی:</b> <code>{tf}</code>
-💰 <b>نقطه ورود:</b> <code>{entry_fmt}</code>
+⏱️ <b>تایم‌فریم:</b> <code>{tf}</code>
+💰 <b>قیمت لحظه صدور:</b> <code>${cur_p:,.1f}</code>
+🎯 <b>قیمت ورود قطعی:</b> <code>{entry_fmt}</code>
 🛑 <b>حد ضرر (SL):</b> <code>{sl_fmt}</code>
 🎯 <b>حد سود اول (TP1):</b> <code>{tp1_fmt}</code>
 🎯 <b>حد سود دوم (TP2):</b> <code>{tp2_fmt}</code>
-⏰ <b>تاریخ و ساعت معامله:</b> <code>{date_tehran} ساعت {time_tehran} (ایران 🇮🇷)</code>
-⏳ <b>مدت زمان نگهداری:</b> <code>{duration}</code>
-━━━━━━━━━━━━━━━━━━━━
-📊 <i>تاییدشده با سیستم تطبیق جریان سفارشات سازمانی داوجونز</i>"""
+{risk_lot_note}
+⏰ <b>تاریخ و ساعت صدور:</b> <code>{date_tehran} ساعت {time_tehran} (ایران 🇮🇷)</code>
+⏳ <b>انقضا / اعتبار ستاپ:</b> <code>تا زمان برخورد به حد سود یا حد ضرر</code>
+━━━━━━━━━━━━━━━━━━━━"""
     return msg.strip()
 
 format_us30_minimal_telegram_signal = format_us30_clean_telegram_signal
