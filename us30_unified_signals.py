@@ -1,3 +1,4 @@
+import time
 """
 US30 UNIFIED SIGNALS ENGINE (Dow Jones Industrial Average)
 ----------------------------------------------------------
@@ -20,6 +21,23 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional
 
 TEHRAN_TZ = timezone(timedelta(hours=3, minutes=30))
+
+# =========================================================================
+# SETUP PERSISTENCE & LOCK ENGINE (Prevents jumping/floating Entry and SL)
+# =========================================================================
+_LOCKED_SCALP_STATE = {
+    "active": False,
+    "entry": 0.0,
+    "sl": 0.0,
+    "tp1": 0.0,
+    "tp2": 0.0,
+    "direction": "LONG",
+    "created_at": 0.0,
+    "expires_at": 0.0,
+    "time_str": "",
+    "date_str": ""
+}
+
 
 def get_us30_live_price() -> float:
     try:
@@ -105,17 +123,73 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
     micro_sl_pts = 7.0
     micro_tp1_pts = 22.0
     micro_tp2_pts = 55.0
+    now_epoch = time.time()
 
-    if scalp_is_long:
-        scalp_entry = current_price
-        scalp_sl = round(current_price - micro_sl_pts, 1)
-        scalp_tp1 = round(current_price + micro_tp1_pts, 1)
-        scalp_tp2 = round(current_price + micro_tp2_pts, 1)
+    global _LOCKED_SCALP_STATE
+    # Check if existing scalp setup is still locked and active (5 min validity)
+    is_valid_lock = (
+        _LOCKED_SCALP_STATE["active"]
+        and now_epoch < _LOCKED_SCALP_STATE["expires_at"]
+        and _LOCKED_SCALP_STATE["entry"] > 10000
+    )
+
+    if is_valid_lock:
+        # Check if TP or SL was hit by current price
+        lk_dir = _LOCKED_SCALP_STATE["direction"]
+        lk_ent = _LOCKED_SCALP_STATE["entry"]
+        lk_sl = _LOCKED_SCALP_STATE["sl"]
+        lk_tp1 = _LOCKED_SCALP_STATE["tp1"]
+        lk_tp2 = _LOCKED_SCALP_STATE["tp2"]
+
+        # Hit conditions
+        hit_tp = (current_price >= lk_tp2) if lk_dir == "LONG" else (current_price <= lk_tp2)
+        hit_sl = (current_price <= lk_sl) if lk_dir == "LONG" else (current_price >= lk_sl)
+
+        if hit_tp or hit_sl:
+            # Expire lock so a fresh setup can form on the next bar
+            is_valid_lock = False
+            _LOCKED_SCALP_STATE["active"] = False
+
+    if is_valid_lock:
+        # RETAIN EXACT LOCKED VALUES - NO FLOATING!
+        scalp_is_long = (_LOCKED_SCALP_STATE["direction"] == "LONG")
+        scalp_dir_str = "خرید (LONG)" if scalp_is_long else "فروش (SHORT)"
+        scalp_dir_emoji = "🟢" if scalp_is_long else "🔴"
+        scalp_entry = _LOCKED_SCALP_STATE["entry"]
+        scalp_sl = _LOCKED_SCALP_STATE["sl"]
+        scalp_tp1 = _LOCKED_SCALP_STATE["tp1"]
+        scalp_tp2 = _LOCKED_SCALP_STATE["tp2"]
+        tehran_date_str = _LOCKED_SCALP_STATE["date_str"]
+        tehran_time_str = _LOCKED_SCALP_STATE["time_str"]
+        sec_left = int(_LOCKED_SCALP_STATE["expires_at"] - now_epoch)
+        lock_status_note = f"🔒 ستاپ قفل‌شده معتبر (اعتبار: {sec_left // 60}:{sec_left % 60:02d})"
     else:
-        scalp_entry = current_price
-        scalp_sl = round(current_price + micro_sl_pts, 1)
-        scalp_tp1 = round(current_price - micro_tp1_pts, 1)
-        scalp_tp2 = round(current_price - micro_tp2_pts, 1)
+        # Mint and LOCK a fresh 1m sniper setup for 5 minutes (300 sec)
+        if scalp_is_long:
+            scalp_entry = current_price
+            scalp_sl = round(current_price - micro_sl_pts, 1)
+            scalp_tp1 = round(current_price + micro_tp1_pts, 1)
+            scalp_tp2 = round(current_price + micro_tp2_pts, 1)
+        else:
+            scalp_entry = current_price
+            scalp_sl = round(current_price + micro_sl_pts, 1)
+            scalp_tp1 = round(current_price - micro_tp1_pts, 1)
+            scalp_tp2 = round(current_price - micro_tp2_pts, 1)
+
+        _LOCKED_SCALP_STATE = {
+            "active": True,
+            "entry": scalp_entry,
+            "sl": scalp_sl,
+            "tp1": scalp_tp1,
+            "tp2": scalp_tp2,
+            "direction": "LONG" if scalp_is_long else "SHORT",
+            "created_at": now_epoch,
+            "expires_at": now_epoch + 300,  # 5 minutes locked
+            "time_str": tehran_time_str,
+            "date_str": tehran_date_str
+        }
+        lock_status_note = "⚡ ستاپ تازه صادر و قفل شد (بدون تغییر با نوسان قیمت)"
+
 
     scalp_signal = {
         "signal_type": "SCALP",

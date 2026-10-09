@@ -1339,6 +1339,9 @@ def telegram_toggle_autopilot():
 
 _composite_signal_cache: Dict[str, Dict[str, Any]] = {}
 
+_LOCKED_COMPOSITE_SETUPS: Dict[str, Dict[str, Any]] = {}
+
+
 @app.get("/api/dow/composite-signal")
 def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 1h, 4h, 1d")):
     now_ts = time.time()
@@ -1545,36 +1548,103 @@ def dow_composite_signal(interval: str = Query("1h", description="5m, 15m, 30m, 
         score = max(55, min(70, 60 + total_votes * 5))
         grade = "B"
 
-    # Calculate base setup levels first
-    sl_pts = round(atr * cfg["sl_mult"])
-    tp1_pts = round(atr * cfg["tp1_m"])
-    tp2_pts = round(atr * cfg["tp2_m"])
-    tp3_pts = round(atr * cfg["tp3_m"])
+    # Setup Persistence & Lock Logic (Levels remain FIXED for the entire trade duration)
+    global _LOCKED_COMPOSITE_SETUPS
+    now_epoch = time.time()
+    lock_durations = {
+        "1m": 300,    # 5 minutes
+        "5m": 600,    # 10 minutes
+        "15m": 1200,  # 20 minutes
+        "30m": 1800,  # 30 minutes
+        "1h": 3600,   # 1 hour
+        "4h": 14400,  # 4 hours
+        "1d": 86400   # 1 day
+    }
+    lock_validity_sec = lock_durations.get(interval, 300)
 
-    if action == "BUY":
-        entry_low = round(p_curr - (atr * 0.15), 1)
-        entry_high = round(p_curr + (atr * 0.1), 1)
-        sl_price = round(p_curr - sl_pts, 1)
-        tp1_price = round(p_curr + tp1_pts, 1)
-        tp2_price = round(p_curr + tp2_pts, 1)
-        tp3_price = round(p_curr + tp3_pts, 1)
-        setup_title = cfg["name"]
-    elif action == "SELL":
-        entry_low = round(p_curr - (atr * 0.1), 1)
-        entry_high = round(p_curr + (atr * 0.15), 1)
-        sl_price = round(p_curr + sl_pts, 1)
-        tp1_price = round(p_curr - tp1_pts, 1)
-        tp2_price = round(p_curr - tp2_pts, 1)
-        tp3_price = round(p_curr - tp3_pts, 1)
-        setup_title = cfg["name"]
+    cached_setup = _LOCKED_COMPOSITE_SETUPS.get(interval)
+    is_valid_lock = (
+        cached_setup is not None
+        and now_epoch < cached_setup.get("expires_at", 0)
+        and cached_setup.get("entry_low", 0) > 10000
+    )
+
+    if is_valid_lock:
+        # Check if current price touched TP or SL
+        c_act = cached_setup["action"]
+        c_sl = cached_setup["sl_price"]
+        c_tp2 = cached_setup["tp2_price"]
+        hit_tp = (p_curr >= c_tp2) if c_act == "BUY" else (p_curr <= c_tp2)
+        hit_sl = (p_curr <= c_sl) if c_act == "BUY" else (p_curr >= c_sl)
+        if hit_tp or hit_sl:
+            is_valid_lock = False
+
+    if is_valid_lock:
+        # Retain 100% LOCKED levels - DO NOT JUMP OR FLOAT WITH TICKS
+        entry_low = cached_setup["entry_low"]
+        entry_high = cached_setup["entry_high"]
+        sl_price = cached_setup["sl_price"]
+        sl_pts = cached_setup["sl_pts"]
+        tp1_price = cached_setup["tp1_price"]
+        tp1_pts = cached_setup["tp1_pts"]
+        tp2_price = cached_setup["tp2_price"]
+        tp2_pts = cached_setup["tp2_pts"]
+        tp3_price = cached_setup["tp3_price"]
+        tp3_pts = cached_setup["tp3_pts"]
+        action = cached_setup["action"]
+        action_fa = cached_setup["action_fa"]
+        color = cached_setup["color"]
+        setup_title = cached_setup["setup_title"]
     else:
-        entry_low = round(p_curr - 20, 1)
-        entry_high = round(p_curr + 20, 1)
-        sl_price = round(p_curr - sl_pts, 1)
-        tp1_price = round(p_curr + tp1_pts, 1)
-        tp2_price = round(p_curr + tp2_pts, 1)
-        tp3_price = round(p_curr + tp3_pts, 1)
-        setup_title = cfg["name"] + " [در انتظار تایید نهایی سشن]"
+        # Mint fresh setup and LOCK it for lock_validity_sec
+        sl_pts = 7 if interval == "1m" else round(atr * cfg["sl_mult"])
+        tp1_pts = 22 if interval == "1m" else round(atr * cfg["tp1_m"])
+        tp2_pts = 55 if interval == "1m" else round(atr * cfg["tp2_m"])
+        tp3_pts = 85 if interval == "1m" else round(atr * cfg["tp3_m"])
+
+        if action == "BUY":
+            entry_low = round(p_curr - (1.5 if interval == "1m" else atr * 0.15), 1)
+            entry_high = round(p_curr + (1.0 if interval == "1m" else atr * 0.1), 1)
+            sl_price = round(p_curr - sl_pts, 1)
+            tp1_price = round(p_curr + tp1_pts, 1)
+            tp2_price = round(p_curr + tp2_pts, 1)
+            tp3_price = round(p_curr + tp3_pts, 1)
+            setup_title = cfg["name"]
+        elif action == "SELL":
+            entry_low = round(p_curr - (1.0 if interval == "1m" else atr * 0.1), 1)
+            entry_high = round(p_curr + (1.5 if interval == "1m" else atr * 0.15), 1)
+            sl_price = round(p_curr + sl_pts, 1)
+            tp1_price = round(p_curr - tp1_pts, 1)
+            tp2_price = round(p_curr - tp2_pts, 1)
+            tp3_price = round(p_curr - tp3_pts, 1)
+            setup_title = cfg["name"]
+        else:
+            entry_low = round(p_curr - 20, 1)
+            entry_high = round(p_curr + 20, 1)
+            sl_price = round(p_curr - sl_pts, 1)
+            tp1_price = round(p_curr + tp1_pts, 1)
+            tp2_price = round(p_curr + tp2_pts, 1)
+            tp3_price = round(p_curr + tp3_pts, 1)
+            setup_title = cfg["name"] + " [در انتظار تایید نهایی سشن]"
+
+        _LOCKED_COMPOSITE_SETUPS[interval] = {
+            "entry_low": entry_low,
+            "entry_high": entry_high,
+            "sl_price": sl_price,
+            "sl_pts": sl_pts,
+            "tp1_price": tp1_price,
+            "tp1_pts": tp1_pts,
+            "tp2_price": tp2_price,
+            "tp2_pts": tp2_pts,
+            "tp3_price": tp3_price,
+            "tp3_pts": tp3_pts,
+            "action": action,
+            "action_fa": action_fa,
+            "color": color,
+            "setup_title": setup_title,
+            "created_at": now_epoch,
+            "expires_at": now_epoch + lock_validity_sec
+        }
 
     # Apply 6 Elite Institutional Validation Filters (VIX, VWAP, SMT, News, 5 Dow Giants, NY Killzone)
     try:
