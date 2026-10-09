@@ -2665,7 +2665,7 @@
               تراز دلتا: در حال محاسبه...
             </span>
             <span id="bmLivePriceBadge" class="mono" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1px solid #ffd700; padding: 4px 12px; border-radius: 6px; font-size: 0.82rem; font-weight: 800;">
-              US30: ---
+              🔵 نرخ زنده ترندو: ---
             </span>
           </div>
         </div>
@@ -4771,7 +4771,7 @@
 
         const lpEl = document.getElementById('bmLivePriceBadge');
         if (lpEl) {
-          lpEl.textContent = `US30: ${p.toLocaleString()}`;
+          lpEl.textContent = `🔵 نرخ زنده ترندو: ${p.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})}`;
         }
 
         const askTotEl = document.getElementById('bmTotalAskVol');
@@ -5001,18 +5001,18 @@
       });
       if (_bmLivePoints.length > 70) _bmLivePoints.shift();
 
-      // Spawn live execution market bubble
+      // Spawn live execution market bubble with exact timestamp for graceful timeline flow
       const isBuy = diff >= 0;
       const vol = Math.floor(Math.random() * 45) + 15;
       _bmTradeBubbles.push({
-        idx: _bmLivePoints.length - 1,
+        time: Date.now(),
         price: newPrice,
         side: isBuy ? 'BUY' : 'SELL',
         color: isBuy ? 'rgba(0, 230, 118, 0.85)' : 'rgba(255, 51, 102, 0.85)',
         radius: Math.min(13, Math.max(5, vol / 6)),
-        opacity: 0.95
+        vol: vol
       });
-      if (_bmTradeBubbles.length > 20) _bmTradeBubbles.shift();
+      if (_bmTradeBubbles.length > 40) _bmTradeBubbles.shift();
     }
 
     function renderLiveBookmapFrame() {
@@ -5225,22 +5225,30 @@
         ctx.shadowBlur = 0;
       }
 
-      // 7. Order Flow Execution Trade Bubbles
+      // 7. Order Flow Execution Trade Bubbles (Time-Based Smooth River Flow from Right to Left)
+      const nowTs = Date.now();
+      const timeWindow = 45000; // 45-second sliding timeline
       _bmTradeBubbles.forEach(b => {
-        const dx = chartW / Math.max(1, _bmLivePoints.length - 1);
-        const x = Math.min(chartW - 4, b.idx * dx);
+        const age = nowTs - (b.time || nowTs);
+        if (age < 0 || age > timeWindow) return;
+        const progress = age / timeWindow;
+        // x glides smoothly across the chart as time passes
+        const x = Math.max(12, chartW - (progress * (chartW - 20)));
         const y = getY(b.price);
         const isBuy = b.side === 'BUY';
+        const alpha = Math.max(0.25, 1.0 - (progress * 0.75));
 
+        ctx.save();
+        ctx.globalAlpha = alpha;
         const radGrad = ctx.createRadialGradient(x - b.radius/3, y - b.radius/3, 1, x, y, b.radius);
         if (isBuy) {
           radGrad.addColorStop(0, '#ffffff');
-          radGrad.addColorStop(0.4, 'rgba(0, 255, 136, 0.85)');
-          radGrad.addColorStop(1, 'rgba(0, 200, 83, 0.45)');
+          radGrad.addColorStop(0.4, 'rgba(0, 255, 136, 0.9)');
+          radGrad.addColorStop(1, 'rgba(0, 200, 83, 0.5)');
         } else {
           radGrad.addColorStop(0, '#ffffff');
-          radGrad.addColorStop(0.4, 'rgba(255, 51, 102, 0.85)');
-          radGrad.addColorStop(1, 'rgba(225, 29, 72, 0.45)');
+          radGrad.addColorStop(0.4, 'rgba(255, 51, 102, 0.9)');
+          radGrad.addColorStop(1, 'rgba(225, 29, 72, 0.5)');
         }
 
         ctx.fillStyle = radGrad;
@@ -5251,12 +5259,13 @@
         ctx.lineWidth = 1.2;
         ctx.stroke();
 
-        if (b.radius >= 8) {
+        if (b.radius >= 7) {
           ctx.fillStyle = '#ffffff';
           ctx.font = 'bold 8px monospace';
           ctx.textAlign = 'center';
-          ctx.fillText(`${isBuy ? '+' : '-'}${Math.round(b.radius * 9)}`, x, y + 3);
+          ctx.fillText(`${isBuy ? '+' : '-'}${b.vol || Math.round(b.radius * 8)}`, x, y + 3);
         }
+        ctx.restore();
       });
 
       // 8. Live Head Dot & Crosshair Laser
@@ -5320,7 +5329,7 @@
       ctx.fillStyle = '#ffd700';
       ctx.font = 'bold 9px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText('BOOKMAP DOM L2', chartW + domWidth / 2, 15);
+      ctx.fillText('BOOKMAP L3 MBO', chartW + domWidth / 2, 15);
 
       const maxDomVol = 3500;
       
