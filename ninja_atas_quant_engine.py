@@ -20,6 +20,7 @@ TEHRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 
 _CACHE: Dict[str, Any] = {}
 _CACHE.clear()
+_CACHE.clear()
 _CACHE_TIME: Dict[str, float] = {}
 _TTL = 3.0  # High-frequency 3-second cache for online responsiveness
 
@@ -96,10 +97,10 @@ def get_ninjatrader_live(current_price: float = 51240.0, timeframe: str = "15m")
             "ask_bar_pct": 0
         })
 
-    # 2. Footprint Candlestick Clusters (Last 6 candles with Bid x Ask volume)
+    # 2. Footprint Candlestick Clusters (Last 12 candles with Bid x Ask volume & orderflow clusters)
     footprint_candles: List[Dict[str, Any]] = []
-    base_time = now - (bar_sec * 6)
-    for c_idx in range(6):
+    base_time = now - (bar_sec * 12)
+    for c_idx in range(12):
         c_time = datetime.fromtimestamp(base_time + c_idx * bar_sec, tz=TEHRAN_TZ).strftime("%H:%M")
         c_open = round(p - (c_idx * step * 1.5) + math.sin(c_idx) * step, 1)
         c_close = round(c_open + (step * 2.2 if c_idx % 2 == 0 else -step * 1.2), 1)
