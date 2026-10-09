@@ -3677,7 +3677,10 @@
       fetchCompositeSignal(_activeInterval);
     }
 
+    let _trendoInFlight = false;
     async function fetchTrendoLiveTicks() {
+      if (_trendoInFlight) return;
+      _trendoInFlight = true;
       try {
         const res = await fetch('/api/trendo/live');
         if (!res.ok) return;
@@ -3694,12 +3697,13 @@
         if (spEl) spEl.textContent = `${data.spread} pt`;
         if (sessEl) sessEl.textContent = `${data.session_label} (اسپرد دقیق ترندو)`;
       } catch (e) {
-        console.warn('Error fetching Trendo tick:', e);
+      } finally {
+        _trendoInFlight = false;
       }
     }
 
-    // Poll Trendo ticks every 2.5 seconds
-    setInterval(fetchTrendoLiveTicks, 2500);
+    // Ultra-Fast Real-Time Streaming: Poll Trendo ticks every 350ms (~3 updates per second!)
+    setInterval(fetchTrendoLiveTicks, 350);
 
     // 3. FETCH COMPOSITE SIGNAL FOR ACTIVE TIMEFRAME
     async function fetchCompositeSignal(interval = _activeInterval) {
@@ -3875,10 +3879,10 @@
       } catch (e) {}
     }
 
-    // Run quote polling every 4 seconds
-    setInterval(pollLiveQuotes, 4000);
-    // Refresh composite signal every 12 seconds
-    setInterval(() => fetchCompositeSignal(_activeInterval), 12000);
+    // Run quote polling every 900ms (sub-second) for Forex.com
+    setInterval(pollLiveQuotes, 900);
+    // Refresh composite signal every 3 seconds
+    setInterval(() => fetchCompositeSignal(_activeInterval), 3000);
 
     // 6. MACRO WHAT-IF SCENARIO SIMULATOR
     function simulateMacroScenario(scenario) {

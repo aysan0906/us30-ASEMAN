@@ -135,7 +135,7 @@ def ticker(interval: str = Query("1h", description="5m, 15m, 30m, 1h, 1d")):
     try:
         now_ts = time.time()
         cached = _ticker_cache.get(interval)
-        if cached and (now_ts - cached["time"] < 10.0):
+        if cached and (now_ts - cached["time"] < 0.5):
             return cached["data"]
         data = engine.ticker(interval)
         _ticker_cache[interval] = {"time": now_ts, "data": data}

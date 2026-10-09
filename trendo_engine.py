@@ -15,7 +15,7 @@ TEHRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 
 _TRENDO_CACHE: Dict[str, Any] = {}
 _TRENDO_CACHE_TS: float = 0.0
-_TRENDO_CACHE_TTL: float = 1.5  # Fresh cache for fast polling
+_TRENDO_CACHE_TTL: float = 0.15  # 150ms ultra-low latency cache (real-time tick stream)
 
 def get_trendo_us30_live(timeout: float = 2.5) -> Dict[str, Any]:
     """Fetch live US30 tick from Trendo Broker with caching and session spread detection."""
