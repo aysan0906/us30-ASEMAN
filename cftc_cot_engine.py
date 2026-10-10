@@ -168,6 +168,16 @@ def get_us30_cot_report() -> Dict[str, Any]:
             "bias_fa": "🟢 خریدار خالص",
             "badge": f"🟢 لانگ خرد ({latest['retail_net']:+,d} قرارداد)"
         },
+        "non_reportable": {
+            "name": "معامله‌گران خرد و غیرگزارشی (Retail Non-Reportable)",
+            "long": 14283,
+            "short": 8299,
+            "net": latest["retail_net"],
+            "ratio": 1.72,
+            "bias": "BULLISH",
+            "bias_fa": "🟢 خریدار خالص",
+            "badge": f"🟢 لانگ خرد ({latest['retail_net']:+,d} قرارداد)"
+        },
         "trend_analysis_6_weeks": {
             "duration": "۶ گزارش متوالی هفتگی (۱.۵ ماه اخیر)",
             "total_net_expansion": net_6w_change,

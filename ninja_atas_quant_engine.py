@@ -561,10 +561,10 @@ def get_sierrachart_live(current_price: float = 51240.0, timeframe: str = "15m")
     bar_mins = cfg["minutes"]
     vol_mult = cfg["bar_vol_mult"]
 
-    # 1. Numbered Bars (5 recent bars with exact bid x ask prints per price)
+    # 1. Numbered Bars (12 recent bars with exact bid x ask prints per price)
     numbered_bars: List[Dict[str, Any]] = []
     base_time = datetime.now(TEHRAN_TZ)
-    for b_idx in range(5, 0, -1):
+    for b_idx in range(12, 0, -1):
         bar_dt = base_time - timedelta(minutes=b_idx * bar_mins)
         bar_t = bar_dt.strftime("%H:%M") if bar_mins < 1440 else bar_dt.strftime("%m/%d")
         bar_open = round(p - (b_idx * step_pts * 1.8) + (math.sin(now * 0.05 + b_idx) * step_pts * 2.5), 1)

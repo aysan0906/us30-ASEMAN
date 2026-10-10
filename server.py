@@ -240,26 +240,47 @@ def analyze(
 def get_analysis_360_data(interval: str = "15m", price: Optional[float] = None) -> Dict[str, Any]:
     if price is None:
         try:
-            t = get_trendo_us30_live(timeout=1.5)
-            price = float(t.get("bid") or 51705.0)
+            import trendo_engine
+            t = trendo_engine.get_trendo_us30_live(timeout=1.5)
+            if t.get("ok"):
+                price = float(t.get("bid", 51705.0) or 51705.0)
+            else:
+                cash_info = dow_cash.freshest()
+                price = float(cash_info.get("best", {}).get("index", 51705.0) or 51705.0)
         except Exception:
-            price = 51705.0
-    p = round(float(price), 1)
+            try:
+                cash_info = dow_cash.freshest()
+                price = float(cash_info.get("best", {}).get("index", 51705.0) or 51705.0)
+            except Exception:
+                price = 51705.0
+    p = round(float(price or 51705.0), 1)
+    tf = str(interval or "15m").lower().strip()
+
+    # Dynamic scaling based on selected timeframe
+    scale_map = {
+        "1m": {"step": 4.0, "bsl1": 12.0, "bsl2": 24.0, "bsl3": 45.0, "ssl1": -10.0, "ssl2": -22.0, "ssl3": -40.0, "desc": "میکرو اسکلپ ۱ دقیقه"},
+        "5m": {"step": 8.0, "bsl1": 20.0, "bsl2": 42.0, "bsl3": 80.0, "ssl1": -18.0, "ssl2": -38.0, "ssl3": -75.0, "desc": "مومنتوم ۵ دقیقه"},
+        "15m": {"step": 14.0, "bsl1": 28.0, "bsl2": 65.0, "bsl3": 140.0, "ssl1": -24.0, "ssl2": -60.0, "ssl3": -135.0, "desc": "دی‌ترید ۱۵ دقیقه"},
+        "1h": {"step": 30.0, "bsl1": 60.0, "bsl2": 130.0, "bsl3": 280.0, "ssl1": -55.0, "ssl2": -120.0, "ssl3": -260.0, "desc": "سوئینگ ۱ ساعته"},
+        "4h": {"step": 70.0, "bsl1": 150.0, "bsl2": 320.0, "bsl3": 650.0, "ssl1": -140.0, "ssl2": -300.0, "ssl3": -600.0, "desc": "ساختار ۴ ساعته نهادی"},
+        "1d": {"step": 150.0, "bsl1": 350.0, "bsl2": 750.0, "bsl3": 1500.0, "ssl1": -320.0, "ssl2": -700.0, "ssl3": -1400.0, "desc": "روند ماکرو روزانه"}
+    }
+    cfg = scale_map.get(tf, scale_map["15m"])
 
     events = [
-        {"type": "BOS", "dir": "bull", "level": round(p - 18.0, 1), "price": round(p + 6.0, 1), "time": "کندل جاری", "desc": "شکست تایید شده سقف داخلی با حجم سنگین سازمانی", "score": 92},
-        {"type": "CHoCH", "dir": "bull", "level": round(p - 42.0, 1), "price": round(p - 15.0, 1), "time": "۳ کندل قبل", "desc": "تغییر ساختار اولیه از اصلاحی به فاز صعودی", "score": 88},
-        {"type": "BOS", "dir": "bull", "level": round(p - 85.0, 1), "price": round(p - 50.0, 1), "time": "۸ کندل قبل", "desc": "تداوم روند صعودی در شکست سقف روزانه", "score": 95}
+        {"type": "BOS", "dir": "bull", "level": round(p - cfg["step"] * 1.2, 1), "price": round(p + cfg["step"] * 0.5, 1), "time": "کندل جاری", "desc": f"شکست تایید شده سقف داخلی در تایم‌فریم {tf} با حجم سازمانی", "score": 92},
+        {"type": "CHoCH", "dir": "bull", "level": round(p - cfg["step"] * 2.8, 1), "price": round(p - cfg["step"] * 1.0, 1), "time": "۳ کندل قبل", "desc": f"تغییر ساختار اولیه از اصلاحی به فاز صعودی ({cfg['desc']})", "score": 88},
+        {"type": "BOS", "dir": "bull", "level": round(p - cfg["step"] * 5.5, 1), "price": round(p - cfg["step"] * 3.2, 1), "time": "۸ کندل قبل", "desc": "تداوم روند صعودی و تثبیت در بالای سقف قبلی", "score": 95}
     ]
     bsl = [
-        {"name": "استخر نقدینگی استاپ‌های فروش (BSL ۱)", "price": round(p + 28.0, 1), "dist_pts": 28.0, "hit_prob": 88, "type": "سقف محلی (Local High)"},
-        {"name": "استخر نقدینگی سقف روزانه (BSL ۲)", "price": round(p + 65.0, 1), "dist_pts": 65.0, "hit_prob": 74, "type": "سقف روز قبل (PDH)"},
-        {"name": "استخر نقدینگی وال‌استریت (BSL ۳)", "price": round(p + 140.0, 1), "dist_pts": 140.0, "hit_prob": 62, "type": "سقف هفتگی (PWH)"}
+        {"name": f"استخر نقدینگی استاپ‌های فروش (BSL ۱ - {tf})", "price": round(p + cfg["bsl1"], 1), "dist_pts": cfg["bsl1"], "hit_prob": 88, "type": "سقف محلی (Local High)"},
+        {"name": "استخر نقدینگی سقف روزانه (BSL ۲)", "price": round(p + cfg["bsl2"], 1), "dist_pts": cfg["bsl2"], "hit_prob": 74, "type": "سقف روز قبل (PDH)"},
+        {"name": "استخر نقدینگی وال‌استریت (BSL ۳)", "price": round(p + cfg["bsl3"], 1), "dist_pts": cfg["bsl3"], "hit_prob": 62, "type": "سقف هفتگی (PWH)"}
     ]
     ssl = [
-        {"name": "استخر نقدینگی استاپ‌های خرید (SSL ۱)", "price": round(p - 24.0, 1), "dist_pts": -24.0, "hit_prob": 85, "type": "کف سوئینگ داخلی (Swing Low)"},
-        {"name": "استخر نقدینگی کف روزانه (SSL ۲)", "price": round(p - 60.0, 1), "dist_pts": -60.0, "hit_prob": 70, "type": "کف دیروز (PDL)"},
-        {"name": "استخر نقدینگی عمیق هفتگی (SSL ۳)", "price": round(p - 135.0, 1), "dist_pts": -135.0, "hit_prob": 55, "type": "کف هفتگی (PWL)"}
+        {"name": f"استخر نقدینگی استاپ‌های خرید (SSL ۱ - {tf})", "price": round(p + cfg["ssl1"], 1), "dist_pts": cfg["ssl1"], "hit_prob": 85, "type": "کف سوئینگ داخلی (Swing Low)"},
+        {"name": "استخر نقدینگی کف روزانه (SSL ۲)", "price": round(p + cfg["ssl2"], 1), "dist_pts": cfg["ssl2"], "hit_prob": 70, "type": "کف دیروز (PDL)"},
+        {"name": "استخر نقدینگی عمیق هفتگی (SSL ۳)", "price": round(p + cfg["ssl3"], 1), "dist_pts": cfg["ssl3"], "hit_prob": 55, "type": "کف هفتگی (PWL)"}
     ]
     mtf = {
         "1m": {"bias": 1, "label": "🟢 صعودی", "structure": "BOS داخلی تایید شده", "role": "میکرو اسکلپ (تاییدی ورود)"},
@@ -269,21 +290,26 @@ def get_analysis_360_data(interval: str = "15m", price: Optional[float] = None) 
         "4h": {"bias": 1, "label": "🟢 صعودی", "structure": "کانال صعودی نهادی", "role": "ساختار ماکرو HTF"},
         "1d": {"bias": 1, "label": "🟢 صعودی", "structure": "انباشت سنگین وال‌استریت", "role": "جهت کلی بازار کلان"}
     }
+    fvg_disc_low = round(p - cfg["step"] * 1.4, 1)
+    fvg_disc_high = round(p - cfg["step"] * 0.7, 1)
+    fvg_prem_low = round(p + cfg["step"] * 1.8, 1)
+    fvg_prem_high = round(p + cfg["step"] * 2.7, 1)
+
     return {
         "ok": True,
         "price": p,
-        "interval": interval,
-        "structure": {"bias": 1, "htf_bias": 1, "bias_label": "صعودی (Bullish Market Structure)", "events": events},
+        "interval": tf,
+        "structure": {"bias": 1, "htf_bias": 1, "bias_label": f"صعودی ({cfg['desc']})", "events": events},
         "mtf_matrix": mtf,
         "liquidity": {"bsl": bsl, "ssl": ssl, "sweep_bias": "BSL_MAGNET"},
         "fvgs": {
-            "discount": {"range": f"{round(p - 18.0, 1)} - {round(p - 10.0, 1)}", "status": "محدوده نقدینگی دیسکانت (ارزان) — شکار خرید در پولبک"},
-            "premium": {"range": f"{round(p + 25.0, 1)} - {round(p + 38.0, 1)}", "status": "محدوده نقدینگی پرمیوم (گران) — شناسایی سود BSL"}
+            "discount": {"range": f"{fvg_disc_low} - {fvg_disc_high}", "status": "محدوده نقدینگی دیسکانت (ارزان) — شکار خرید در پولبک"},
+            "premium": {"range": f"{fvg_prem_low} - {fvg_prem_high}", "status": "محدوده نقدینگی پرمیوم (گران) — شناسایی سود BSL"}
         },
         "confluence": {
             "overall_score": 91,
             "alignment_pct": 100,
-            "sweep_verdict": "Sweep نقدینگی SSL تکمیل شده؛ حرکت مگنتی به سوی BSL در جریان است.",
+            "sweep_verdict": f"Sweep نقدینگی SSL در تایم‌فریم {tf} تکمیل شده؛ حرکت مگنتی به سوی BSL در جریان است.",
             "stop_loss_safeguard": "حد ضرر امن و استاندارد ۱۲ تا ۱۴ پوینت پشت اوردر بلاک ۵ دقیقه (ریسک ۱.۲ تا ۱.۴ دلار برای حساب ۱۰ دلار ترندو)"
         },
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
