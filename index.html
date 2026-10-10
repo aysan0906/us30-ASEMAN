@@ -790,6 +790,10 @@
         <div>🇮🇷 تهران: <span id="clockTehran" style="color: #00d2ff; font-weight: 800;">15:42:00</span></div>
         <div>🇺🇸 نیویورک: <span id="clockNY" style="color: #ffd166; font-weight: 800;">08:12:00</span></div>
         <div>⏳ زنگ وال‌استریت: <span id="sessionCountdown" style="color: #00e676; font-weight: 800;">01:17:40</span></div>
+        <button id="btnAudioAlerts" onclick="toggleAudioAlerts()" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; border-radius: 6px; padding: 4px 10px; font-size: 0.76rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: 0.2s;">
+          <span id="audioAlertsIcon">🔊</span>
+          <span id="audioAlertsLabel">اعلان صوتی: فعال</span>
+        </button>
         <button onclick="openEducationModal()" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1px solid #ffd700; border-radius: 6px; padding: 4px 10px; font-size: 0.76rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px;">
           <span>🎓</span> راهنمای مبتدی
         </button>
@@ -3934,6 +3938,202 @@
     // High-performance streaming: 1000ms polling for rock-solid stability and low CPU
     setInterval(fetchTrendoLiveTicks, 1000);
 
+    // =========================================================================
+    // PILLAR 2: PROFESSIONAL WEB AUDIO & SPEECH SYNTHESIS ALERT ENGINE
+    // =========================================================================
+    let _audioAlertsEnabled = localStorage.getItem('us30_audio_alerts') !== 'false';
+    let _audioCtx = null;
+    let _lastAlertTimes = {
+      entry: 0,
+      tp1: 0,
+      sl_warning: 0,
+      trap: 0
+    };
+    const ALERT_COOLDOWN_MS = 60000; // 60s cooldown per alert type to avoid repetitive sound spam
+    let _activeSignalParams = null; // { action: 'BUY', entry: 51240, sl: 51226, tp1: 51264 }
+
+    function getAudioContext() {
+      if (!_audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+          _audioCtx = new AudioContext();
+        }
+      }
+      if (_audioCtx && _audioCtx.state === 'suspended') {
+        _audioCtx.resume();
+      }
+      return _audioCtx;
+    }
+
+    function toggleAudioAlerts() {
+      _audioAlertsEnabled = !_audioAlertsEnabled;
+      localStorage.setItem('us30_audio_alerts', _audioAlertsEnabled ? 'true' : 'false');
+      updateAudioButtonUI();
+      if (_audioAlertsEnabled) {
+        getAudioContext();
+        playChimeSound('entry');
+        speakPersianCallout('سیستم اعلان صوتی داوجونز فعال شد');
+      }
+    }
+
+    function updateAudioButtonUI() {
+      const btn = document.getElementById('btnAudioAlerts');
+      const icon = document.getElementById('audioAlertsIcon');
+      const label = document.getElementById('audioAlertsLabel');
+      if (!btn || !icon || !label) return;
+
+      if (_audioAlertsEnabled) {
+        btn.style.background = 'rgba(0, 230, 118, 0.15)';
+        btn.style.borderColor = '#00e676';
+        btn.style.color = '#00e676';
+        icon.textContent = '🔊';
+        label.textContent = 'اعلان صوتی: فعال';
+      } else {
+        btn.style.background = 'rgba(255, 255, 255, 0.05)';
+        btn.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+        btn.style.color = '#94a3b8';
+        icon.textContent = '🔇';
+        label.textContent = 'اعلان صوتی: خاموش';
+      }
+    }
+
+    function playChimeSound(type) {
+      if (!_audioAlertsEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+
+        if (type === 'entry') {
+          // Crisp melodic entry chime (Harmonic Double Ding: D5 -> A5)
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc1.type = 'sine';
+          osc1.frequency.setValueAtTime(587.33, now);
+          osc1.frequency.exponentialRampToValueAtTime(880.00, now + 0.15);
+
+          osc2.type = 'triangle';
+          osc2.frequency.setValueAtTime(880.00, now + 0.15);
+          osc2.frequency.exponentialRampToValueAtTime(1174.66, now + 0.35);
+
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.linearRampToValueAtTime(0.25, now + 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+          osc1.connect(gain);
+          osc2.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc1.start(now);
+          osc2.start(now + 0.15);
+          osc1.stop(now + 0.16);
+          osc2.stop(now + 0.5);
+        } else if (type === 'tp1') {
+          // Triumphant ascending arpeggio (C5 -> E5 -> G5 -> C6)
+          const notes = [523.25, 659.25, 783.99, 1046.50];
+          notes.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const startT = now + (idx * 0.09);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, startT);
+            gain.gain.setValueAtTime(0.001, startT);
+            gain.gain.linearRampToValueAtTime(0.2, startT + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.28);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(startT);
+            osc.stop(startT + 0.3);
+          });
+        } else if (type === 'sl_warning') {
+          // Urgent low sawtooth pulse warning
+          [0, 0.18].forEach(offset => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const startT = now + offset;
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(320, startT);
+            osc.frequency.exponentialRampToValueAtTime(220, startT + 0.14);
+            gain.gain.setValueAtTime(0.001, startT);
+            gain.gain.linearRampToValueAtTime(0.22, startT + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.15);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(startT);
+            osc.stop(startT + 0.16);
+          });
+        }
+      } catch (e) {
+        console.warn('Audio alert error:', e);
+      }
+    }
+
+    function speakPersianCallout(textFa) {
+      if (!_audioAlertsEnabled) return;
+      if (!('speechSynthesis' in window)) return;
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(textFa);
+        utterance.rate = 1.05;
+        utterance.pitch = 1.0;
+        utterance.lang = 'fa-IR';
+
+        const voices = window.speechSynthesis.getVoices();
+        const faVoice = voices.find(v => v.lang.includes('fa') || v.lang.includes('IR'));
+        if (faVoice) {
+          utterance.voice = faVoice;
+        }
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.warn('Speech synthesis error:', e);
+      }
+    }
+
+    function checkLiveAudioTriggers(currentPrice) {
+      if (!_audioAlertsEnabled || !_activeSignalParams || !currentPrice) return;
+      const now = Date.now();
+      const p = Number(currentPrice);
+      const action = _activeSignalParams.action;
+      const entry = Number(_activeSignalParams.entry);
+      const sl = Number(_activeSignalParams.sl);
+      const tp1 = Number(_activeSignalParams.tp1);
+
+      if (!entry || !sl || !tp1 || isNaN(p) || p <= 0) return;
+
+      // 1. Entry Zone Proximity (within 3.5 points)
+      if (Math.abs(p - entry) <= 3.5) {
+        if (now - _lastAlertTimes.entry > ALERT_COOLDOWN_MS) {
+          _lastAlertTimes.entry = now;
+          playChimeSound('entry');
+          const dirFa = action.includes('BUY') ? 'خرید' : 'فروش';
+          speakPersianCallout(`توجه: داوجونز در محدوده ورود ستاپ ${dirFa} قرار گرفت`);
+        }
+      }
+
+      // 2. TP1 Hit Notification
+      const tp1Hit = action.includes('BUY') ? (p >= tp1) : (p <= tp1);
+      if (tp1Hit) {
+        if (now - _lastAlertTimes.tp1 > ALERT_COOLDOWN_MS) {
+          _lastAlertTimes.tp1 = now;
+          playChimeSound('tp1');
+          speakPersianCallout('تارگت اول داوجونز لمس شد، معامله را ریسک‌فری کنید');
+        }
+      }
+
+      // 3. SL Proximity Warning (within 2.5 points)
+      const distToSl = Math.abs(p - sl);
+      const isDangerous = action.includes('BUY') ? (p <= entry && distToSl <= 3.0) : (p >= entry && distToSl <= 3.0);
+      if (isDangerous) {
+        if (now - _lastAlertTimes.sl_warning > ALERT_COOLDOWN_MS) {
+          _lastAlertTimes.sl_warning = now;
+          playChimeSound('sl_warning');
+          speakPersianCallout('هشدار مهم: قیمت در نزدیکی حد ضرر داوجونز است');
+        }
+      }
+    }
+
     // 3. FETCH COMPOSITE SIGNAL FOR ACTIVE TIMEFRAME (Throttled & Memoized)
     let _lastCompositeJson = '';
     async function fetchCompositeSignal(interval = _activeInterval) {
@@ -3986,6 +4186,14 @@
 
         document.getElementById('heroTp3').textContent = Number(data.tp3).toLocaleString();
         document.getElementById('heroTp3Pts').textContent = `+${data.tp3_pts} pts`;
+
+        // Update active signal parameters for real-time audio triggers
+        _activeSignalParams = {
+          action: data.action || '',
+          entry: parseFloat(String(data.entry_zone || data.entry_price || '').replace(/,/g, '')) || 0,
+          sl: Number(data.stop_loss) || 0,
+          tp1: Number(data.tp1) || 0
+        };
 
         // Update Checklist
         if (data.checklist && data.checklist.length) {
@@ -4139,6 +4347,7 @@
         }
       }
       _lastPrice = newPrice;
+      checkLiveAudioTriggers(newPrice);
     }
 
     // 5. LIVE TICKER POLLING (Every 4 seconds)
@@ -7325,6 +7534,9 @@
 
     // 15. INITIALIZATION ON LOAD
     window.addEventListener('DOMContentLoaded', () => {
+      // 0. Initialize Audio Alert Engine Button UI
+      updateAudioButtonUI();
+
       // 1. Instant zero-latency rendering of clock & session bars
       updateLiveClocksAndCountdowns();
 

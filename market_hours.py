@@ -276,6 +276,67 @@ def upcoming_holidays(n: int = 5, ts: Optional[datetime] = None) -> List[Dict]:
     return out[:n]
 
 
+def is_us30_market_in_active_session() -> Tuple[bool, str, Dict[str, Any]]:
+    """
+    Checks if the US30 market is within the allowed institutional trading window:
+    1. Weekdays only: Monday to Friday (Saturday & Sunday 100% closed).
+    2. Session Window: From London Open (07:00 UTC / 10:30 Iran) to New York Close (21:00 UTC / 00:30 Iran).
+    """
+    now_utc = datetime.now(ZoneInfo("UTC"))
+    weekday = now_utc.weekday()  # 0=Monday, 4=Friday, 5=Saturday, 6=Sunday
+    hour_utc = now_utc.hour
+    minute_utc = now_utc.minute
+    time_val_utc = hour_utc + (minute_utc / 60.0)
+
+    # 1. Weekend Check (Saturday & Sunday)
+    if weekday == 5:  # Saturday
+        return False, "بازار داوجونز در روز شنبه تعطیل است (تعطیلات آخر هفته وال‌استریت)", {
+            "is_open": False,
+            "phase": "WEEKEND_SATURDAY",
+            "label": "تعطیلات آخر هفته وال‌استریت (شنبه)",
+            "countdown": "بازگشایی سشن لندن: دوشنبه ساعت ۱۰:۳۰ صبح به وقت ایران"
+        }
+    elif weekday == 6:  # Sunday
+        return False, "بازار داوجونز در روز یکشنبه تعطیل است (تعطیلات آخر هفته وال‌استریت)", {
+            "is_open": False,
+            "phase": "WEEKEND_SUNDAY",
+            "label": "تعطیلات آخر هفته وال‌استریت (یکشنبه)",
+            "countdown": "بازگشایی سشن لندن: فردا دوشنبه ساعت ۱۰:۳۰ صبح به وقت ایران"
+        }
+
+    # 2. Weekday Hours Check (Monday to Friday: 07:00 UTC to 21:00 UTC)
+    if time_val_utc < 7.0:
+        return False, "خارج از ساعات فعال (قبل از بازگشایی بازار لندن)", {
+            "is_open": False,
+            "phase": "PRE_LONDON_QUIET",
+            "label": "پیش‌گشایش (قبل از بازگشایی لندن)",
+            "countdown": "بازگشایی سشن لندن: ساعت ۱۰:۳۰ صبح به وقت ایران"
+        }
+    elif time_val_utc >= 21.0:
+        if weekday == 4:  # Friday after 21:00 UTC
+            return False, "پایان معاملات هفته در بازار نیویورک (بازار بسته شد)", {
+                "is_open": False,
+                "phase": "FRIDAY_CLOSED",
+                "label": "پایان معاملات هفته (بسته)",
+                "countdown": "بازگشایی مجدد: دوشنبه ساعت ۱۰:۳۰ صبح"
+            }
+        else:
+            return False, "پایان سشن معاملاتی نیویورک (ساعات غیرفعال شبانه)", {
+                "is_open": False,
+                "phase": "POST_NY_QUIET",
+                "label": "پایان سشن نیویورک (آرامش شبانه)",
+                "countdown": "بازگشایی سشن لندن: ساعت ۱۰:۳۰ صبح فردا"
+            }
+
+    session_name = "سشن نیویورک" if time_val_utc >= 13.5 else ("هم‌پوشانی طلایی لندن و نیویورک" if time_val_utc >= 12.0 else "سشن لندن")
+    return True, f"بازار داوجونز فعال است ({session_name})", {
+        "is_open": True,
+        "phase": "MARKET_ACTIVE",
+        "label": f"بازار فعال ({session_name})",
+        "countdown": "سیگنال‌دهی تلگرام مجاز و فعال (از گشایش لندن ۱۰:۳۰ تا پایان نیویورک ۰۰:۳۰)"
+    }
+
+
 if __name__ == "__main__":
     s = market_status()
     print("=== وضعیت بازار ===")

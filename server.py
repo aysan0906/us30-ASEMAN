@@ -860,6 +860,20 @@ _us30_sentinel_stats = {
     "last_error": None
 }
 
+_us30_interactive_bot_stats = {
+    "is_running": True,
+    "last_poll_utc": None,
+    "last_update_id": 0,
+    "queries_answered_total": 0,
+    "last_query": None,
+    "last_response": None,
+    "last_error": None
+}
+
+class DowAdvisorQuestionRequest(BaseModel):
+    question: str
+    price: Optional[float] = None
+
 class US30TelegramConfigRequest(BaseModel):
     bot_token: Optional[str] = ""
     chat_id: Optional[str] = ""
@@ -1433,6 +1447,27 @@ def telegram_toggle_autopilot():
             "ok": True,
             "is_running": new_state,
             "message": f"دیده‌بان تلگرام اکنون «{status_text}» است."
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+@app.get("/api/telegram/interactive-status")
+def telegram_interactive_status():
+    return {
+        "ok": True,
+        "interactive_stats": _us30_interactive_bot_stats,
+        "sentinel_stats": _us30_sentinel_stats
+    }
+
+@app.post("/api/advisor/ask")
+def advisor_ask_question(req: DowAdvisorQuestionRequest):
+    try:
+        from dow_advisor_engine import DowAIAdvisor
+        answer = DowAIAdvisor.answer_question(req.question, req.price)
+        return {
+            "ok": True,
+            "question": req.question,
+            "answer": answer
         }
     except Exception as e:
         return {"ok": False, "error": str(e)}
@@ -2492,6 +2527,102 @@ def us30_sentinel_auto_loop():
             _us30_sentinel_stats["last_error"] = str(e)
         time.sleep(60)
 
+def us30_telegram_interactive_poller():
+    """
+    Two-way interactive Telegram bot polling daemon.
+    Listens for user commands (/start, /status, /scalp, /cot, /analysis360)
+    and natural-language inquiries, passing them through DowAIAdvisor.
+    """
+    time.sleep(12)
+    last_update_id = 0
+    while True:
+        try:
+            bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+            if not bot_token and TG_CONFIG_FILE.exists():
+                try:
+                    with open(TG_CONFIG_FILE, "r", encoding="utf-8") as f:
+                        bot_token = json.load(f).get("bot_token", "").strip()
+                except Exception:
+                    pass
+
+            if not bot_token:
+                time.sleep(20)
+                continue
+
+            _us30_interactive_bot_stats["last_poll_utc"] = time.strftime("%Y-%m-%d %H:%M:%S UTC")
+
+            # Call Telegram getUpdates
+            url = f"https://api.telegram.org/bot{bot_token}/getUpdates?offset={last_update_id}&timeout=15"
+            req = urllib.request.Request(url, headers={"User-Agent": "US30-Sentinel-Bot/2.0"})
+            with urllib.request.urlopen(req, timeout=25) as resp:
+                data = json.loads(resp.read().decode())
+                if data.get("ok"):
+                    updates = data.get("result", [])
+                    for u in updates:
+                        up_id = u.get("update_id", 0)
+                        last_update_id = max(last_update_id, up_id + 1)
+                        _us30_interactive_bot_stats["last_update_id"] = last_update_id
+
+                        msg_obj = u.get("message") or u.get("channel_post")
+                        if not msg_obj:
+                            continue
+
+                        chat = msg_obj.get("chat", {})
+                        chat_id = str(chat.get("id", ""))
+                        text = (msg_obj.get("text") or "").strip()
+
+                        if not chat_id or not text:
+                            continue
+
+                        from dow_advisor_engine import DowAIAdvisor
+
+                        reply_text = ""
+                        clean_cmd = text.lower().split("@")[0].strip()
+
+                        if clean_cmd in ["/start", "/help", "راهنما", "دستورات"]:
+                            reply_text = """👋 <b>به ربات هوشمند تعاملی سنتینل داوجونز خوش آمدید!</b>
+━━━━━━━━━━━━━━━━━━━━
+من مشاور هوشمند ۲۴ ساعته وال‌استریت برای نماد <b>US30</b> هستم. شما می‌توانید در هر لحظه دستورات زیر را ارسال کنید یا هر سوالی درباره بازار بپرسید:
+
+⚡ <b>دستورات سریع:</b>
+• <code>/status</code> 👈 نرخ لحظه‌ای Bid/Ask و اسپرد ترندو + ساعت و وضعیت سشن
+• <code>/scalp</code> 👈 آخرین ستاپ ۱ دقیقه‌ای میکرو اسکالپ با استاپ ۱۲-۱۴ پوینت برای حساب ۱۰ دلاری
+• <code>/cot</code> 👈 گزارش رسمی تعهدات معامله‌گران نهادی وال‌استریت (CFTC CoT)
+• <code>/analysis360</code> 👈 خلاصه ساختار بازار، ترازهای نقدینگی و سطوح عرضه و تقاضا
+
+💡 <b>چت هوشمند و پرسش آزاد:</b>
+می‌توانید هر سوالی را به زبان فارسی بفرستید! برای مثال:
+  • <i>«الان بخرم یا بفروشم؟»</i>
+  • <i>«بین بوک‌مپ و اوراق قرضه تضاد هست، چکار کنم؟»</i>
+  • <i>«دو تا استاپ خوردم اعصابم خورده»</i>
+  • <i>«فرمول مقسوم‌علیه داوجونز و تاثیر UNH چیه؟»</i>
+━━━━━━━━━━━━━━━━━━━━"""
+                        elif clean_cmd == "/status":
+                            reply_text = DowAIAdvisor.get_quick_status_summary()
+                        elif clean_cmd == "/scalp":
+                            reply_text = DowAIAdvisor.get_quick_scalp_summary()
+                        elif clean_cmd == "/cot":
+                            reply_text = DowAIAdvisor.get_quick_cot_summary()
+                        elif clean_cmd in ["/analysis360", "/360", "/smc"]:
+                            reply_text = DowAIAdvisor.get_quick_360_summary()
+                        else:
+                            # Natural language advisor reasoning query
+                            reply_text = DowAIAdvisor.answer_question(text)
+
+                        # Send reply back to user/chat
+                        if reply_text:
+                            dispatch_to_telegram_raw(bot_token, chat_id, reply_text)
+                            _us30_interactive_bot_stats["queries_answered_total"] += 1
+                            _us30_interactive_bot_stats["last_query"] = text
+                            _us30_interactive_bot_stats["last_response"] = reply_text[:120]
+
+        except urllib.error.URLError as e:
+            _us30_interactive_bot_stats["last_error"] = f"URLError: {e.reason}"
+            time.sleep(5)
+        except Exception as e:
+            _us30_interactive_bot_stats["last_error"] = str(e)
+            time.sleep(5)
+
 def prewarm_signals_in_background():
     time.sleep(1)
     for tf in ["1h", "15m", "5m", "30m", "4h", "1d"]:
@@ -2505,6 +2636,9 @@ threading.Thread(target=prewarm_signals_in_background, daemon=True).start()
 
 # Start Sentinel auto-pilot thread on server boot
 threading.Thread(target=us30_sentinel_auto_loop, daemon=True).start()
+
+# Start Interactive Two-Way Telegram Poller daemon on boot
+threading.Thread(target=us30_telegram_interactive_poller, daemon=True).start()
 
 if __name__ == "__main__":
     import uvicorn
