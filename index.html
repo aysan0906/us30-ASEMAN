@@ -2656,6 +2656,27 @@
           </div>
         </div>
 
+        <!-- Market Trading Session Status Bar (London Open to New York Close Guard) -->
+        <div id="tgMarketSessionBar" style="background: rgba(255, 51, 102, 0.08); border: 1.5px solid #ff3366; border-radius: 10px; padding: 12px 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.4rem;" id="tgSessionIcon">⏸️</span>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <strong id="tgSessionTitle" style="color: #ffd166; font-size: 0.86rem;">سپر جلسات معاملاتی: بازار داوجونز در حال حاضر بسته است</strong>
+                <span id="tgSessionStatusBadge" style="background: rgba(255, 51, 102, 0.2); color: #ff3366; border: 1px solid #ff3366; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 800;">
+                  ارسال متوقف (بازار غیرفعال)
+                </span>
+              </div>
+              <div id="tgSessionDesc" style="font-size: 0.76rem; color: #cbd5e1; margin-top: 3px;">
+                سیگنال‌دهی خودکار تلگرام فقط در طول هفته از <strong>باز شدن بازار لندن (۱۰:۳۰ صبح)</strong> تا <strong>پایان بازار نیویورک (۰۰:۳۰ بامداد)</strong> فعال است. در تعطیلات و ساعات غیرفعال هیچ پیام کاذبی ارسال نمی‌شود.
+              </div>
+            </div>
+          </div>
+          <div id="tgSessionCountdown" style="font-family: var(--font-mono); font-size: 0.78rem; color: #ffd700; background: rgba(0,0,0,0.3); padding: 5px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
+            دوشنبه ساعت ۱۰:۳۰ بازگشایی می‌شود
+          </div>
+        </div>
+
         <!-- Telegram Signals Performance Dashboard (4 KPI Cards) -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 20px;">
           <!-- Card 1: Total Sent Signals -->
@@ -5947,6 +5968,50 @@
 
           const netPtsEl = document.getElementById('tgStatNetPts');
           if (netPtsEl) netPtsEl.textContent = `خالص: ${st.net_pts >= 0 ? '+' : ''}${Number(st.net_pts).toLocaleString()} pts`;
+        }
+
+        // Update Market Session Guard Banner
+        const sessBar = document.getElementById('tgMarketSessionBar');
+        const sessBadge = document.getElementById('tgSessionStatusBadge');
+        const sessTitle = document.getElementById('tgSessionTitle');
+        const sessDesc = document.getElementById('tgSessionDesc');
+        const sessCount = document.getElementById('tgSessionCountdown');
+        const sessIcon = document.getElementById('tgSessionIcon');
+
+        if (sessBar) {
+          if (data.market_active) {
+            sessBar.style.borderColor = '#00e676';
+            sessBar.style.background = 'rgba(0, 230, 118, 0.08)';
+            if (sessIcon) sessIcon.textContent = '🟢';
+            if (sessBadge) {
+              sessBadge.textContent = 'سیگنال‌دهی مجاز و فعال';
+              sessBadge.style.color = '#00e676';
+              sessBadge.style.borderColor = '#00e676';
+              sessBadge.style.background = 'rgba(0, 230, 118, 0.2)';
+            }
+            if (sessTitle) {
+              sessTitle.textContent = `سپر جلسات معاملاتی: ${data.market_status || 'بازار داوجونز فعال است'}`;
+              sessTitle.style.color = '#00e676';
+            }
+            if (sessDesc) sessDesc.innerHTML = 'بازار در پنجره طلایی <strong>سشن لندن تا نیویورک</strong> قرار دارد؛ سیستم در حال پایش و مخابره بهترین ستاپ‌های تاییدشده به تلگرام است.';
+            if (sessCount) sessCount.textContent = 'سشن فعال | آنلاین';
+          } else {
+            sessBar.style.borderColor = '#ff3366';
+            sessBar.style.background = 'rgba(255, 51, 102, 0.08)';
+            if (sessIcon) sessIcon.textContent = '⏸️';
+            if (sessBadge) {
+              sessBadge.textContent = 'ارسال متوقف (بازار غیرفعال)';
+              sessBadge.style.color = '#ff3366';
+              sessBadge.style.borderColor = '#ff3366';
+              sessBadge.style.background = 'rgba(255, 51, 102, 0.2)';
+            }
+            if (sessTitle) {
+              sessTitle.textContent = `سپر جلسات معاملاتی: ${data.market_status || 'بازار داوجونز در حال حاضر بسته است'}`;
+              sessTitle.style.color = '#ffd166';
+            }
+            if (sessDesc) sessDesc.innerHTML = 'سیگنال‌دهی خودکار تلگرام فقط در طول هفته از <strong>باز شدن بازار لندن (۱۰:۳۰ صبح)</strong> تا <strong>پایان بازار نیویورک (۰۰:۳۰ بامداد)</strong> فعال است. در تعطیلات و ساعات غیرفعال هیچ پیام کاذبی ارسال نمی‌شود.';
+            if (sessCount && data.session_info) sessCount.textContent = data.session_info.countdown || 'دوشنبه ساعت ۱۰:۳۰ بازگشایی می‌شود';
+          }
         }
       } catch (e) {}
     }
