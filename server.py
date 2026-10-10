@@ -1194,6 +1194,11 @@ DISPATCHED_SIGNALS_FILE = Path(__file__).resolve().parent / "dispatched_signals.
 
 def append_dispatched_signal(rec: Dict[str, Any]):
     try:
+        # Strict Double Guard: Never append any signal to journal when US30 market is closed
+        active, reason, _ = is_us30_market_in_active_session()
+        if not active:
+            print(f"[JOURNAL GUARD] Suppressed signal record because market is closed: {reason}")
+            return
         with open(DISPATCHED_SIGNALS_FILE, "a", encoding="utf-8") as f:
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
     except Exception as e:
@@ -1202,6 +1207,14 @@ def append_dispatched_signal(rec: Dict[str, Any]):
 @app.post("/api/telegram/send")
 def telegram_send(req: US30TelegramSendRequest):
     try:
+        # Strict Market Hours Guard: Disallow manual or auto signal dispatch when market is closed
+        market_active, market_reason, _ = is_us30_market_in_active_session()
+        if not market_active:
+            return JSONResponse(status_code=400, content={
+                "success": False,
+                "message": f"⛔ بازار داوجونز هم‌اکنون تعطیل است ({market_reason}). امکان ارسال و ثبت سیگنال در بازار بسته وجود ندارد."
+            })
+
         tok = req.bot_token or os.environ.get("TELEGRAM_BOT_TOKEN") or ""
         chat = req.chat_id or os.environ.get("TELEGRAM_CHAT_ID") or ""
         if not tok or not chat:
@@ -1238,6 +1251,7 @@ def telegram_send(req: US30TelegramSendRequest):
             sig_name = "سوئینگ جامع (Swing)"
             tp1_val = sig.get("tp1", p_curr + 550)
             tp2_val = sig.get("tp2", p_curr + 1450)
+            tp3_val = sig.get("tp3", p_curr + 2200)
             sl_val = sig.get("stop_loss", p_curr - 280)
             dur = sig.get("holding_duration", "۲ تا ۵ روز")
             tf = "4H"
@@ -1249,6 +1263,7 @@ def telegram_send(req: US30TelegramSendRequest):
             sig_name = "میکرو-اسکالپ تک‌تیرانداز (1m Sniper)"
             tp1_val = sig.get("tp1", p_curr + 24.0)
             tp2_val = sig.get("tp2", p_curr + 48.0)
+            tp3_val = sig.get("tp3", p_curr + 72.0)
             sl_val = sig.get("stop_loss", p_curr - 12.0)
             dur = sig.get("holding_duration", "۳ الی ۱۰ دقیقه (خروج سریع)")
             tf = "1m"
@@ -1273,13 +1288,14 @@ def telegram_send(req: US30TelegramSendRequest):
                 "entry": p_curr,
                 "tp1": tp1_val,
                 "tp2": tp2_val,
+                "tp3": tp3_val,
                 "sl": sl_val,
                 "holding_duration": dur,
                 "result": f"تارگت اول تاچ شد (+{tp_pts} pts)",
                 "pnl_pts": tp_pts,
                 "r_mult": round(tp_pts / max(sl_pts, 1), 2),
                 "status": "WIN",
-                "ts": f"{now_tehran.strftime('%H:%M')} (1405/07/16)"
+                "ts": now_tehran.strftime("%Y/%m/%d ساعت %H:%M:%S")
             }
             append_dispatched_signal(dispatched_rec)
 

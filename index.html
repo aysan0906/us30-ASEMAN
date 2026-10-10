@@ -2622,7 +2622,7 @@
                   <th>تایم‌فریم</th>
                   <th>جهت</th>
                   <th>نقطه ورود</th>
-                  <th>حدود سود (TP1 / TP2)</th>
+                  <th>حدود سود (TP1 / TP2 / TP3)</th>
                   <th>حد ضرر (SL)</th>
                   <th>مدت نگهداری</th>
                   <th>نتیجه و پوینت</th>
@@ -6536,6 +6536,14 @@
       if (!tbody) return;
 
       let records = _allJournalRecords || [];
+      // Explicit newest-first sorting: highest id/epoch at top
+      records = [...records].sort((a, b) => {
+        const idA = parseInt(String(a.id || '').replace(/\D/g, '')) || 0;
+        const idB = parseInt(String(b.id || '').replace(/\D/g, '')) || 0;
+        if (idB !== idA) return idB - idA;
+        return 0;
+      });
+
       if (_journalFilter === 'sniper') {
         records = records.filter(r => (r.timeframe === '1m' || (r.signal_type || '').includes('تک‌تیرانداز') || (r.signal_type || '').includes('اسکالپ')));
       } else if (_journalFilter === 'swing') {
@@ -6552,7 +6560,7 @@
       }
 
       tbody.innerHTML = records.map((r, idx) => {
-        const rowNumber = r.row_num || (idx + 1);
+        const rowNumber = idx + 1; // Row #1 is guaranteed to be the newest at the top
         const isWin = r.status === 'WIN' || r.pnl_pts > 0;
         const resColor = isWin ? '#00e676' : '#ff3366';
         const isBuy = r.direction === 'BUY';
@@ -6570,9 +6578,14 @@
 
         const tp1Val = r.tp1 || r.tp;
         const tp2Val = r.tp2;
-        const tpDisplay = tp2Val
-          ? `<span style="color: #00e676;">TP1: $${Number(tp1Val).toLocaleString()}</span><br><span style="color: #34d399; font-size: 0.7rem;">TP2: $${Number(tp2Val).toLocaleString()}</span>`
-          : `<span style="color: #00e676;">TP: $${Number(tp1Val).toLocaleString()}</span>`;
+        const tp3Val = r.tp3;
+        let tpDisplay = `<span style="color: #00e676; font-weight:700;">TP1: $${Number(tp1Val || 0).toLocaleString()}</span>`;
+        if (tp2Val) {
+          tpDisplay += `<br><span style="color: #34d399; font-size: 0.7rem;">TP2: $${Number(tp2Val).toLocaleString()}</span>`;
+        }
+        if (tp3Val) {
+          tpDisplay += `<br><span style="color: #38bdf8; font-size: 0.7rem;">TP3: $${Number(tp3Val).toLocaleString()}</span>`;
+        }
 
         const durDisplay = r.holding_duration || (isSniper ? '۲ الی ۱۰ دقیقه' : (isSwing ? '۲ تا ۵ روز' : '۳۰ دقیقه تا ۲ ساعت'));
 
