@@ -1420,6 +1420,20 @@ def journal_reset():
                 "wins_count": 0,
                 "losses_count": 0
             },
+            "sniper_1m_stats": {
+                "total": 0,
+                "wins": 0,
+                "losses": 0,
+                "win_rate": 0.0,
+                "net_pts": 0,
+                "net_usd_001_lot": 0.0,
+                "profit_factor": 0.0,
+                "total_tp_pts": 0,
+                "total_sl_pts": 0,
+                "safe_sl_desc": "۱۲ تا ۱۴ پوینت ($۱.۲۰ - $۱.۴۰)",
+                "target_desc": "تارگت اول +۲۴ pt | تارگت دوم +۴۸ pt",
+                "grade": "GRADE A+ (اعتبار نهادی)"
+            },
             "records": []
         }
     except Exception as e:

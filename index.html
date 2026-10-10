@@ -2480,22 +2480,22 @@
             <!-- Sniper Card 1: Win Rate -->
             <div style="background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 215, 0, 0.35); border-radius: 10px; padding: 12px;">
               <div style="font-size: 0.72rem; color: #94a3b8;">🎯 وین‌ریت اختصاصی تک‌تیرانداز 1m</div>
-              <div id="snWinRate" style="font-size: 1.4rem; font-weight: 900; color: #ffd700; margin-top: 4px; font-family: var(--font-mono);">۸۰.۰٪</div>
-              <div id="snTotalSignals" style="font-size: 0.68rem; color: #94a3b8; margin-top: 2px;">۵ سیگنال (۴ تارگت / ۱ استاپ)</div>
+              <div id="snWinRate" style="font-size: 1.4rem; font-weight: 900; color: #ffd700; margin-top: 4px; font-family: var(--font-mono);">۰.۰٪</div>
+              <div id="snTotalSignals" style="font-size: 0.68rem; color: #94a3b8; margin-top: 2px;">۰ سیگنال (۰ تارگت / ۰ استاپ)</div>
             </div>
 
             <!-- Sniper Card 2: Net USD for $10 Account -->
             <div style="background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(0, 230, 118, 0.35); border-radius: 10px; padding: 12px;">
               <div style="font-size: 0.72rem; color: #94a3b8;">💰 بازدهی دلاری حساب $۱۰ ترندو</div>
-              <div id="snNetUsd" style="font-size: 1.4rem; font-weight: 900; color: #00e676; margin-top: 4px; font-family: var(--font-mono);">+$10.70 دلار</div>
-              <div style="font-size: 0.68rem; color: #34d399; margin-top: 2px;">+۱۰۷٪ رشد بالانس با ۰.۰۱ لات (اهرم ۱:۵۰۰/۱:۱۰۰۰)</div>
+              <div id="snNetUsd" style="font-size: 1.4rem; font-weight: 900; color: #00e676; margin-top: 4px; font-family: var(--font-mono);">$0.00 دلار</div>
+              <div id="snBalanceGrowth" style="font-size: 0.68rem; color: #34d399; margin-top: 2px;">۰.۰٪ رشد بالانس (بالانس: $10.00 با ۰.۰۱ لات)</div>
             </div>
 
             <!-- Sniper Card 3: Net Points -->
             <div style="background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(14, 165, 233, 0.35); border-radius: 10px; padding: 12px;">
               <div style="font-size: 0.72rem; color: #94a3b8;">📈 مجموع پوینت خالص تک‌تیرانداز</div>
-              <div id="snNetPts" style="font-size: 1.4rem; font-weight: 900; color: #38bdf8; margin-top: 4px; font-family: var(--font-mono);">+۱۰۷ پوینت</div>
-              <div id="snProfitFactor" style="font-size: 0.68rem; color: #94a3b8; margin-top: 2px;">+۱۲۰ پوینت سود / -۱۳ پوینت استاپ (PF: 9.2)</div>
+              <div id="snNetPts" style="font-size: 1.4rem; font-weight: 900; color: #38bdf8; margin-top: 4px; font-family: var(--font-mono);">۰ پوینت</div>
+              <div id="snProfitFactor" style="font-size: 0.68rem; color: #94a3b8; margin-top: 2px;">۰ پوینت سود / ۰ پوینت استاپ (PF: 0.0)</div>
             </div>
 
             <!-- Sniper Card 4: Risk Calibration -->
@@ -6496,6 +6496,20 @@
         const res = await fetch('/api/journal/reset', { method: 'POST' });
         const data = await res.json();
         if (data.ok) {
+          // Immediately zero out DOM elements so user sees instant 0% and $0.00
+          const snUsdEl = document.getElementById('snNetUsd');
+          if (snUsdEl) { snUsdEl.textContent = '$0.00 دلار'; snUsdEl.style.color = '#00e676'; }
+          const snGrowthEl = document.getElementById('snBalanceGrowth');
+          if (snGrowthEl) { snGrowthEl.textContent = '۰.۰٪ رشد بالانس (بالانس: $10.00 با ۰.۰۱ لات)'; snGrowthEl.style.color = '#34d399'; }
+          const snWrEl = document.getElementById('snWinRate');
+          if (snWrEl) snWrEl.textContent = '۰.۰٪';
+          const snTotEl = document.getElementById('snTotalSignals');
+          if (snTotEl) snTotEl.textContent = '۰ سیگنال (۰ تارگت / ۰ استاپ)';
+          const snPtsEl = document.getElementById('snNetPts');
+          if (snPtsEl) snPtsEl.textContent = '۰ پوینت';
+          const snPfEl = document.getElementById('snProfitFactor');
+          if (snPfEl) snPfEl.textContent = '۰ سود / ۰ استاپ (PF: 0.0)';
+
           fetchJournalData();
           alert('✅ تمام سوابق سیگنال‌های ژورنال با موفقیت ریست شدند.');
         }
@@ -6675,6 +6689,17 @@
           if (snUsdEl) {
             snUsdEl.textContent = `${sn.net_usd_001_lot >= 0 ? '+' : ''}$${sn.net_usd_001_lot.toFixed(2)} دلار`;
             snUsdEl.style.color = sn.net_usd_001_lot >= 0 ? '#00e676' : '#ff3366';
+          }
+
+          const snGrowthEl = document.getElementById('snBalanceGrowth');
+          if (snGrowthEl) {
+            const initialBalance = 10.0;
+            const netUsd = Number(sn.net_usd_001_lot || 0);
+            const currentBalance = initialBalance + netUsd;
+            const growthPct = (netUsd / initialBalance) * 100;
+            const sign = growthPct > 0 ? '+' : '';
+            snGrowthEl.textContent = `${sign}${growthPct.toFixed(1)}% رشد بالانس (بالانس: $${currentBalance.toFixed(2)} با ۰.۰۱ لات)`;
+            snGrowthEl.style.color = netUsd >= 0 ? '#34d399' : '#ff3366';
           }
 
           const snPfEl = document.getElementById('snProfitFactor');
