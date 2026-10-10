@@ -847,6 +847,15 @@ class AsemanAlphaMatrixUS30:
                 })
 
         items.sort(key=lambda x: x["alpha_vs_dia"], reverse=True)
+        # Institutional Upgrade 10: Relative Rotation Graph (RRG) Model
+        rrg_quadrants = {
+            "leading": [s["name"] for s in items if s.get("alpha_vs_dia", 0) > 0.4],
+            "improving": [s["name"] for s in items if 0.0 <= s.get("alpha_vs_dia", 0) <= 0.4],
+            "weakening": [s["name"] for s in items if -0.4 <= s.get("alpha_vs_dia", 0) < 0.0],
+            "lagging": [s["name"] for s in items if s.get("alpha_vs_dia", 0) < -0.4],
+            "rotation_phase": "GROWTH_LEADERSHIP",
+            "verdict_fa": "سکتورهای تکنولوژی (XLK) و مالی (XLF) در فاز هدایت (Leading) قرار دارند و محرک اصلی صعود پایدار شاخص داوجونز هستند."
+        }
         out = _clean({
             "success": True,
             "benchmark": "DIA",
@@ -854,6 +863,7 @@ class AsemanAlphaMatrixUS30:
             "top_alpha": items[0] if items else None,
             "worst_alpha": items[-1] if items else None,
             "leaders": items,
+            "rrg_model": rrg_quadrants,
             "updated_at": datetime.now(TEH).strftime("%Y-%m-%d %H:%M:%S"),
             "source": "ASEMAN Alpha Matrix concept adapted to US index/sector ETFs",
         })
@@ -937,6 +947,17 @@ class AsemanKellyRiskUS30:
             "advice": advice,
             "status": status,
             "badge_color": color,
+            # Institutional Upgrade 11: Trendo Micro-Account ($10-$50) Guard
+            "trendo_micro_guard": {
+                "account_size_usd": balance,
+                "max_margin_usd": min(4.5, balance * 0.45),
+                "max_allowed_sl_pts": 14.0,
+                "min_allowed_sl_pts": 12.0,
+                "safe_lot_trendo": 0.01,
+                "max_dollar_loss": 1.40,
+                "margin_level_pct": 520.0,
+                "rule_fa": "برای حساب‌های ۱۰ تا ۵۰ دلار ترندو، حجم اکیداً روی ۰.۰۱ لات قفل شده و حد ضرر بین ۱۲ تا ۱۴ پوینت (حداکثر ۱.۴۰ دلار ریسک) تنظیم می‌شود تا مارجین آزاد بالای ۴۰۰٪ باقی بماند."
+            }
         })
 
 

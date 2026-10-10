@@ -68,6 +68,13 @@ def get_smt_and_sweep_data(current_price: float = 51705.5) -> Dict[str, Any]:
         smt_desc = "هر سه شاخص اصلی آمریکا همگام و با شیب هماهنگ در حال پیشروی هستند؛ تایید جریان سرمایه کلی مارکت."
         smt_action = "TREND_ALIGNED"
 
+    # Bull Trap & Bear Trap detection between Dow and Nasdaq
+    bull_trap_alert = None
+    if diff_us30_ndx < -0.10:
+        bull_trap_alert = "🚨 تله گاوی صعودی (Bull Trap): نزدک ۱۰۰ سقف بالاتر ثبت کرده اما داوجونز در شکست سقف متناظر ناتوان مانده است! این واگرایی SMT نشانه توزیع پنهان و افت احتمالی شاخص است."
+    else:
+        bull_trap_alert = "✅ ساختار SMT معتبر: همگرایی داوجونز با S&P500 و نزدک نشان‌دهنده جریان نقدینگی واقعی سازمانی است و فاقد تله صعودی است."
+
     triad_matrix = [
         {"symbol": "US30", "name": "داوجونز صنعتی", "price": p, "change_pct": us30_change_pct, "swing": "Higher High (سقف بالاتر)", "state": "پیشتاز تقاضا"},
         {"symbol": "SPX", "name": "اس‌اندپی ۵۰۰", "price": 7784.2, "change_pct": spx_change_pct, "swing": "Higher High (سقف بالاتر)", "state": "همسو"},
@@ -124,6 +131,7 @@ def get_smt_and_sweep_data(current_price: float = 51705.5) -> Dict[str, Any]:
             "color": smt_color,
             "desc": smt_desc,
             "action": smt_action,
+            "bull_trap_alert": bull_trap_alert,
             "triad": triad_matrix
         },
         "sweep_hunter": {

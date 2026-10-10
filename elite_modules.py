@@ -389,6 +389,8 @@ def get_divisor_impact(current_price: float = 51570.0) -> Dict[str, Any]:
         "top_bullish": f"{top_bull['name']} ({top_bull['symbol']}): {top_bull['points_impact']:+.1f} pts",
         "top_bearish": f"{top_bear['name']} ({top_bear['symbol']}): {top_bear['points_impact']:+.1f} pts",
         "health_verdict": health,
+        # Institutional Upgrade 6: Divisor Formula Point Impact Alert
+        "live_formula_alert": f"📐 فرمول مقسوم‌علیه داو (Divisor = {DIVISOR_2026:.4f}): هر ۱ دلار نوسان قیمت در هر سهم ۵ غول وال‌استریت، شاخص را دقیقاً ۶.۵۹ پوینت جابه‌جا می‌کند. برای نمونه افت ۲ دلاری UNH منجر به ریزش اجباری ۱۳.۲ پوینتی کل شاخص داوجونز می‌شود!",
         "leaders": leaders,
         "updated_at": time.strftime("%H:%M:%S UTC")
     }
@@ -446,15 +448,15 @@ def get_moc_imbalance(current_price: float = 51570.0) -> Dict[str, Any]:
         "ok": True,
         "countdown": countdown_str,
         "countdown_seconds": diff_sec,
-        "target_tehran_time": "۲۳:۲۰:۰۰ (۱۰ دقیقه قبل از بسته شدن وال‌استریت)",
+        "target_tehran_time": "۲۰ دقیقه پایانی بازار نیویورک (۲۳:۴۰ تا ۲۴:۰۰ تهران)",
         "phase": phase,
         "phase_color": phase_color,
         "imbalance_amount": imbalance_val,
         "imbalance_side": imbalance_side,
         "scalp_bias": scalp_bias,
         "scalp_playbook": {
-            "setup_name": "اسکالپ ۱۰ دقیقه پایانی (MOC Close Scalp)",
-            "expected_move": "۴۰ الی ۷۵ پوینت در ۱۰ دقیقه",
+            "setup_name": "اسکالپ ۲۰ دقیقه پایانی MOC (Wall Street Close Scalp)",
+            "expected_move": "۴۰ الی ۷۵ پوینت در ۱۰ الی ۲۰ دقیقه",
             "stop_loss_pts": 25,
             "target_pts": 60,
             "advice": scalp_advice
@@ -486,7 +488,7 @@ def get_all_elite_modules(current_price: float = 51570.0, price_change: float = 
 
 _vix_cache = {"time": 0, "data": None}
 
-def get_vix_and_smt_data():
+def get_vix_and_smt_data(current_price: Optional[float] = None):
     now = time.time()
     if _vix_cache["data"] and (now - _vix_cache["time"]) < 120.0:
         return _vix_cache["data"]
