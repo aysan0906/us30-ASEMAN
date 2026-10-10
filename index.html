@@ -3812,7 +3812,7 @@
 
     let _trendoInFlight = false;
     async function fetchTrendoLiveTicks() {
-      if (_trendoInFlight) return;
+      if (document.hidden || _trendoInFlight) return;
       _trendoInFlight = true;
       try {
         const res = await fetch('/api/trendo/live');
@@ -3829,21 +3829,34 @@
         if (askEl) askEl.textContent = Number(data.ask).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
         if (spEl) spEl.textContent = `${data.spread} pt`;
         if (sessEl) sessEl.textContent = `${data.session_label} (اسپرد دقیق ترندو)`;
+
+        if (_activeBroker === 'trendo' && data.bid) {
+          updatePriceWithFlash(data.bid);
+          pushBookmapLiveTick(data.bid);
+        }
       } catch (e) {
       } finally {
         _trendoInFlight = false;
       }
     }
 
-    // Ultra-Fast Real-Time Streaming: Poll Trendo ticks every 350ms (~3 updates per second!)
-    setInterval(fetchTrendoLiveTicks, 350);
+    // High-performance streaming: 1000ms polling for rock-solid stability and low CPU
+    setInterval(fetchTrendoLiveTicks, 1000);
 
-    // 3. FETCH COMPOSITE SIGNAL FOR ACTIVE TIMEFRAME
+    // 3. FETCH COMPOSITE SIGNAL FOR ACTIVE TIMEFRAME (Throttled & Memoized)
+    let _lastCompositeJson = '';
     async function fetchCompositeSignal(interval = _activeInterval) {
+      if (document.hidden) return;
       try {
         const res = await fetch(`/api/dow/composite-signal?interval=${interval}&broker=${_activeBroker}`);
         if (!res.ok) return;
-        const data = await res.json();
+        const text = await res.text();
+        if (text === _lastCompositeJson) {
+          _secondsSinceRefresh = 0;
+          return; // Identical payload: avoid heavy DOM reflow
+        }
+        _lastCompositeJson = text;
+        const data = JSON.parse(text);
         if (!data.ok) return;
 
         // Reset seconds counter
@@ -3997,6 +4010,7 @@
 
     // 5. LIVE TICKER POLLING (Every 4 seconds)
     async function pollLiveQuotes() {
+      if (document.hidden || _activeBroker === 'trendo') return;
       try {
         const res = await fetch('/api/ticker');
         if (res.ok) {
@@ -4018,10 +4032,10 @@
       } catch (e) {}
     }
 
-    // Run quote polling every 900ms (sub-second) for Forex.com
-    setInterval(pollLiveQuotes, 900);
-    // Refresh composite signal every 3 seconds
-    setInterval(() => fetchCompositeSignal(_activeInterval), 3000);
+    // High-efficiency polling (skips when Trendo is feeding ticks or tab is hidden)
+    setInterval(pollLiveQuotes, 2500);
+    // Refresh composite signal every 3.5 seconds
+    setInterval(() => fetchCompositeSignal(_activeInterval), 3500);
 
     // TOGGLE ACCORDION FOR 21 MODULES
     function toggleModulesAccordion() {
@@ -5320,11 +5334,11 @@
     }
 
     function renderLiveBookmapFrame() {
-      // If NOT on Bookmap tab or not in canvas mode, sleep 400ms to keep CPU at 0%
-      if (_activeTab !== 'bookmapTab' || _bmViewMode !== 'canvas') {
+      // If NOT on Bookmap tab or tab hidden, sleep 1200ms to keep CPU strictly at 0%
+      if (_activeTab !== 'bookmapTab' || _bmViewMode !== 'canvas' || document.hidden) {
         _bmAnimFrame = setTimeout(() => {
           requestAnimationFrame(renderLiveBookmapFrame);
-        }, 400);
+        }, 1200);
         return;
       }
 
@@ -7081,24 +7095,29 @@
           pbEl.innerHTML = data.executive_playbook;
         }
 
-        // Tab 21 & Journal Tab clone container
-        const tabCont = document.getElementById('tabMsDynamicContainer');
-        const jTabCont = document.getElementById('journalMsDynamicContainer');
-        const heroCockpit = document.getElementById('masterSignalCockpit');
-        if (heroCockpit) {
-          if (tabCont) tabCont.innerHTML = heroCockpit.innerHTML;
-          if (jTabCont) jTabCont.innerHTML = heroCockpit.innerHTML;
+        // Tab 21 & Journal Tab clone container (Only clone when that tab is active)
+        if (_activeTab === 'masterSignalTab') {
+          const tabCont = document.getElementById('tabMsDynamicContainer');
+          const heroCockpit = document.getElementById('masterSignalCockpit');
+          if (heroCockpit && tabCont) tabCont.innerHTML = heroCockpit.innerHTML;
+        } else if (_activeTab === 'journalTab') {
+          const jTabCont = document.getElementById('journalMsDynamicContainer');
+          const heroCockpit = document.getElementById('masterSignalCockpit');
+          if (heroCockpit && jTabCont) jTabCont.innerHTML = heroCockpit.innerHTML;
         }
       } catch (e) {
         console.error('Error fetching Master Signal data:', e);
       }
     }
 
-    // Refresh Elite Modules every 20 seconds
-    setInterval(fetchEliteModules, 20000);
-
-    // Refresh Bookmap & Active Trading Terminals
+    // Refresh Elite Modules every 30 seconds
     setInterval(() => {
+      if (!document.hidden) fetchEliteModules();
+    }, 30000);
+
+    // Refresh Active Trading Terminal (Strictly target ONLY the active tab, zero background waste)
+    setInterval(() => {
+      if (document.hidden) return;
       if (_activeTab === 'bookmapTab') fetchBookmapData();
       else if (_activeTab === 'journalTab') fetchJournalData();
       else if (_activeTab === 'ninjatraderTab') fetchNinjaTraderData();
@@ -7107,11 +7126,21 @@
       else if (_activeTab === 'geopoliticsTab') fetchGeopoliticsData();
       else if (_activeTab === 'sierrachartTab') fetchSierraChartData();
       else if (_activeTab === 'masterSignalTab') fetchMasterSignalData();
-    }, 5000);
+    }, 6000);
 
-    // Refresh Master Signal Cockpit every 10 seconds
-    setInterval(fetchMasterSignalData, 10000);
+    // Refresh Master Signal Cockpit every 15 seconds
+    setInterval(() => {
+      if (!document.hidden) fetchMasterSignalData();
+    }, 15000);
 
+
+    // Smart Browser Tab Visibility Guard: Pause background tasks when tab is hidden, resume instantly when focused
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        fetchTrendoLiveTicks();
+        fetchCompositeSignal(_activeInterval);
+      }
+    });
 
     // 15. INITIALIZATION ON LOAD
     window.addEventListener('DOMContentLoaded', () => {

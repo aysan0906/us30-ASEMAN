@@ -1370,8 +1370,9 @@ def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trend
         broker_clean = "trendo"
     broker = broker_clean
     now_ts = time.time()
-    cached = _composite_signal_cache.get(interval)
-    if cached and (now_ts - cached["time"] < 30.0):
+    cache_key = f"{interval}_{broker}"
+    cached = _composite_signal_cache.get(cache_key)
+    if cached and (now_ts - cached["time"] < 2.5):
         return cached["data"]
 
     # 1. Fetch live price (Direct from Trendo Broker or Forex.com)
@@ -1948,7 +1949,7 @@ def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trend
         "trendo_info": trendo_meta if trendo_meta.get("ok") else None,
         "updated_at": time.strftime("%Y-%m-%d %H:%M:%S UTC")
     }
-    _composite_signal_cache[interval] = {"time": now_ts, "data": response_payload}
+    _composite_signal_cache[cache_key] = {"time": now_ts, "data": response_payload}
     return response_payload
 
 _leaders_cache: Dict[str, Any] = {}
