@@ -1915,6 +1915,12 @@ def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trend
     # Re-boost final score with 15-module multi-confluence
     final_score = min(99, max(score, int(confluence_pct * 0.95)))
 
+    try:
+        import smt_and_sweep_engine
+        smt_sweep = smt_and_sweep_engine.get_smt_and_sweep_data(p_curr)
+    except Exception:
+        smt_sweep = None
+
     response_payload = {
         "ok": True,
         "action": action,
@@ -1945,6 +1951,7 @@ def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trend
         "session_vwap": validation.get("session_vwap", round(p_curr - 15, 1)),
         "filters_passed": validation.get("filters_passed", f"تایید {passed_count} از ۱۵ ماژول نهادی"),
         "triggers": triggers,
+        "smt_and_sweep": smt_sweep,
         "broker": broker,
         "trendo_info": trendo_meta if trendo_meta.get("ok") else None,
         "updated_at": time.strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -2226,6 +2233,21 @@ def dow_moc_imbalance():
     except Exception:
         p = 51570.0
     return elite.get_moc_imbalance(p)
+
+@app.get("/api/dow/smt-and-sweep")
+def dow_smt_and_sweep():
+    try:
+        try:
+            import trendo_engine
+            t_tick = trendo_engine.get_trendo_tick()
+            p = float(t_tick.get("bid", 51705.5) or 51705.5)
+        except Exception:
+            t_data = engine.ticker("1h")
+            p = float(t_data.get("price", 51705.5) or 51705.5)
+        import smt_and_sweep_engine
+        return smt_and_sweep_engine.get_smt_and_sweep_data(p)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 
 def get_dashboard_html() -> str:

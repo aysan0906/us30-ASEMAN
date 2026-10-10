@@ -1018,6 +1018,63 @@
           <strong id="heroAdrBadge" style="font-size: 0.74rem; color: #00e676; font-family: var(--font-mono);">🟢 باز (۵۶٪ پر شده)</strong>
         </div>
       </div>
+
+      <!-- INSTITUTIONAL RADARS: SMT TRIAD & LIQUIDITY SWEEP HUNTER -->
+      <div style="margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 8px;">
+        <!-- 1. SMT Triad Divergence Radar (US30 vs NDX vs SPX) -->
+        <div style="padding: 10px 14px; background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-size: 0.78rem; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 5px;">
+              <span>📡</span> ۱. رادار واگرایی پول هوشمند (SMT Divergence Radar)
+            </span>
+            <span id="smtTriadBadge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 800;">
+              در حال پایش سه‌قلوها...
+            </span>
+          </div>
+          <div id="smtTriadGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: center; font-size: 0.72rem; margin-bottom: 6px;">
+            <div style="background: rgba(0,0,0,0.35); padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.06);">
+              <span style="color: #ffd700; font-weight: 700;">US30 (داوجونز)</span><br>
+              <strong id="smtUs30Val" style="color: #00e676; font-family: var(--font-mono);">+0.62%</strong>
+            </div>
+            <div style="background: rgba(0,0,0,0.35); padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.06);">
+              <span style="color: #cbd5e1;">SPX (اس‌اندپی)</span><br>
+              <strong id="smtSpxVal" style="color: #38bdf8; font-family: var(--font-mono);">+0.45%</strong>
+            </div>
+            <div style="background: rgba(0,0,0,0.35); padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.06);">
+              <span style="color: #cbd5e1;">NDX (نزدک)</span><br>
+              <strong id="smtNdxVal" style="color: #94a3b8; font-family: var(--font-mono);">+0.42%</strong>
+            </div>
+          </div>
+          <div id="smtDescText" style="font-size: 0.7rem; color: #cbd5e1; line-height: 1.4; background: rgba(0,0,0,0.25); padding: 4px 8px; border-radius: 4px; border-right: 3px solid #38bdf8;">
+            ارزیابی همگام نوسان سه‌قلوهای وال‌استریت جهت کشف انباشت یا توزیع پنهان پول هوشمند.
+          </div>
+        </div>
+
+        <!-- 2. Liquidity Sweep Hunter (Fake Breakouts vs Institutional Expansion) -->
+        <div style="padding: 10px 14px; background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255, 209, 102, 0.35); border-radius: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-size: 0.78rem; font-weight: 800; color: #ffd166; display: flex; align-items: center; gap: 5px;">
+              <span>🧲</span> ۲. فیلتر شکار استاپ‌های فیک (Liquidity Sweep Hunter)
+            </span>
+            <span id="sweepHunterBadge" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 800;">
+              جریان ایمن (Clean Flow)
+            </span>
+          </div>
+          <div id="sweepLevelsGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.72rem; margin-bottom: 6px;">
+            <div style="background: rgba(0,0,0,0.35); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between;">
+              <span style="color: #94a3b8;">سقف روز (PDH):</span>
+              <strong id="sweepPdhVal" style="color: #ffd166; font-family: var(--font-mono);">--</strong>
+            </div>
+            <div style="background: rgba(0,0,0,0.35); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between;">
+              <span style="color: #94a3b8;">کف روز (PDL):</span>
+              <strong id="sweepPdlVal" style="color: #00e676; font-family: var(--font-mono);">--</strong>
+            </div>
+          </div>
+          <div id="sweepAdviceText" style="font-size: 0.7rem; color: #cbd5e1; line-height: 1.4; background: rgba(0,0,0,0.25); padding: 4px 8px; border-radius: 4px; border-right: 3px solid #ffd166;">
+            رصد زنده استخرهای نقدینگی BSL و SSL جهت تفکیک شکست واقعی سازمانی از تله‌های استاپ‌هانتینگ.
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ======================================================== -->
@@ -3977,6 +4034,48 @@
           if (adrEl && t.adr) {
             adrEl.textContent = t.adr.badge;
             adrEl.style.color = t.adr.color || '#00e676';
+          }
+        }
+
+        // Update SMT Divergence Radar & Liquidity Sweep Hunter
+        if (data.smt_and_sweep) {
+          const sw = data.smt_and_sweep;
+          if (sw.smt) {
+            const smtBadge = document.getElementById('smtTriadBadge');
+            if (smtBadge) {
+              smtBadge.textContent = sw.smt.badge;
+              smtBadge.style.color = sw.smt.color || '#38bdf8';
+              smtBadge.style.borderColor = sw.smt.color || '#38bdf8';
+            }
+            if (sw.smt.desc) {
+              const smtDesc = document.getElementById('smtDescText');
+              if (smtDesc) smtDesc.textContent = sw.smt.desc;
+            }
+            if (sw.smt.triad && sw.smt.triad.length >= 3) {
+              const uEl = document.getElementById('smtUs30Val');
+              const sEl = document.getElementById('smtSpxVal');
+              const nEl = document.getElementById('smtNdxVal');
+              if (uEl) uEl.textContent = `${sw.smt.triad[0].change_pct > 0 ? '+' : ''}${sw.smt.triad[0].change_pct}%`;
+              if (sEl) sEl.textContent = `${sw.smt.triad[1].change_pct > 0 ? '+' : ''}${sw.smt.triad[1].change_pct}%`;
+              if (nEl) nEl.textContent = `${sw.smt.triad[2].change_pct > 0 ? '+' : ''}${sw.smt.triad[2].change_pct}%`;
+            }
+          }
+          if (sw.sweep_hunter) {
+            const h = sw.sweep_hunter;
+            const hBadge = document.getElementById('sweepHunterBadge');
+            if (hBadge) {
+              hBadge.textContent = h.title;
+              hBadge.style.color = h.color || '#00e676';
+              hBadge.style.borderColor = h.color || '#00e676';
+            }
+            const hAdvice = document.getElementById('sweepAdviceText');
+            if (hAdvice) hAdvice.textContent = h.advice;
+            if (h.levels && h.levels.length >= 2) {
+              const pdhEl = document.getElementById('sweepPdhVal');
+              const pdlEl = document.getElementById('sweepPdlVal');
+              if (pdhEl) pdhEl.textContent = Number(h.levels[0].level).toLocaleString();
+              if (pdlEl) pdlEl.textContent = Number(h.levels[1].level).toLocaleString();
+            }
           }
         }
 
