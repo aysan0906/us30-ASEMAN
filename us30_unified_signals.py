@@ -156,14 +156,14 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
     cot = {}
     try:
         import cftc_cot_engine as cce
-        cot = cce.get_cot_analytics()
+        cot = cce.get_us30_cot_report()
     except Exception:
         pass
 
-    cross = {}
+    cross = []
     try:
         import cross_asset as ca
-        cross = ca.get_cross_asset_data()
+        cross = ca.get_macro_assets_quotes()
     except Exception:
         pass
 
@@ -350,13 +350,17 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
     qt_vah = qt_mp.get("vah", current_price + 220)
     qt_val = qt_mp.get("val", current_price - 180)
 
-    cot_bias = cot.get("summary_bias", "BULLISH")
-    cross_bias = cross.get("macro_verdict", "BULLISH")
+    cot_bias = cot.get("institutional_status", cot.get("badge", "BULLISH"))
+    dxy_chg = 0.0
+    if isinstance(cross, list):
+        for item in cross:
+            if "DX" in item.get("symbol", ""):
+                dxy_chg = float(item.get("change_pct", 0.0) or 0.0)
 
     swing_bull_score = 0
-    if "BULL" in cot_bias.upper() or "صعود" in cot_bias:
+    if "BULL" in str(cot_bias).upper() or "صعود" in str(cot_bias):
         swing_bull_score += 4
-    if "BULL" in cross_bias.upper() or "صعود" in cross_bias:
+    if dxy_chg <= 0.2:  # Weak dollar index is bullish for US30
         swing_bull_score += 3
     if current_price >= qt_val:
         swing_bull_score += 3
