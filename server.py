@@ -1814,21 +1814,34 @@ def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trend
         tp2_pts = setup_spec["tp2"]
         tp3_pts = setup_spec["tp3"]
 
+        import us30_unified_signals as uus
         if action == "BUY":
             entry_low = round(p_curr - (1.5 if interval == "1m" else atr * 0.15), 1)
             entry_high = round(p_curr + (1.0 if interval == "1m" else atr * 0.1), 1)
             sl_price = round(p_curr - sl_pts, 1)
-            tp1_price = round(p_curr + tp1_pts, 1)
-            tp2_price = round(p_curr + tp2_pts, 1)
-            tp3_price = round(p_curr + tp3_pts, 1)
+            raw_tp1 = p_curr + tp1_pts
+            raw_tp2 = p_curr + tp2_pts
+            raw_tp3 = p_curr + tp3_pts
+            tp1_price = uus._apply_us30_anti_front_run_tp(raw_tp1, p_curr, True)
+            tp2_price = uus._apply_us30_anti_front_run_tp(raw_tp2, p_curr, True)
+            tp3_price = uus._apply_us30_anti_front_run_tp(raw_tp3, p_curr, True)
+            if tp1_price <= p_curr: tp1_price = round(p_curr + 15.0, 1)
+            if tp2_price <= tp1_price: tp2_price = round(tp1_price + 20.0, 1)
+            if tp3_price <= tp2_price: tp3_price = round(tp2_price + 25.0, 1)
             setup_title = cfg["name"]
         elif action == "SELL":
             entry_low = round(p_curr - (1.0 if interval == "1m" else atr * 0.1), 1)
             entry_high = round(p_curr + (1.5 if interval == "1m" else atr * 0.15), 1)
             sl_price = round(p_curr + sl_pts, 1)
-            tp1_price = round(p_curr - tp1_pts, 1)
-            tp2_price = round(p_curr - tp2_pts, 1)
-            tp3_price = round(p_curr - tp3_pts, 1)
+            raw_tp1 = p_curr - tp1_pts
+            raw_tp2 = p_curr - tp2_pts
+            raw_tp3 = p_curr - tp3_pts
+            tp1_price = uus._apply_us30_anti_front_run_tp(raw_tp1, p_curr, False)
+            tp2_price = uus._apply_us30_anti_front_run_tp(raw_tp2, p_curr, False)
+            tp3_price = uus._apply_us30_anti_front_run_tp(raw_tp3, p_curr, False)
+            if tp1_price >= p_curr: tp1_price = round(p_curr - 15.0, 1)
+            if tp2_price >= tp1_price: tp2_price = round(tp1_price - 20.0, 1)
+            if tp3_price >= tp2_price: tp3_price = round(tp2_price - 25.0, 1)
             setup_title = cfg["name"]
         else:
             entry_low = round(p_curr - 20, 1)

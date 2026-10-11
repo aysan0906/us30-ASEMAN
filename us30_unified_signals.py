@@ -1,42 +1,104 @@
+# -*- coding: utf-8 -*-
+"""
+US30 UNIFIED SIGNALS ENGINE (Dow Jones Industrial Average - Wall Street Pro)
+----------------------------------------------------------------------------
+Provides two distinct, institutional-grade unified signals with:
+1. Setup Freeze Lock (Scalp 45m / Swing 4h) - No floating or drifting Entry/SL!
+2. Wall Street Anti-Front-Running Target Algorithm (Snaps targets 2.5-3.5 pts before
+   heavy resting limit walls and psychological century round numbers .00 / .50).
+3. 100% Tailored for $10 Micro Account:
+   - Micro SL strictly 12-14 points ($1.20 - $1.40 max risk at 0.01 lot).
+   - Non-zero monotonic TP1, TP2, and TP3 targets.
+"""
+
 import time
-"""
-US30 UNIFIED SIGNALS ENGINE (Dow Jones Industrial Average)
-----------------------------------------------------------
-Provides two distinct, institutional-grade unified signals:
-1. UNIFIED US30 SCALP SIGNAL (15m Timeframe):
-   - Synthesizes: Bookmap L2/L3 US30 Liquidity Walls & Icebergs, NinjaTrader 8 Footprint
-     imbalances & CVD, ATAS Order Flow Velocity, Sierra Chart VBP POC, NY Killzone.
-   - Holding Horizon: 30 minutes to 2 hours.
-   - Micro SL behind liquidity shelf (60-90 pts), TP1 (+90-140 pts), TP2 (+220-380 pts).
-
-2. UNIFIED US30 SWING SIGNAL (4h Timeframe):
-   - Synthesizes: Quantower 4H Market Profile (VAL/VAH/VPOC), CFTC COT 6-Week Commitments,
-     Wall Street 5 Banks Coalition, Alpha Cross-Asset Matrix (US10Y, DXY, Oil),
-     Dow 30 Top 5 Heavyweights (UNH, GS, MSFT, CAT, HD), Macro Calendar & Geopolitics.
-   - Holding Horizon: 2 to 5 days.
-   - Structural Macro SL (250-380 pts), TP1 (VAH +450-700 pts), TP2 (Macro Target +1,200-2,000 pts).
-"""
-
+import math
 from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 TEHRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 
 # =========================================================================
 # SETUP PERSISTENCE & LOCK ENGINE (Prevents jumping/floating Entry and SL)
 # =========================================================================
-_LOCKED_SCALP_STATE = {
+_LOCKED_SCALP_STATE: Dict[str, Any] = {
     "active": False,
     "entry": 0.0,
     "sl": 0.0,
     "tp1": 0.0,
     "tp2": 0.0,
+    "tp3": 0.0,
     "direction": "LONG",
     "created_at": 0.0,
     "expires_at": 0.0,
     "time_str": "",
     "date_str": ""
 }
+
+_LOCKED_SWING_STATE: Dict[str, Any] = {
+    "active": False,
+    "entry": 0.0,
+    "sl": 0.0,
+    "tp1": 0.0,
+    "tp2": 0.0,
+    "tp3": 0.0,
+    "direction": "LONG",
+    "created_at": 0.0,
+    "expires_at": 0.0,
+    "time_str": "",
+    "date_str": ""
+}
+
+
+def _apply_us30_anti_front_run_tp(
+    tp_raw: float,
+    entry: float,
+    is_long: bool,
+    orderbook_walls: Optional[List[float]] = None
+) -> float:
+    """
+    US30 Wall Street Institutional Anti-Front-Running Algorithm:
+    Protects Dow Jones orders from rejection misses by positioning Take Profits
+    2.5 to 3.5 points BEFORE major round numbers (every 50 / 100 pts) and Bookmap Ask/Bid walls.
+    """
+    buffer_pts = 3.0  # 3.0 points institutional front-running margin
+    tp_adj = float(tp_raw)
+    walls = orderbook_walls or []
+    round_step = 50.0  # US30 major liquidity rests at .00 and .50
+
+    if is_long:
+        # 1. Front-run resting Bookmap ask walls
+        for w in sorted([x for x in walls if x > entry]):
+            if tp_adj >= w - 1.5:
+                front_run_w = w - buffer_pts
+                if front_run_w > entry + 5.0:
+                    tp_adj = min(tp_adj, front_run_w)
+                    break
+
+        # 2. Front-run psychological round numbers (every 50 points: .00, .50)
+        round_level = round(tp_adj / round_step) * round_step
+        if round_level > entry + 5.0:
+            if -4.0 <= (tp_adj - round_level) <= 5.0:
+                front_run_level = round_level - buffer_pts
+                if front_run_level > entry + 5.0:
+                    tp_adj = front_run_level
+    else:
+        # SHORT: Front-run resting Bookmap bid shelves (sit ABOVE them)
+        for s in sorted([x for x in walls if x < entry], reverse=True):
+            if tp_adj <= s + 1.5:
+                front_run_s = s + buffer_pts
+                if front_run_s < entry - 5.0:
+                    tp_adj = max(tp_adj, front_run_s)
+                    break
+
+        round_level = round(tp_adj / round_step) * round_step
+        if round_level < entry - 5.0:
+            if -5.0 <= (tp_adj - round_level) <= 4.0:
+                front_run_level = round_level + buffer_pts
+                if front_run_level < entry - 5.0:
+                    tp_adj = front_run_level
+
+    return round(tp_adj, 1)
 
 
 def get_us30_live_price(prefer_trendo: bool = True) -> float:
@@ -60,7 +122,9 @@ def get_us30_live_price(prefer_trendo: bool = True) -> float:
         pass
     return 51280.0
 
+
 def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str, Any]:
+    global _LOCKED_SCALP_STATE, _LOCKED_SWING_STATE
     now_tehran = datetime.now(TEHRAN_TZ)
     tehran_time_str = now_tehran.strftime("%H:%M:%S")
     tehran_date_str = now_tehran.strftime("%Y/%m/%d")
@@ -104,12 +168,8 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
         pass
 
     # =========================================================================
-    # PART 1: UNIFIED US30 SCALP SIGNAL (15m Timeframe)
+    # PART 1: UNIFIED US30 SCALP SIGNAL (15m Timeframe / 1m Sniper with Lock & Anti-Front-Run)
     # =========================================================================
-    # PART 1: UNIFIED US30 MICRO-SCALP SNIPER SIGNAL (1m Order Flow & Bookmap Depth)
-    # =========================================================================
-    # Fast 1m pre-emptive tick trigger to catch the absolute beginning of the move
-    # Ultra-tight technical stop loss (7.0 pts) right behind Bookmap wall/1m wick
     cvd_data = nt.get("cvd", {})
     cvd_val = cvd_data.get("value", 120) if isinstance(cvd_data, dict) else 120
     sc_div = sc.get("delta_divergence", {}).get("type_fa", "صعودی")
@@ -129,39 +189,31 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
     scalp_dir_str = "خرید (LONG)" if scalp_is_long else "فروش (SHORT)"
     scalp_dir_emoji = "🟢" if scalp_is_long else "🔴"
 
-    # Safe structural stop loss: 13.0 points (12-14 pt range / -$1.30 in 0.01 lot for $10 account)
+    # Micro Stop Loss strictly 13.0 points ($1.30 in 0.01 lot for $10 account)
     micro_sl_pts = 13.0
-    micro_tp1_pts = 24.0
-    micro_tp2_pts = 48.0
     now_epoch = time.time()
 
-    global _LOCKED_SCALP_STATE
-    # Check if existing scalp setup is still locked and active (5 min validity)
-    is_valid_lock = (
-        _LOCKED_SCALP_STATE["active"]
-        and now_epoch < _LOCKED_SCALP_STATE["expires_at"]
-        and _LOCKED_SCALP_STATE["entry"] > 10000
+    # Check if existing scalp setup is still locked and active (45 min lock)
+    is_valid_scalp_lock = (
+        _LOCKED_SCALP_STATE.get("active", False)
+        and now_epoch < _LOCKED_SCALP_STATE.get("expires_at", 0)
+        and _LOCKED_SCALP_STATE.get("entry", 0) > 10000
     )
 
-    if is_valid_lock:
-        # Check if TP or SL was hit by current price
+    if is_valid_scalp_lock:
         lk_dir = _LOCKED_SCALP_STATE["direction"]
-        lk_ent = _LOCKED_SCALP_STATE["entry"]
         lk_sl = _LOCKED_SCALP_STATE["sl"]
-        lk_tp1 = _LOCKED_SCALP_STATE["tp1"]
         lk_tp2 = _LOCKED_SCALP_STATE["tp2"]
 
-        # Hit conditions
         hit_tp = (current_price >= lk_tp2) if lk_dir == "LONG" else (current_price <= lk_tp2)
         hit_sl = (current_price <= lk_sl) if lk_dir == "LONG" else (current_price >= lk_sl)
 
         if hit_tp or hit_sl:
-            # Expire lock so a fresh setup can form on the next bar
-            is_valid_lock = False
+            is_valid_scalp_lock = False
             _LOCKED_SCALP_STATE["active"] = False
 
-    if is_valid_lock:
-        # RETAIN EXACT LOCKED VALUES - NO FLOATING!
+    if is_valid_scalp_lock:
+        # Retain 100% frozen values
         scalp_is_long = (_LOCKED_SCALP_STATE["direction"] == "LONG")
         scalp_dir_str = "خرید (LONG)" if scalp_is_long else "فروش (SHORT)"
         scalp_dir_emoji = "🟢" if scalp_is_long else "🔴"
@@ -169,12 +221,16 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
         scalp_sl = _LOCKED_SCALP_STATE["sl"]
         scalp_tp1 = _LOCKED_SCALP_STATE["tp1"]
         scalp_tp2 = _LOCKED_SCALP_STATE["tp2"]
+        scalp_tp3 = _LOCKED_SCALP_STATE["tp3"]
+        scalp_tp1_pts = _LOCKED_SCALP_STATE.get("tp1_pts", 24)
+        scalp_tp2_pts = _LOCKED_SCALP_STATE.get("tp2_pts", 48)
+        scalp_tp3_pts = _LOCKED_SCALP_STATE.get("tp3_pts", 75)
         tehran_date_str = _LOCKED_SCALP_STATE["date_str"]
         tehran_time_str = _LOCKED_SCALP_STATE["time_str"]
         sec_left = int(_LOCKED_SCALP_STATE["expires_at"] - now_epoch)
         lock_status_note = f"🔒 ستاپ قفل‌شده معتبر (اعتبار: {sec_left // 60}:{sec_left % 60:02d})"
     else:
-        # Mint and LOCK a fresh 1m sniper setup based on Trendo Ask/Bid
+        # Mint and LOCK a fresh scalp setup with Anti-Front-Running protection
         t_bid = current_price
         t_ask = current_price + 1.2
         try:
@@ -186,35 +242,77 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
         except Exception:
             pass
 
+        # Bookmap walls
+        bm_asks = [float(x.get("price")) for x in bm.get("ask_levels", []) if x.get("price")]
+        bm_bids = [float(x.get("price")) for x in bm.get("bid_levels", []) if x.get("price")]
+
         if scalp_is_long:
-            scalp_entry = t_ask                           # ورود با خط قرمز ترندو (Ask)
-            scalp_sl = round(t_bid - micro_sl_pts, 1)     # استاپ بر مبنای خط آبی ترندو (Bid)
-            scalp_tp1 = round(t_bid + micro_tp1_pts, 1)
-            scalp_tp2 = round(t_bid + micro_tp2_pts, 1)
+            scalp_entry = t_ask
+            scalp_sl = round(t_bid - micro_sl_pts, 1)
+
+            raw_tp1 = t_bid + 24.0
+            raw_tp2 = t_bid + 48.0
+            raw_tp3 = t_bid + 75.0
+
+            scalp_tp1 = _apply_us30_anti_front_run_tp(raw_tp1, scalp_entry, True, bm_asks)
+            scalp_tp2 = _apply_us30_anti_front_run_tp(raw_tp2, scalp_entry, True, bm_asks)
+            scalp_tp3 = _apply_us30_anti_front_run_tp(raw_tp3, scalp_entry, True, bm_asks)
+
+            # Monotonic step check
+            if scalp_tp1 <= scalp_entry:
+                scalp_tp1 = round(scalp_entry + 15.0, 1)
+            if scalp_tp2 <= scalp_tp1:
+                scalp_tp2 = round(scalp_tp1 + 20.0, 1)
+            if scalp_tp3 <= scalp_tp2:
+                scalp_tp3 = round(scalp_tp2 + 25.0, 1)
+
+            scalp_tp1_pts = int(round(scalp_tp1 - scalp_entry))
+            scalp_tp2_pts = int(round(scalp_tp2 - scalp_entry))
+            scalp_tp3_pts = int(round(scalp_tp3 - scalp_entry))
         else:
-            scalp_entry = t_bid                           # ورود با خط آبی ترندو (Bid)
-            scalp_sl = round(t_ask + micro_sl_pts, 1)     # استاپ بر مبنای خط قرمز ترندو (Ask)
-            scalp_tp1 = round(t_bid - micro_tp1_pts, 1)
-            scalp_tp2 = round(t_bid - micro_tp2_pts, 1)
+            scalp_entry = t_bid
+            scalp_sl = round(t_ask + micro_sl_pts, 1)
+
+            raw_tp1 = t_bid - 24.0
+            raw_tp2 = t_bid - 48.0
+            raw_tp3 = t_bid - 75.0
+
+            scalp_tp1 = _apply_us30_anti_front_run_tp(raw_tp1, scalp_entry, False, bm_bids)
+            scalp_tp2 = _apply_us30_anti_front_run_tp(raw_tp2, scalp_entry, False, bm_bids)
+            scalp_tp3 = _apply_us30_anti_front_run_tp(raw_tp3, scalp_entry, False, bm_bids)
+
+            if scalp_tp1 >= scalp_entry:
+                scalp_tp1 = round(scalp_entry - 15.0, 1)
+            if scalp_tp2 >= scalp_tp1:
+                scalp_tp2 = round(scalp_tp1 - 20.0, 1)
+            if scalp_tp3 >= scalp_tp2:
+                scalp_tp3 = round(scalp_tp2 - 25.0, 1)
+
+            scalp_tp1_pts = int(round(scalp_entry - scalp_tp1))
+            scalp_tp2_pts = int(round(scalp_entry - scalp_tp2))
+            scalp_tp3_pts = int(round(scalp_entry - scalp_tp3))
 
         _LOCKED_SCALP_STATE = {
-            "active": False,
+            "active": True,
             "entry": scalp_entry,
             "sl": scalp_sl,
             "tp1": scalp_tp1,
             "tp2": scalp_tp2,
+            "tp3": scalp_tp3,
+            "tp1_pts": scalp_tp1_pts,
+            "tp2_pts": scalp_tp2_pts,
+            "tp3_pts": scalp_tp3_pts,
             "direction": "LONG" if scalp_is_long else "SHORT",
             "created_at": now_epoch,
-            "expires_at": now_epoch + 1200,  # 5 minutes locked
+            "expires_at": now_epoch + 2700,  # 45 minutes locked
             "time_str": tehran_time_str,
             "date_str": tehran_date_str
         }
-        lock_status_note = "⚡ ستاپ تازه صادر و قفل شد (بدون تغییر با نوسان قیمت)"
-
+        lock_status_note = "⚡ ستاپ تازه صادر و قفل شد (مجهز به فیلتر ضد فرانت‌رانینگ)"
 
     scalp_signal = {
         "signal_type": "SCALP",
-        "signal_type_fa": "میکرو-اسکالپ تک‌تیرانداز داوجونز (Sniper 1m)",
+        "signal_type_fa": "میکرو-اسکالپ تک‌تیرانداز داوجونز (Sniper 1m / 15m)",
         "timeframe": "1m (تک‌تیرانداز پیش‌دستانه)",
         "direction": scalp_dir_str,
         "direction_code": "LONG" if scalp_is_long else "SHORT",
@@ -224,28 +322,29 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
         "stop_loss": scalp_sl,
         "stop_loss_pts": int(micro_sl_pts),
         "current_price_issued": current_price,
-        "stop_loss_fmt": f"${scalp_sl:,.1f} (-{int(micro_sl_pts)} پوینت / -$1.20 در 0.01 لات)",
-        "tp1_fmt": f"${scalp_tp1:,.1f} (+{int(micro_tp1_pts)} پوینت / +$2.40 در 0.01 لات)",
-        "tp2_fmt": f"${scalp_tp2:,.1f} (+{int(micro_tp2_pts)} پوینت / +$4.80 در 0.01 لات)",
+        "stop_loss_fmt": f"${scalp_sl:,.1f} (-{int(micro_sl_pts)} پوینت / -$1.30 در 0.01 لات)",
+        "tp1": scalp_tp1,
+        "tp1_pts": scalp_tp1_pts,
+        "tp1_fmt": f"${scalp_tp1:,.1f} (+{scalp_tp1_pts} پوینت / +${scalp_tp1_pts*0.1:.2f})",
+        "tp2": scalp_tp2,
+        "tp2_pts": scalp_tp2_pts,
+        "tp2_fmt": f"${scalp_tp2:,.1f} (+{scalp_tp2_pts} پوینت / +${scalp_tp2_pts*0.1:.2f})",
+        "tp3": scalp_tp3,
+        "tp3_pts": scalp_tp3_pts,
+        "tp3_fmt": f"${scalp_tp3:,.1f} (+{scalp_tp3_pts} پوینت / +${scalp_tp3_pts*0.1:.2f})",
         "leverage_recommended": "1:500 یا 1:1000 ترندو",
         "lot_recommended": "0.01 لات استاندارد (مارجین امن حساب ۱۰ دلاری)",
         "entry_instruction_fa": f"به محض رسیدن قیمت خط قرمز ترندو به {scalp_entry:,.1f} دکمه Buy را لمس کنید" if scalp_is_long else f"به محض رسیدن خط آبی ترندو به {scalp_entry:,.1f} دکمه Sell را لمس کنید",
-        "tp1": scalp_tp1,
-        "tp1_pts": int(micro_tp1_pts),
-        "tp1_fmt": f"${scalp_tp1:,.1f} (+{int(micro_tp1_pts)} پوینت)",
-        "tp2": scalp_tp2,
-        "tp2_pts": int(micro_tp2_pts),
-        "tp2_fmt": f"${scalp_tp2:,.1f} (+{int(micro_tp2_pts)} پوینت)",
         "date_tehran": tehran_date_str,
         "time_tehran": tehran_time_str,
         "holding_duration": "۲ الی ۱۰ دقیقه (خروج سریع)",
         "holding_duration_en": "2m - 10m",
-        "core_modules": "Bookmap L2/L3 Walls + 1m Footprint Delta + Tape Velocity",
-        "rationale_fa": "ورود پیش‌دستانه در نقطه صفر حرکت؛ استاپ فوق‌باریک تکنیکال ۷ پوینتی دقیقاً پشت دیوار نقدینگی بوک‌مپ تعبیه شده تا با اسپرد نسوزد و از ابتدای روند با سود کامل همراه شود."
+        "core_modules": "Bookmap L2/L3 Walls + 1m Footprint Delta + Anti-Front-Run",
+        "rationale_fa": "ورود پیش‌دستانه با استاپ فوق‌باریک ۱۳ پوینتی (مناسب حساب $10)؛ کلیه تارگت‌ها ۳ پوینت پیش از دیواره‌های رُند ۵۰ پوینتی ست شده‌اند تا پیش از بازگشت قیمت نقد شوند."
     }
 
     # =========================================================================
-    # PART 2: UNIFIED US30 SWING SIGNAL (4h Timeframe)
+    # PART 2: UNIFIED US30 SWING SIGNAL (4h Timeframe - 4-Hour Lock & Macro Anti-Front-Run)
     # =========================================================================
     qt_mp = qt.get("market_profile", {})
     qt_vah = qt_mp.get("vah", current_price + 220)
@@ -266,31 +365,96 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
     swing_dir_str = "خرید (LONG)" if swing_is_long else "فروش (SHORT)"
     swing_dir_emoji = "🟢" if swing_is_long else "🔴"
 
-    t_bid = current_price
-    try:
-        import trendo_engine
-        t_data = trendo_engine.get_trendo_us30_live()
-        if t_data.get("ok"):
-            t_bid = float(t_data.get("bid", current_price))
-    except Exception:
-        pass
+    is_valid_swing_lock = (
+        _LOCKED_SWING_STATE.get("active", False)
+        and now_epoch < _LOCKED_SWING_STATE.get("expires_at", 0)
+        and _LOCKED_SWING_STATE.get("entry", 0) > 10000
+    )
 
-    if swing_is_long:
-        swing_entry = t_bid
-        swing_sl = round(t_bid - 280.0, 1)
-        swing_sl_pts = 280
-        swing_tp1 = round(t_bid + 550.0, 1)
-        swing_tp1_pts = 550
-        swing_tp2 = round(t_bid + 1450.0, 1)
-        swing_tp2_pts = 1450
+    if is_valid_swing_lock:
+        sw_dir = _LOCKED_SWING_STATE["direction"]
+        sw_sl = _LOCKED_SWING_STATE["sl"]
+        sw_tp2 = _LOCKED_SWING_STATE["tp2"]
+
+        hit_sw_tp = (current_price >= sw_tp2) if sw_dir == "LONG" else (current_price <= sw_tp2)
+        hit_sw_sl = (current_price <= sw_sl) if sw_dir == "LONG" else (current_price >= sw_sl)
+
+        if hit_sw_tp or hit_sw_sl:
+            is_valid_swing_lock = False
+            _LOCKED_SWING_STATE["active"] = False
+
+    if is_valid_swing_lock:
+        swing_is_long = (_LOCKED_SWING_STATE["direction"] == "LONG")
+        swing_dir_str = "خرید (LONG)" if swing_is_long else "فروش (SHORT)"
+        swing_dir_emoji = "🟢" if swing_is_long else "🔴"
+        swing_entry = _LOCKED_SWING_STATE["entry"]
+        swing_sl = _LOCKED_SWING_STATE["sl"]
+        swing_sl_pts = _LOCKED_SWING_STATE.get("sl_pts", 280)
+        swing_tp1 = _LOCKED_SWING_STATE["tp1"]
+        swing_tp1_pts = _LOCKED_SWING_STATE.get("tp1_pts", 550)
+        swing_tp2 = _LOCKED_SWING_STATE["tp2"]
+        swing_tp2_pts = _LOCKED_SWING_STATE.get("tp2_pts", 1450)
+        swing_tp3 = _LOCKED_SWING_STATE.get("tp3", swing_entry + (2400 if swing_is_long else -2400))
+        swing_tp3_pts = _LOCKED_SWING_STATE.get("tp3_pts", 2400)
     else:
-        swing_entry = t_bid
-        swing_sl = round(t_bid + 280.0, 1)
+        t_bid = current_price
+        try:
+            import trendo_engine
+            t_data = trendo_engine.get_trendo_us30_live()
+            if t_data.get("ok"):
+                t_bid = float(t_data.get("bid", current_price))
+        except Exception:
+            pass
+
         swing_sl_pts = 280
-        swing_tp1 = round(t_bid - 550.0, 1)
-        swing_tp1_pts = 550
-        swing_tp2 = round(t_bid - 1450.0, 1)
-        swing_tp2_pts = 1450
+        if swing_is_long:
+            swing_entry = t_bid
+            swing_sl = round(t_bid - swing_sl_pts, 1)
+
+            raw_sw_tp1 = t_bid + 550.0
+            raw_sw_tp2 = t_bid + 1450.0
+            raw_sw_tp3 = t_bid + 2400.0
+
+            swing_tp1 = _apply_us30_anti_front_run_tp(raw_sw_tp1, swing_entry, True)
+            swing_tp2 = _apply_us30_anti_front_run_tp(raw_sw_tp2, swing_entry, True)
+            swing_tp3 = _apply_us30_anti_front_run_tp(raw_sw_tp3, swing_entry, True)
+
+            swing_tp1_pts = int(round(swing_tp1 - swing_entry))
+            swing_tp2_pts = int(round(swing_tp2 - swing_entry))
+            swing_tp3_pts = int(round(swing_tp3 - swing_entry))
+        else:
+            swing_entry = t_bid
+            swing_sl = round(t_bid + swing_sl_pts, 1)
+
+            raw_sw_tp1 = t_bid - 550.0
+            raw_sw_tp2 = t_bid - 1450.0
+            raw_sw_tp3 = t_bid - 2400.0
+
+            swing_tp1 = _apply_us30_anti_front_run_tp(raw_sw_tp1, swing_entry, False)
+            swing_tp2 = _apply_us30_anti_front_run_tp(raw_sw_tp2, swing_entry, False)
+            swing_tp3 = _apply_us30_anti_front_run_tp(raw_sw_tp3, swing_entry, False)
+
+            swing_tp1_pts = int(round(swing_entry - swing_tp1))
+            swing_tp2_pts = int(round(swing_entry - swing_tp2))
+            swing_tp3_pts = int(round(swing_entry - swing_tp3))
+
+        _LOCKED_SWING_STATE = {
+            "active": True,
+            "entry": swing_entry,
+            "sl": swing_sl,
+            "sl_pts": swing_sl_pts,
+            "tp1": swing_tp1,
+            "tp1_pts": swing_tp1_pts,
+            "tp2": swing_tp2,
+            "tp2_pts": swing_tp2_pts,
+            "tp3": swing_tp3,
+            "tp3_pts": swing_tp3_pts,
+            "direction": "LONG" if swing_is_long else "SHORT",
+            "created_at": now_epoch,
+            "expires_at": now_epoch + 14400,  # 4 hours locked
+            "time_str": tehran_time_str,
+            "date_str": tehran_date_str
+        }
 
     swing_signal = {
         "signal_type": "SWING",
@@ -310,12 +474,15 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
         "tp2": swing_tp2,
         "tp2_pts": swing_tp2_pts,
         "tp2_fmt": f"${swing_tp2:,.1f} (+{swing_tp2_pts} پوینت)",
+        "tp3": swing_tp3,
+        "tp3_pts": swing_tp3_pts,
+        "tp3_fmt": f"${swing_tp3:,.1f} (+{swing_tp3_pts} پوینت)",
         "date_tehran": tehran_date_str,
         "time_tehran": tehran_time_str,
         "holding_duration": "۲ الی ۵ روز",
         "holding_duration_en": "2 - 5 days",
-        "core_modules": "Quantower 4H TPO + CFTC COT 6-Week + Wall Street 5 Banks + Alpha Cross-Asset Matrix + Dow 30 Giants",
-        "rationale_fa": "هم‌راستایی تعهدات صعودی مدیران دارایی در گزارش CFTC COT با کف منصفانه ارزش (VAL) کوانت‌تاور و تثبیت بازدهی اوراق ۱۰ ساله آمریکا."
+        "core_modules": "Quantower 4H TPO + CFTC COT 6-Week + Wall Street 5 Banks + Anti-Front-Run",
+        "rationale_fa": "هم‌راستایی تعهدات صعودی مدیران دارایی در گزارش CFTC COT با کف منصفانه ارزش (VAL) کوانت‌تاور و تارگت‌گذاری ماکرو ضد فرانت‌رانینگ پیش از استخرهای نقدینگی شورت‌ها."
     }
 
     # =========================================================================
@@ -341,6 +508,7 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
         "updated_at_iran": f"{tehran_date_str} ساعت {tehran_time_str}"
     }
 
+
 def format_us30_clean_telegram_signal(sig: Dict[str, Any], is_swing: bool = False) -> str:
     sig_type_fa = sig.get("signal_type_fa", "سوئینگ داوجونز" if is_swing else "میکرو-اسکالپ تک‌تیرانداز 1m")
     tf = sig.get("timeframe", "4H" if is_swing else "1m (تک‌تیرانداز پیش‌دستانه)")
@@ -350,6 +518,7 @@ def format_us30_clean_telegram_signal(sig: Dict[str, Any], is_swing: bool = Fals
     sl_fmt = sig.get("stop_loss_fmt", "-")
     tp1_fmt = sig.get("tp1_fmt", "-")
     tp2_fmt = sig.get("tp2_fmt", "-")
+    tp3_fmt = sig.get("tp3_fmt", "-")
     date_tehran = sig.get("date_tehran", "")
     time_tehran = sig.get("time_tehran", "")
     duration = sig.get("holding_duration", "۲ تا ۵ روز" if is_swing else "۳ الی ۱۰ دقیقه")
@@ -357,7 +526,7 @@ def format_us30_clean_telegram_signal(sig: Dict[str, Any], is_swing: bool = Fals
 
     if not is_swing:
         risk_lot_note = """📦 <b>حجم و اهرم پیشنهادی:</b> <code>0.01 لات | اهرم 1:500 یا 1:1000 ترندو</code>
-💵 <b>محاسبه حساب $10:</b> <code>ریسک -$1.20 | سود تارگت اول +$2.40</code>"""
+💵 <b>محاسبه حساب $10:</b> <code>ریسک -$1.30 | تارگت اول +$2.40</code>"""
     else:
         risk_lot_note = """📦 <b>حجم پیشنهادی:</b> <code>0.01 لات به ازای هر $50 بالانس</code>"""
 
@@ -371,6 +540,8 @@ def format_us30_clean_telegram_signal(sig: Dict[str, Any], is_swing: bool = Fals
 🛑 <b>حد ضرر (SL):</b> <code>{sl_fmt}</code>
 🎯 <b>حد سود اول (TP1):</b> <code>{tp1_fmt}</code>
 🎯 <b>حد سود دوم (TP2):</b> <code>{tp2_fmt}</code>
+🎯 <b>حد سود سوم (TP3):</b> <code>{tp3_fmt}</code>
+🛡️ <b>مکانیزم ضد فرانت‌رانینگ:</b> <code>فعال (خروج ۳ پوینت پیش از دیواره‌های رُند .00 / .50)</code>
 {risk_lot_note}
 ⏰ <b>تاریخ و ساعت صدور:</b> <code>{date_tehran} ساعت {time_tehran} (ایران 🇮🇷)</code>
 ⏳ <b>انقضا / اعتبار ستاپ:</b> <code>تا زمان برخورد به حد سود یا حد ضرر</code>
@@ -378,10 +549,3 @@ def format_us30_clean_telegram_signal(sig: Dict[str, Any], is_swing: bool = Fals
     return msg.strip()
 
 format_us30_minimal_telegram_signal = format_us30_clean_telegram_signal
-
-if __name__ == "__main__":
-    res = get_us30_unified_signals()
-    print("US30 SCALP:", res["scalp"]["direction"], res["scalp"]["entry_fmt"], res["scalp"]["stop_loss_fmt"])
-    print("US30 SWING:", res["swing"]["direction"], res["swing"]["entry_fmt"], res["swing"]["stop_loss_fmt"])
-    print("\nTELEGRAM SAMPLE:")
-    print(format_us30_clean_telegram_signal(res["scalp"]))
