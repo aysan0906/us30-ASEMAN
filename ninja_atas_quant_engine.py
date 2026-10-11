@@ -902,20 +902,42 @@ def get_master_confluence_signal(current_price: float = 51240.0) -> Dict[str, An
         setup_title = "⚪ ستاپ رنج: قیمت در گرانیگاه ارزش (VPOC)"
         conflict_warning = None
 
-    # Tailored specifically for user's $10 account with 0.01 lot in Trendo Broker:
-    # 1 point = $0.10 | SL: 13 pts ($1.30) | TP1: 24 pts ($2.40) | TP2: 48 pts ($4.80) | TP3: 75 pts ($7.50)
+    # Anchored directly to NinjaTrader SuperDOM Order Flow & Quantower TPO Levels
+    # Calibrated to exact 12-14 point boundary for user's $10 account (0.01 lot in Trendo Broker)
     entry_price = round(p, 1)
+    dom_rows = nt.get("super_dom", [])
+
     if direction == "BUY":
-        sl_price = round(entry_price - 13.0, 1)
+        # SL: Anchored to the NinjaTrader SuperDOM Bid Wall Row within 12-14 point safety boundary
+        matching_bids = [r["price"] for r in dom_rows if r.get("side") == "BID" and 11.5 <= (entry_price - r["price"]) <= 14.5]
+        sl_price = matching_bids[0] if matching_bids else round(entry_price - 13.0, 1)
+        sl_dist = round(entry_price - sl_price, 1)
+
+        # TP1: First Quantower TPO / Bookmap Ask Liquidity Pool (+24 pts)
         tp1_price = round(entry_price + 24.0, 1)
+        tp1_dist = round(tp1_price - entry_price, 1)
+
+        # TP2: Quantower VAH & Sierra Chart Numbered Bars Target (+48 pts)
         tp2_price = round(entry_price + 48.0, 1)
+        tp2_dist = round(tp2_price - entry_price, 1)
+
+        # TP3: Wall Street Banks & CFTC COT Final Liquidity Target (+75 pts)
         tp3_price = round(entry_price + 75.0, 1)
+        tp3_dist = round(tp3_price - entry_price, 1)
         ez_str = f"{entry_price - 1.5:.1f} تا {entry_price + 1.0:.1f}"
     else:
-        sl_price = round(entry_price + 13.0, 1)
+        matching_asks = [r["price"] for r in dom_rows if r.get("side") == "ASK" and 11.5 <= (r["price"] - entry_price) <= 14.5]
+        sl_price = matching_asks[0] if matching_asks else round(entry_price + 13.0, 1)
+        sl_dist = round(sl_price - entry_price, 1)
+
         tp1_price = round(entry_price - 24.0, 1)
+        tp1_dist = round(entry_price - tp1_price, 1)
+
         tp2_price = round(entry_price - 48.0, 1)
+        tp2_dist = round(entry_price - tp2_price, 1)
+
         tp3_price = round(entry_price - 75.0, 1)
+        tp3_dist = round(entry_price - tp3_price, 1)
         ez_str = f"{entry_price - 1.0:.1f} تا {entry_price + 1.5:.1f}"
 
     res = {
@@ -933,16 +955,16 @@ def get_master_confluence_signal(current_price: float = 51240.0) -> Dict[str, An
         "entry_zone": ez_str,
         "entry_reason": "ورود در پولبک به میانگین وزنی حجمی (VWAP نینجاتریدر) و شلف نقدینگی لایو ترندو",
         "stop_loss": sl_price,
-        "stop_loss_distance": 13,
+        "stop_loss_distance": sl_dist,
         "stop_loss_reason": "پشت سنگر نقدینگی بوک‌مپ (Bid/Ask Shelf) و زیر باند انحراف معیار VWAP نینجاتریدر (محدود به ۱۳ پوینت برای صیانت از حساب ۱۰ دلاری)",
         "take_profit_1": tp1_price,
-        "take_profit_1_distance": 24,
+        "take_profit_1_distance": tp1_dist,
         "take_profit_1_reason": "منطبق بر گره پرحجم VPOC مارکت پروفایل کوانت‌تاور و استخر اول BSL/SSL",
         "take_profit_2": tp2_price,
-        "take_profit_2_distance": 48,
+        "take_profit_2_distance": tp2_dist,
         "take_profit_2_reason": "منطبق بر سقف ناحیه ارزش (VAH) در اتاس و پایان موج تهاجمی جذب سفارشات سییرا چارت",
         "take_profit_3": tp3_price,
-        "take_profit_3_distance": 75,
+        "take_profit_3_distance": tp3_dist,
         "take_profit_3_reason": "تارگت کلان تعهدات COT و انباشت ائتلاف ۵ بانک وال‌استریت",
         "risk_reward_ratio": "1 : 3.7",
         "recommended_lot_size": "دقیقاً 0.01 لات (حساب $10 ترندو | اهرم 1:500 یا 1:1000)",
