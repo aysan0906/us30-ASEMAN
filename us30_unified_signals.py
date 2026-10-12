@@ -123,6 +123,30 @@ def get_us30_live_price(prefer_trendo: bool = True) -> float:
     return 51280.0
 
 
+
+def is_us30_market_in_killzone():
+    now_tehran = datetime.now(TEHRAN_TZ)
+    weekday = now_tehran.weekday() # 0 is Monday, 4 is Friday, 5 is Saturday, 6 is Sunday
+    # Weekend filter (Saturday and Sunday)
+    if weekday in [5, 6]:
+        return False, "بازار وال‌استریت در تعطیلات پایان هفته بسته است."
+    
+    hour = now_tehran.hour
+    minute = now_tehran.minute
+    total_minutes = hour * 60 + minute
+
+    # London Open Killzone: 10:30 to 13:00 Tehran (630 to 780 min)
+    is_london = (630 <= total_minutes <= 780)
+    # NY Overlap & Wall Street Main Session: 16:30 to 22:30 Tehran (990 to 1350 min)
+    is_ny = (990 <= total_minutes <= 1350)
+
+    if is_london:
+        return True, "کیل‌زون لندن (تزریق نقدینگی بانکی اروپایی)"
+    elif is_ny:
+        return True, "کیل‌زون وال‌استریت و سشن اصلی نیویورک (نقدینگی حداکثری)"
+    else:
+        return False, "ساعات کم‌نوسان و مرده بازار (خارج از کیل‌زون طلایی لندن و نیویورک جهت جلوگیری از استاپ‌هانت)"
+
 def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str, Any]:
     global _LOCKED_SCALP_STATE, _LOCKED_SWING_STATE
     now_tehran = datetime.now(TEHRAN_TZ)
@@ -246,47 +270,48 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
         bm_asks = [float(x.get("price")) for x in bm.get("ask_levels", []) if x.get("price")]
         bm_bids = [float(x.get("price")) for x in bm.get("bid_levels", []) if x.get("price")]
 
+        # Institutional Limit Pullback Entry (NEVER chase at market top/bottom)
+        # Entry zone is placed 4.0 to 6.5 points in pullback towards VWAP/FVG discount
         if scalp_is_long:
-            scalp_entry = t_ask
-            scalp_sl = round(t_bid - micro_sl_pts, 1)
+            pullback_dist = 5.0
+            scalp_entry = round(t_bid - pullback_dist, 1)
+            entry_low = round(scalp_entry - 2.5, 1)
+            entry_high = scalp_entry
+            scalp_sl = round(scalp_entry - micro_sl_pts, 1)
 
-            raw_tp1 = t_bid + 24.0
-            raw_tp2 = t_bid + 48.0
-            raw_tp3 = t_bid + 75.0
+            raw_tp1 = scalp_entry + 28.0
+            raw_tp2 = scalp_entry + 55.0
+            raw_tp3 = scalp_entry + 90.0
 
             scalp_tp1 = _apply_us30_anti_front_run_tp(raw_tp1, scalp_entry, True, bm_asks)
             scalp_tp2 = _apply_us30_anti_front_run_tp(raw_tp2, scalp_entry, True, bm_asks)
             scalp_tp3 = _apply_us30_anti_front_run_tp(raw_tp3, scalp_entry, True, bm_asks)
 
-            # Monotonic step check
-            if scalp_tp1 <= scalp_entry:
-                scalp_tp1 = round(scalp_entry + 15.0, 1)
-            if scalp_tp2 <= scalp_tp1:
-                scalp_tp2 = round(scalp_tp1 + 20.0, 1)
-            if scalp_tp3 <= scalp_tp2:
-                scalp_tp3 = round(scalp_tp2 + 25.0, 1)
+            if scalp_tp1 <= scalp_entry: scalp_tp1 = round(scalp_entry + 18.0, 1)
+            if scalp_tp2 <= scalp_tp1: scalp_tp2 = round(scalp_tp1 + 25.0, 1)
+            if scalp_tp3 <= scalp_tp2: scalp_tp3 = round(scalp_tp2 + 30.0, 1)
 
             scalp_tp1_pts = int(round(scalp_tp1 - scalp_entry))
             scalp_tp2_pts = int(round(scalp_tp2 - scalp_entry))
             scalp_tp3_pts = int(round(scalp_tp3 - scalp_entry))
         else:
-            scalp_entry = t_bid
-            scalp_sl = round(t_ask + micro_sl_pts, 1)
+            pullback_dist = 5.0
+            scalp_entry = round(t_ask + pullback_dist, 1)
+            entry_low = scalp_entry
+            entry_high = round(scalp_entry + 2.5, 1)
+            scalp_sl = round(scalp_entry + micro_sl_pts, 1)
 
-            raw_tp1 = t_bid - 24.0
-            raw_tp2 = t_bid - 48.0
-            raw_tp3 = t_bid - 75.0
+            raw_tp1 = scalp_entry - 28.0
+            raw_tp2 = scalp_entry - 55.0
+            raw_tp3 = scalp_entry - 90.0
 
             scalp_tp1 = _apply_us30_anti_front_run_tp(raw_tp1, scalp_entry, False, bm_bids)
             scalp_tp2 = _apply_us30_anti_front_run_tp(raw_tp2, scalp_entry, False, bm_bids)
             scalp_tp3 = _apply_us30_anti_front_run_tp(raw_tp3, scalp_entry, False, bm_bids)
 
-            if scalp_tp1 >= scalp_entry:
-                scalp_tp1 = round(scalp_entry - 15.0, 1)
-            if scalp_tp2 >= scalp_tp1:
-                scalp_tp2 = round(scalp_tp1 - 20.0, 1)
-            if scalp_tp3 >= scalp_tp2:
-                scalp_tp3 = round(scalp_tp2 - 25.0, 1)
+            if scalp_tp1 >= scalp_entry: scalp_tp1 = round(scalp_entry - 18.0, 1)
+            if scalp_tp2 >= scalp_tp1: scalp_tp2 = round(scalp_tp1 - 25.0, 1)
+            if scalp_tp3 >= scalp_tp2: scalp_tp3 = round(scalp_tp2 - 25.0, 1)
 
             scalp_tp1_pts = int(round(scalp_entry - scalp_tp1))
             scalp_tp2_pts = int(round(scalp_entry - scalp_tp2))
@@ -334,7 +359,7 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
         "tp3_fmt": f"${scalp_tp3:,.1f} (+{scalp_tp3_pts} پوینت / +${scalp_tp3_pts*0.1:.2f})",
         "leverage_recommended": "1:500 یا 1:1000 ترندو",
         "lot_recommended": "0.01 لات استاندارد (مارجین امن حساب ۱۰ دلاری)",
-        "entry_instruction_fa": f"به محض رسیدن قیمت خط قرمز ترندو به {scalp_entry:,.1f} دکمه Buy را لمس کنید" if scalp_is_long else f"به محض رسیدن خط آبی ترندو به {scalp_entry:,.1f} دکمه Sell را لمس کنید",
+        "entry_instruction_fa": f"کاشت لیمیت خرید (Buy Limit) در پولبک به تراز {scalp_entry:,.1f} (پشت شلف نقدینگی و VWAP)" if scalp_is_long else f"کاشت لیمیت فروش (Sell Limit) در پولبک به تراز {scalp_entry:,.1f} (زیر دیواره عرضه و VWAP)",
         "date_tehran": tehran_date_str,
         "time_tehran": tehran_time_str,
         "holding_duration": "۲ الی ۱۰ دقیقه (خروج سریع)",

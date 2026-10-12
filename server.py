@@ -1291,10 +1291,10 @@ def telegram_send(req: US30TelegramSendRequest):
                 "tp3": tp3_val,
                 "sl": sl_val,
                 "holding_duration": dur,
-                "result": f"تارگت اول تاچ شد (+{tp_pts} pts)",
-                "pnl_pts": tp_pts,
+                "result": "در جریان (OPEN)",
+                "pnl_pts": 0,
                 "r_mult": round(tp_pts / max(sl_pts, 1), 2),
-                "status": "WIN",
+                "status": "OPEN",
                 "ts": now_tehran.strftime("%Y/%m/%d ساعت %H:%M:%S")
             }
             append_dispatched_signal(dispatched_rec)
@@ -1347,6 +1347,38 @@ def journal_live():
                             recs.append(json.loads(line))
                         except Exception:
                             pass
+
+        # Live sweep: Update OPEN records against live Trendo feed
+        try:
+            import trendo_engine
+            t_data = trendo_engine.get_trendo_us30_live()
+            curr_p = float(t_data.get("bid", 0)) if t_data.get("ok") else 0.0
+            if curr_p > 10000:
+                modified = False
+                for r in recs:
+                    if r.get("status") == "OPEN":
+                        is_buy = r.get("direction") in ["BUY", "LONG"]
+                        entry_p = float(r.get("entry", 0))
+                        tp1_p = float(r.get("tp1", 0))
+                        sl_p = float(r.get("sl", 0))
+                        hit_tp1 = (curr_p >= tp1_p) if is_buy else (curr_p <= tp1_p)
+                        hit_sl = (curr_p <= sl_p) if is_buy else (curr_p >= sl_p)
+                        if hit_tp1:
+                            r["status"] = "WIN"
+                            r["result"] = f"تارگت اول تاچ شد (+{abs(round(tp1_p - entry_p, 1))} pt)"
+                            r["pnl_pts"] = abs(round(tp1_p - entry_p, 1))
+                            modified = True
+                        elif hit_sl:
+                            r["status"] = "LOSS"
+                            r["result"] = f"حد ضرر تاچ شد (-{abs(round(sl_p - entry_p, 1))} pt)"
+                            r["pnl_pts"] = -abs(round(sl_p - entry_p, 1))
+                            modified = True
+                if modified:
+                    with open(DISPATCHED_SIGNALS_FILE, "w", encoding="utf-8") as f:
+                        for item in recs:
+                            f.write(json.dumps(item, ensure_ascii=False) + "\n")
+        except Exception:
+            pass
 
         # Sort newest first and assign Row #1 to the newest
         recs_rev = list(reversed(recs))
@@ -1815,42 +1847,37 @@ def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trend
         tp3_pts = setup_spec["tp3"]
 
         import us30_unified_signals as uus
+        unif = uus.get_us30_unified_signals(p_curr)
+        if interval in ["1m", "5m"]:
+            sig_source = unif.get("scalp", {})
+        else:
+            sig_source = unif.get("swing", {})
+
+        action = "BUY" if sig_source.get("direction_code") == "LONG" else ("SELL" if sig_source.get("direction_code") == "SHORT" else "WAIT")
+        action_fa = f"🟢 خرید قدرتمند نهادی (STRONG BUY)" if action == "BUY" else (f"🔴 فروش قدرتمند نهادی (STRONG SELL)" if action == "SELL" else "⏸️ در انتظار تایید سشن (WAIT)")
+        color = "#00e676" if action == "BUY" else ("#ff3366" if action == "SELL" else "#ffb300")
+
+        base_entry = float(sig_source.get("entry", p_curr))
+        sl_price = float(sig_source.get("stop_loss", p_curr - sl_pts if action == "BUY" else p_curr + sl_pts))
+        sl_pts = round(abs(base_entry - sl_price), 1)
+
+        tp1_price = float(sig_source.get("tp1", p_curr + tp1_pts if action == "BUY" else p_curr - tp1_pts))
+        tp1_pts = round(abs(tp1_price - base_entry), 1)
+        tp2_price = float(sig_source.get("tp2", p_curr + tp2_pts if action == "BUY" else p_curr - tp2_pts))
+        tp2_pts = round(abs(tp2_price - base_entry), 1)
+        tp3_price = float(sig_source.get("tp3", p_curr + tp3_pts if action == "BUY" else p_curr - tp3_pts))
+        tp3_pts = round(abs(tp3_price - base_entry), 1)
+
         if action == "BUY":
-            entry_low = round(p_curr - (1.5 if interval == "1m" else atr * 0.15), 1)
-            entry_high = round(p_curr + (1.0 if interval == "1m" else atr * 0.1), 1)
-            sl_price = round(p_curr - sl_pts, 1)
-            raw_tp1 = p_curr + tp1_pts
-            raw_tp2 = p_curr + tp2_pts
-            raw_tp3 = p_curr + tp3_pts
-            tp1_price = uus._apply_us30_anti_front_run_tp(raw_tp1, p_curr, True)
-            tp2_price = uus._apply_us30_anti_front_run_tp(raw_tp2, p_curr, True)
-            tp3_price = uus._apply_us30_anti_front_run_tp(raw_tp3, p_curr, True)
-            if tp1_price <= p_curr: tp1_price = round(p_curr + 15.0, 1)
-            if tp2_price <= tp1_price: tp2_price = round(tp1_price + 20.0, 1)
-            if tp3_price <= tp2_price: tp3_price = round(tp2_price + 25.0, 1)
-            setup_title = cfg["name"]
+            entry_low = round(base_entry - 2.5, 1)
+            entry_high = base_entry
         elif action == "SELL":
-            entry_low = round(p_curr - (1.0 if interval == "1m" else atr * 0.1), 1)
-            entry_high = round(p_curr + (1.5 if interval == "1m" else atr * 0.15), 1)
-            sl_price = round(p_curr + sl_pts, 1)
-            raw_tp1 = p_curr - tp1_pts
-            raw_tp2 = p_curr - tp2_pts
-            raw_tp3 = p_curr - tp3_pts
-            tp1_price = uus._apply_us30_anti_front_run_tp(raw_tp1, p_curr, False)
-            tp2_price = uus._apply_us30_anti_front_run_tp(raw_tp2, p_curr, False)
-            tp3_price = uus._apply_us30_anti_front_run_tp(raw_tp3, p_curr, False)
-            if tp1_price >= p_curr: tp1_price = round(p_curr - 15.0, 1)
-            if tp2_price >= tp1_price: tp2_price = round(tp1_price - 20.0, 1)
-            if tp3_price >= tp2_price: tp3_price = round(tp2_price - 25.0, 1)
-            setup_title = cfg["name"]
+            entry_low = base_entry
+            entry_high = round(base_entry + 2.5, 1)
         else:
             entry_low = round(p_curr - 20, 1)
             entry_high = round(p_curr + 20, 1)
-            sl_price = round(p_curr - sl_pts, 1)
-            tp1_price = round(p_curr + tp1_pts, 1)
-            tp2_price = round(p_curr + tp2_pts, 1)
-            tp3_price = round(p_curr + tp3_pts, 1)
-            setup_title = cfg["name"] + " [در انتظار تایید نهایی سشن]"
+        setup_title = cfg["name"]
 
         _LOCKED_COMPOSITE_SETUPS[interval] = {
             "entry_low": entry_low,
@@ -1901,12 +1928,8 @@ def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trend
             tp2_pts = 48.0
         if tp3_pts < 50.0:
             tp3_pts = 75.0
-        if action == "BUY":
-            tp2_price = round(p_curr + tp2_pts, 1)
-            tp3_price = round(p_curr + tp3_pts, 1)
-        elif action == "SELL":
-            tp2_price = round(p_curr - tp2_pts, 1)
-            tp3_price = round(p_curr - tp3_pts, 1)
+        # Targets remain 100% frozen with the locked setup (Never float with p_curr)
+        pass
     except Exception as ex:
         print(f"[SIGNAL VALIDATION ERR] {ex}")
         triggers = {}
@@ -2108,7 +2131,7 @@ def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trend
         "interval": interval,
         "setup_name": setup_title,
         "price": p_curr,
-        "entry_zone": f"{entry_low:,.1f} - {entry_high:,.1f}",
+        "entry_zone": f"{entry_low:,.1f} تا {entry_high:,.1f} (کاشت لیمیت در پولبک)",
         "entry_low": entry_low,
         "entry_high": entry_high,
         "stop_loss": sl_price,
@@ -2516,12 +2539,14 @@ def us30_sentinel_auto_loop():
                             sl_val = sig_body.get("stop_loss", best_sig.get("stop_loss"))
                             tp1_val = sig_body.get("tp1", best_sig.get("tp1"))
                             tp2_val = sig_body.get("tp2", best_sig.get("tp2"))
+                            tp3_val = sig_body.get("tp3", best_sig.get("tp3", 0))
                             dur_val = "۲ تا ۵ روز"
                         else:
                             entry_val = best_sig.get("price")
                             sl_val = best_sig.get("stop_loss")
                             tp1_val = best_sig.get("tp1")
                             tp2_val = best_sig.get("tp2")
+                            tp3_val = best_sig.get("tp3", 0)
                             dur_val = "۱۵ دقیقه تا ۱ ساعت"
                             cur_p = best_sig.get("price")
                             tehran_t = datetime.now(timezone(timedelta(hours=3, minutes=30))).strftime("%Y/%m/%d ساعت %H:%M:%S")
@@ -2534,7 +2559,10 @@ def us30_sentinel_auto_loop():
 🎯 <b>قیمت ورود قطعی:</b> <code>{best_sig.get('entry_zone')}</code>
 🛑 <b>حد ضرر (SL):</b> <code>${sl_val:,.1f} (-{best_sig.get('stop_loss_pts')} pt)</code>
 🎯 <b>حد سود اول (TP1):</b> <code>${tp1_val:,.1f} (+{best_sig.get('tp1_pts')} pt)</code>
-🎯 <b>حد سود دوم (TP2):</b> <code>${tp2_val:,.1f} (+{best_sig.get('tp2_pts')} pt)</code>
+🎯 <b>حد سود دوم (TP2):</b> <code>${tp2_val:,.1f} (+{best_sig.get('tp2_pts')} pt)</code>"""
+                            if tp3_val > 0:
+                                msg += f"\n🎯 <b>حد سود سوم (TP3):</b> <code>${tp3_val:,.1f}</code>"
+                            msg += f"""
 📦 <b>حجم و اهرم پیشنهادی:</b> <code>0.01 لات | اهرم 1:500 یا 1:1000 ترندو</code>
 ⏰ <b>تاریخ و ساعت صدور:</b> <code>{tehran_t} (ایران 🇮🇷)</code>
 ⏳ <b>انقضا / اعتبار ستاپ:</b> <code>تا زمان برخورد به حد سود یا حد ضرر</code>
@@ -2559,11 +2587,13 @@ def us30_sentinel_auto_loop():
                                 "sl": sl_val,
                                 "tp1": tp1_val,
                                 "tp2": tp2_val,
+                                "tp3": tp3_val,
                                 "holding_duration": dur_val,
                                 "status": "OPEN",
                                 "pnl_pts": 0,
                                 "lot_size": 0.01,
-                                "broker": "Trendo"
+                                "broker": "Trendo",
+                                "ts": tehran_now.strftime("%Y/%m/%d ساعت %H:%M:%S")
                             }
                             append_dispatched_signal(journal_rec)
         except Exception as e:

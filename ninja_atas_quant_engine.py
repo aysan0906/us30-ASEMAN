@@ -902,43 +902,35 @@ def get_master_confluence_signal(current_price: float = 51240.0) -> Dict[str, An
         setup_title = "⚪ ستاپ رنج: قیمت در گرانیگاه ارزش (VPOC)"
         conflict_warning = None
 
-    # Anchored directly to NinjaTrader SuperDOM Order Flow & Quantower TPO Levels
-    # Calibrated to exact 12-14 point boundary for user's $10 account (0.01 lot in Trendo Broker)
-    entry_price = round(p, 1)
-    dom_rows = nt.get("super_dom", [])
-
-    if direction == "BUY":
-        # SL: Anchored to the NinjaTrader SuperDOM Bid Wall Row within 12-14 point safety boundary
-        matching_bids = [r["price"] for r in dom_rows if r.get("side") == "BID" and 11.5 <= (entry_price - r["price"]) <= 14.5]
-        sl_price = matching_bids[0] if matching_bids else round(entry_price - 13.0, 1)
-        sl_dist = round(entry_price - sl_price, 1)
-
-        # TP1: First Quantower TPO / Bookmap Ask Liquidity Pool (+24 pts)
-        tp1_price = round(entry_price + 24.0, 1)
-        tp1_dist = round(tp1_price - entry_price, 1)
-
-        # TP2: Quantower VAH & Sierra Chart Numbered Bars Target (+48 pts)
-        tp2_price = round(entry_price + 48.0, 1)
-        tp2_dist = round(tp2_price - entry_price, 1)
-
-        # TP3: Wall Street Banks & CFTC COT Final Liquidity Target (+75 pts)
-        tp3_price = round(entry_price + 75.0, 1)
-        tp3_dist = round(tp3_price - entry_price, 1)
-        ez_str = f"{entry_price - 1.5:.1f} تا {entry_price + 1.0:.1f}"
-    else:
-        matching_asks = [r["price"] for r in dom_rows if r.get("side") == "ASK" and 11.5 <= (r["price"] - entry_price) <= 14.5]
-        sl_price = matching_asks[0] if matching_asks else round(entry_price + 13.0, 1)
-        sl_dist = round(sl_price - entry_price, 1)
-
-        tp1_price = round(entry_price - 24.0, 1)
-        tp1_dist = round(entry_price - tp1_price, 1)
-
-        tp2_price = round(entry_price - 48.0, 1)
-        tp2_dist = round(entry_price - tp2_price, 1)
-
-        tp3_price = round(entry_price - 75.0, 1)
-        tp3_dist = round(entry_price - tp3_price, 1)
-        ez_str = f"{entry_price - 1.0:.1f} تا {entry_price + 1.5:.1f}"
+    # SYNCHRONIZE 100% WITH SINGLE SOURCE OF TRUTH (us30_unified_signals.py)
+    try:
+        import us30_unified_signals as uus
+        unif = uus.get_us30_unified_signals(p)
+        sc = unif.get("scalp", {})
+        entry_price = float(sc.get("entry", p))
+        sl_price = float(sc.get("stop_loss", p - 13.0 if direction == "BUY" else p + 13.0))
+        sl_dist = round(abs(entry_price - sl_price), 1)
+        tp1_price = float(sc.get("tp1", p + 28.0 if direction == "BUY" else p - 28.0))
+        tp1_dist = round(abs(tp1_price - entry_price), 1)
+        tp2_price = float(sc.get("tp2", p + 55.0 if direction == "BUY" else p - 55.0))
+        tp2_dist = round(abs(tp2_price - entry_price), 1)
+        tp3_price = float(sc.get("tp3", p + 90.0 if direction == "BUY" else p - 90.0))
+        tp3_dist = round(abs(tp3_price - entry_price), 1)
+        if direction == "BUY":
+            ez_str = f"{entry_price - 2.5:.1f} تا {entry_price:.1f} (کاشت لیمیت در پولبک)"
+        else:
+            ez_str = f"{entry_price:.1f} تا {entry_price + 2.5:.1f} (کاشت لیمیت در پولبک)"
+    except Exception:
+        entry_price = round(p, 1)
+        sl_price = round(entry_price - 13.0 if direction == "BUY" else entry_price + 13.0, 1)
+        sl_dist = 13.0
+        tp1_price = round(entry_price + 28.0 if direction == "BUY" else entry_price - 28.0, 1)
+        tp1_dist = 28.0
+        tp2_price = round(entry_price + 55.0 if direction == "BUY" else entry_price - 55.0, 1)
+        tp2_dist = 55.0
+        tp3_price = round(entry_price + 90.0 if direction == "BUY" else entry_price - 90.0, 1)
+        tp3_dist = 90.0
+        ez_str = f"{entry_price - 2.0:.1f} تا {entry_price + 2.0:.1f}"
 
     res = {
         "ok": True,
