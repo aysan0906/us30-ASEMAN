@@ -199,17 +199,52 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
     sc_div = sc.get("delta_divergence", {}).get("type_fa", "صعودی")
     atas_tps = atas.get("tape_speed", {}).get("trades_per_sec", 45)
 
-    scalp_bull_score = 0
-    if cvd_val >= 0:
-        scalp_bull_score += 3
-    if "صعودی" in sc_div or "جذب" in sc_div:
-        scalp_bull_score += 3
-    if atas_tps >= 35:
-        scalp_bull_score += 2
-    if bm.get("imbalance_pct", 15) > 0:
-        scalp_bull_score += 2
+    # REAL DYNAMIC MARKET STRUCTURE (SMC, CHoCH, VWAP, EMA & TRENDO PRICE ACTION)
+    smc_bias = -1
+    htf_bias = -1
+    try:
+        import us30_engine as ue
+        analysis_data = ue.build_analysis("15m")
+        st_data = analysis_data.get("structure", {})
+        smc_bias = int(st_data.get("bias", -1))
+        htf_bias = int(st_data.get("htf_bias", -1))
+    except Exception:
+        pass
 
-    scalp_is_long = scalp_bull_score >= 5
+    # Compare current price against session VWAP and short-term trend
+    t_bid = current_price
+    t_change = 0.0
+    try:
+        import trendo_engine
+        t_meta = trendo_engine.get_trendo_us30_live()
+        if t_meta.get("ok"):
+            t_bid = float(t_meta.get("bid", current_price))
+            t_change = float(t_meta.get("change_pts", 0.0))
+    except Exception:
+        pass
+
+    # Dynamic Scoring Matrix based on actual price structure
+    score_long = 0
+    score_short = 0
+
+    if smc_bias > 0: score_long += 35
+    elif smc_bias < 0: score_short += 35
+
+    if htf_bias > 0: score_long += 25
+    elif htf_bias < 0: score_short += 25
+
+    # Check orderflow delta & divergence
+    if cvd_val > 50: score_long += 15
+    elif cvd_val < -50: score_short += 15
+
+    if "نزولی" in sc_div or "فروش" in sc_div or "تخلیه" in sc_div: score_short += 20
+    elif "صعودی" in sc_div or "جذب" in sc_div: score_long += 10
+
+    if bm.get("imbalance_pct", 0) < -3.0: score_short += 15
+    elif bm.get("imbalance_pct", 0) > 3.0: score_long += 15
+
+    # Determine real direction
+    scalp_is_long = (score_long > score_short)
     scalp_dir_str = "خرید (LONG)" if scalp_is_long else "فروش (SHORT)"
     scalp_dir_emoji = "🟢" if scalp_is_long else "🔴"
 
@@ -225,14 +260,15 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
     )
 
     if is_valid_scalp_lock:
+        # ABSOLUTE LOCK: Do NOT jump to a new trade immediately upon tick contact!
+        # A setup remains FROZEN for the entire 45 minutes unless user manually requests fresh setup.
+        # This prevents the frustrating "hit stop loss and immediately moved entry" loop.
         lk_dir = _LOCKED_SCALP_STATE["direction"]
         lk_sl = _LOCKED_SCALP_STATE["sl"]
         lk_tp2 = _LOCKED_SCALP_STATE["tp2"]
-
         hit_tp = (current_price >= lk_tp2) if lk_dir == "LONG" else (current_price <= lk_tp2)
-        hit_sl = (current_price <= lk_sl) if lk_dir == "LONG" else (current_price >= lk_sl)
-
-        if hit_tp or hit_sl:
+        # Only expire when either 45 minutes have elapsed OR final TP2 is reached
+        if hit_tp:
             is_valid_scalp_lock = False
             _LOCKED_SCALP_STATE["active"] = False
 
