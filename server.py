@@ -1,3 +1,5 @@
+from __future__ import annotations
+from us30_supreme_arbiter import us30_supreme_arbiter
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -10,7 +12,6 @@ Pattern follows ASEMAN crypto source:
 - /healthz for Render/UptimeRobot
 """
 
-from __future__ import annotations
 
 import sys, subprocess
 try:
@@ -2717,3 +2718,34 @@ if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
+
+@app.get("/api/us30/supreme-arbiter")
+def get_supreme_arbiter_status():
+    """
+    Supreme Arbiter Engine for US30:
+    Synthesizes all 7 modules and enforces 90% WAIT policy for $10 accounts.
+    """
+    import trendo_engine
+    t_meta = trendo_engine.get_trendo_us30_live()
+    live_p = float(t_meta.get("bid", 51240.0))
+
+    import ninja_atas_quant_engine as naq
+    import bookmap_engine as be
+    import macro_data as md
+
+    modules_data = {
+        "trendo": t_meta,
+        "ninjatrader": naq.get_ninjatrader_live(live_p, "15m"),
+        "atas": naq.get_atas_live(live_p),
+        "quantower": naq.get_quantower_live(live_p),
+        "bookmap": be.get_us30_bookmap_data(),
+        "macro": md.get_macro_status()
+    }
+
+    verdict = us30_supreme_arbiter.audit_and_decide(live_p, t_meta, modules_data)
+    return {
+        "ok": True,
+        "verdict": verdict,
+        "stats": us30_supreme_arbiter.stats,
+        "next_scan_seconds": 180
+    }

@@ -1429,132 +1429,173 @@
         <span id="modToggleChevron" style="font-size: 1.1rem; color: #00d2ff; transition: transform 0.3s;">▼</span>
       </div>
     </div>
-    <div class="tab-nav-grid" id="mainTabNavGrid" style="display: grid;">
-      <button class="tab-card-btn active" id="btnNavRadar" onclick="switchTab('radarTab', this)">
-        <div class="tab-card-icon">🎯</div>
-        <div class="tab-card-name">۱. لیدرهای داو ۳۰</div>
-        <div class="tab-card-sub">۱۲ نماد سنگین‌وزن شاخص</div>
-      </button>
+    
+    <!-- =========================================================================
+         4 INSTITUTIONAL HUBS CONTROLLER (ساماندهی ۲۱ ماژول در ۴ هاب خلوت و تخصصی)
+         ========================================================================= -->
+    <div style="background: rgba(15, 23, 42, 0.95); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 14px; padding: 14px 18px; margin-bottom: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.5);">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px;">
+        <div style="font-size: 0.95rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+          <span>🏛️</span> دسته‌بندی ایستگاه‌های کاری داوجونز (Workstation Hubs)
+        </div>
+        <div style="font-size: 0.75rem; color: #94a3b8;" id="us30HubSubLabel">
+          هاب انتخابی: <strong style="color: #38bdf8;" id="activeHubNameDisplay">اتاق فرمان و سیگنال طلایی</strong>
+        </div>
+      </div>
 
-      <button class="tab-card-btn" id="btnNavChart" onclick="switchTab('chartTab', this)">
-        <div class="tab-card-icon">📊</div>
-        <div class="tab-card-name">۲. نمودار تریدینگ‌ویو</div>
-        <div class="tab-card-sub">FOREXCOM:US30 زنده</div>
-      </button>
+      <!-- 4 Main High-Level Hub Buttons -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;" id="us30MainHubButtons">
+        <button type="button" class="us30-hub-btn active" onclick="switchUS30Hub('CMD')" id="hubBtn_CMD" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff; border: 1px solid #38bdf8; border-radius: 10px; padding: 12px 14px; font-weight: 800; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 8px; justify-content: center; transition: all 0.2s;">
+          <span>🎯</span> ۱. اتاق فرماندهی & سیگنال
+        </button>
 
-      <button class="tab-card-btn" id="btnNavCoalition" onclick="switchTab('coalitionTab', this)">
-        <div class="tab-card-icon">🏛️</div>
-        <div class="tab-card-name">۳. ائتلاف غول‌های بانکی</div>
-        <div class="tab-card-sub">انباشت نهادی وال‌استریت</div>
-      </button>
+        <button type="button" class="us30-hub-btn" onclick="switchUS30Hub('OF')" id="hubBtn_OF" style="background: rgba(15, 23, 42, 0.7); color: #ff8c00; border: 1px solid rgba(255, 140, 0, 0.4); border-radius: 10px; padding: 12px 14px; font-weight: 800; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 8px; justify-content: center; transition: all 0.2s;">
+          <span>🌊</span> ۲. اوردر فلو & پلتفرم‌ها
+        </button>
 
-      <button class="tab-card-btn" id="btnNavOrderflow" onclick="switchTab('orderflowTab', this)">
-        <div class="tab-card-icon">🌊</div>
-        <div class="tab-card-name">۴. جریان سفارشات & FVG</div>
-        <div class="tab-card-sub">اوردربلاک و خلأ نقدینگی</div>
-      </button>
+        <button type="button" class="us30-hub-btn" onclick="switchUS30Hub('TECH')" id="hubBtn_TECH" style="background: rgba(15, 23, 42, 0.7); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 10px; padding: 12px 14px; font-weight: 800; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 8px; justify-content: center; transition: all 0.2s;">
+          <span>📊</span> ۳. چارت، لیدرها & SMC
+        </button>
 
-      <button class="tab-card-btn" id="btnNavMacro" onclick="switchTab('macroTab', this)">
-        <div class="tab-card-icon">🛡️</div>
-        <div class="tab-card-name">۵. تقویم کلان & ریسک غافلگیری</div>
-        <div class="tab-card-sub">شبیه‌ساز سناریو و FedWatch</div>
-      </button>
+        <button type="button" class="us30-hub-btn" onclick="switchUS30Hub('MACRO')" id="hubBtn_MACRO" style="background: rgba(15, 23, 42, 0.7); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.4); border-radius: 10px; padding: 12px 14px; font-weight: 800; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 8px; justify-content: center; transition: all 0.2s;">
+          <span>🛡️</span> ۴. کلان، بانک‌ها & ژئوپلیتیک
+        </button>
+      </div>
 
-      <button class="tab-card-btn" id="btnNavChat" onclick="switchTab('chatTab', this)">
-        <div class="tab-card-icon">🤖</div>
-        <div class="tab-card-name">۶. مشاور هوشمند AI</div>
-        <div class="tab-card-sub">چت زنده تحلیلی داوجونز</div>
-      </button>
+      <!-- Sub-tabs within Active Hub (Filtered dynamically) -->
+      <div class="tab-nav-grid" id="mainTabNavGrid" style="display: grid; margin-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
+      
+        <!-- HUB 1: COMMAND & JOURNAL -->
+        <button class="tab-card-btn active" data-hub="CMD" id="btnNavMasterSignal" onclick="switchTab('masterSignalTab', this)">
+          <div class="tab-card-icon">👑</div>
+          <div class="tab-card-name">سیگنال طلایی تک‌تیرانداز</div>
+          <div class="tab-card-sub">همگرایی ۹ ابزار نهادی</div>
+        </button>
 
-      <button class="tab-card-btn" id="btnNavAnalysis" onclick="switchTab('analysisTab', this)">
-        <div class="tab-card-icon">🧭</div>
-        <div class="tab-card-name">۷. تحلیل ۳۶۰ درجه SMC</div>
-        <div class="tab-card-sub">ساختار بازار و نقدینگی</div>
-      </button>
+        <button class="tab-card-btn" data-hub="CMD" id="btnNavJournal" onclick="switchTab('journalTab', this)">
+          <div class="tab-card-icon">📖</div>
+          <div class="tab-card-name">ژورنال معاملات و نتایج</div>
+          <div class="tab-card-sub">ثبت و Win Rate حساب</div>
+        </button>
 
-      <button class="tab-card-btn" id="btnNavCross" onclick="switchTab('crossTab', this)">
-        <div class="tab-card-icon">🌐</div>
-        <div class="tab-card-name">۸. همبستگی دارایی‌ها</div>
-        <div class="tab-card-sub">انس طلا، نفت و شاخص دلار</div>
-      </button>
+        <button class="tab-card-btn" data-hub="CMD" id="btnNavSentinel" onclick="switchTab('sentinelTab', this)">
+          <div class="tab-card-icon">✈️</div>
+          <div class="tab-card-name">دیده‌بان و ربات تلگرام</div>
+          <div class="tab-card-sub">ارسال آنی ستاپ‌های تاییدشده</div>
+        </button>
 
-      <button class="tab-card-btn" id="btnNavAlpha" onclick="switchTab('alphaTab', this)">
-        <div class="tab-card-icon">⚡</div>
-        <div class="tab-card-name">۹. ماتریس آلفای سکتورها</div>
-        <div class="tab-card-sub">۱۲ سکتور پیشران وال‌استریت</div>
-      </button>
+        <button class="tab-card-btn" data-hub="CMD" id="btnNavGuard" onclick="switchTab('guardTab', this)">
+          <div class="tab-card-icon">🔒</div>
+          <div class="tab-card-name">گارد محافظ اسلیپیج</div>
+          <div class="tab-card-sub">کنترل ریسک اکانت ۱۰ دلاری</div>
+        </button>
 
-      <button class="tab-card-btn" id="btnNavOptions" onclick="switchTab('optionsTab', this)">
-        <div class="tab-card-icon">🎲</div>
-        <div class="tab-card-name">۱۰. آپشن و احساسات</div>
-        <div class="tab-card-sub">Max Pain و گامای بازار</div>
-      </button>
+        <button class="tab-card-btn" data-hub="CMD" id="btnNavKelly" onclick="switchTab('kellyTab', this)">
+          <div class="tab-card-icon">💼</div>
+          <div class="tab-card-name">ماشین‌حساب کِلی</div>
+          <div class="tab-card-sub">محاسبه دقیق حجم لوریج و لات</div>
+        </button>
 
-      <button class="tab-card-btn" id="btnNavKelly" onclick="switchTab('kellyTab', this)">
-        <div class="tab-card-icon">💼</div>
-        <div class="tab-card-name">۱۱. مدیریت ریسک کِلی</div>
-        <div class="tab-card-sub">محاسبه دقیق حجم لات</div>
-      </button>
+        <!-- HUB 2: ORDER FLOW PLATFORMS -->
+        <button class="tab-card-btn" data-hub="OF" id="btnNavBookmap" onclick="switchTab('bookmapTab', this)" style="display: none;">
+          <div class="tab-card-icon">🔥</div>
+          <div class="tab-card-name">بوک‌مپ نقدینگی (Bookmap)</div>
+          <div class="tab-card-sub">هیت‌مپ عمق سفارشات و Iceberg</div>
+        </button>
 
-      <button class="tab-card-btn" id="btnNavJournal" onclick="switchTab('journalTab', this)">
-        <div class="tab-card-icon">📖</div>
-        <div class="tab-card-name">۱۲. ژورنال معاملات</div>
-        <div class="tab-card-sub">ثبت نتایج و Win Rate</div>
-      </button>
+        <button class="tab-card-btn" data-hub="OF" id="btnNavNinja" onclick="switchTab('ninjatraderTab', this)" style="display: none;">
+          <div class="tab-card-icon">🎯</div>
+          <div class="tab-card-name">نینجاتریدر آنلاین (NinjaTrader)</div>
+          <div class="tab-card-sub">SuperDOM و ۱۲ کندل فوت‌پرینت</div>
+        </button>
 
-      <button class="tab-card-btn" id="btnNavSentinel" onclick="switchTab('sentinelTab', this)">
-        <div class="tab-card-icon">✈️</div>
-        <div class="tab-card-name">۱۳. دیده‌بان تلگرام</div>
-        <div class="tab-card-sub">ارسال آنی سگنال‌ها</div>
-      </button>
+        <button class="tab-card-btn" data-hub="OF" id="btnNavAtas" onclick="switchTab('atasTab', this)" style="display: none;">
+          <div class="tab-card-icon">⚡</div>
+          <div class="tab-card-name">اتاس آنلاین (ATAS)</div>
+          <div class="tab-card-sub">معاملات بزرگ و سرعت نوار</div>
+        </button>
 
-      <button class="tab-card-btn" id="btnNavGuard" onclick="switchTab('guardTab', this)">
-        <div class="tab-card-icon">🔒</div>
-        <div class="tab-card-name">۱۴. گارد محافظ معامله</div>
-        <div class="tab-card-sub">کنترل اسلیپیج و نوسان</div>
-      </button>
+        <button class="tab-card-btn" data-hub="OF" id="btnNavQuant" onclick="switchTab('quantowerTab', this)" style="display: none;">
+          <div class="tab-card-icon">🏛️</div>
+          <div class="tab-card-name">کوانت‌تاور (Quantower TPO)</div>
+          <div class="tab-card-sub">مارکت پروفایل و ترازهای POC/VAH</div>
+        </button>
 
-      <button class="tab-card-btn" id="btnNavBookmap" onclick="switchTab('bookmapTab', this)">
-        <div class="tab-card-icon">🔥</div>
-        <div class="tab-card-name">۱۵. بوک‌مپ نقدینگی</div>
-        <div class="tab-card-sub">هیت‌مپ عمق سفارشات و دیوارهای لیمیت</div>
-      </button>
+        <button class="tab-card-btn" data-hub="OF" id="btnNavSierra" onclick="switchTab('sierrachartTab', this)" style="display: none;">
+          <div class="tab-card-icon">📊</div>
+          <div class="tab-card-name">سییرا چارت (Sierra Chart)</div>
+          <div class="tab-card-sub">Numbered Bars و پروفایل تجمیعی</div>
+        </button>
 
-      <button class="tab-card-btn" id="btnNavNinja" onclick="switchTab('ninjatraderTab', this)">
-        <div class="tab-card-icon">🎯</div>
-        <div class="tab-card-name">۱۶. نینجاتریدر آنلاین</div>
-        <div class="tab-card-sub">SuperDOM، فوت‌پرینت و CVD</div>
-      </button>
+        <button class="tab-card-btn" data-hub="OF" id="btnNavOrderflow" onclick="switchTab('orderflowTab', this)" style="display: none;">
+          <div class="tab-card-icon">🌊</div>
+          <div class="tab-card-name">جریان سفارشات & FVG</div>
+          <div class="tab-card-sub">اوردربلاک و خلأ نقدینگی</div>
+        </button>
 
-      <button class="tab-card-btn" id="btnNavAtas" onclick="switchTab('atasTab', this)">
-        <div class="tab-card-icon">⚡</div>
-        <div class="tab-card-name">۱۷. اتاس آنلاین (ATAS)</div>
-        <div class="tab-card-sub">معاملات بزرگ و نوار سرعت</div>
-      </button>
+        <!-- HUB 3: TECHNICAL & SMC -->
+        <button class="tab-card-btn" data-hub="TECH" id="btnNavChart" onclick="switchTab('chartTab', this)" style="display: none;">
+          <div class="tab-card-icon">📊</div>
+          <div class="tab-card-name">نمودار تریدینگ‌ویو</div>
+          <div class="tab-card-sub">FOREXCOM:US30 زنده</div>
+        </button>
 
-      <button class="tab-card-btn" id="btnNavQuant" onclick="switchTab('quantowerTab', this)">
-        <div class="tab-card-icon">🏛️</div>
-        <div class="tab-card-name">۱۸. کوانت‌تاور آنلاین</div>
-        <div class="tab-card-sub">TPO مارکت پروفایل و نودها</div>
-      </button>
+        <button class="tab-card-btn" data-hub="TECH" id="btnNavRadar" onclick="switchTab('radarTab', this)" style="display: none;">
+          <div class="tab-card-icon">🎯</div>
+          <div class="tab-card-name">لیدرهای داو ۳۰</div>
+          <div class="tab-card-sub">۱۲ نماد سنگین‌وزن شاخص</div>
+        </button>
 
-      <button class="tab-card-btn" id="btnNavGeo" onclick="switchTab('geopoliticsTab', this)">
-        <div class="tab-card-icon">🌐</div>
-        <div class="tab-card-name">۱۹. فاندامنتال & ژئوپلیتیک</div>
-        <div class="tab-card-sub">ریسک جهانی GPR و سود ۳۰ سهم</div>
-      </button>
+        <button class="tab-card-btn" data-hub="TECH" id="btnNavAnalysis" onclick="switchTab('analysisTab', this)" style="display: none;">
+          <div class="tab-card-icon">🧭</div>
+          <div class="tab-card-name">تحلیل ۳۶۰ درجه SMC</div>
+          <div class="tab-card-sub">ساختار شکست بازار و نقدینگی</div>
+        </button>
 
-      <button class="tab-card-btn" id="btnNavSierra" onclick="switchTab('sierrachartTab', this)">
-        <div class="tab-card-icon">📊</div>
-        <div class="tab-card-name">۲۰. سییرا چارت آنلاین</div>
-        <div class="tab-card-sub">Numbered Bars، پروفایل VBP و واگرایی دلتا</div>
-      </button>
+        <button class="tab-card-btn" data-hub="TECH" id="btnNavAlpha" onclick="switchTab('alphaTab', this)" style="display: none;">
+          <div class="tab-card-icon">⚡</div>
+          <div class="tab-card-name">ماتریس آلفای سکتورها</div>
+          <div class="tab-card-sub">۱۲ سکتور پیشران وال‌استریت</div>
+        </button>
 
-      <button class="tab-card-btn" id="btnNavMasterSignal" onclick="switchTab('masterSignalTab', this)" style="border: 1px solid rgba(255, 215, 0, 0.4); background: linear-gradient(135deg, rgba(255, 215, 0, 0.12), rgba(0, 210, 255, 0.08));">
-        <div class="tab-card-icon">👑</div>
-        <div class="tab-card-name" style="color: #ffd700; font-weight: 800;">۲۱. کادر تخصصی سیگنال‌دهی</div>
-        <div class="tab-card-sub" style="color: #cbd5e1;">همگرایی همزمان ۹ ابزار نهادی</div>
-      </button>
+        <!-- HUB 4: MACRO & WALL STREET -->
+        <button class="tab-card-btn" data-hub="MACRO" id="btnNavMacro" onclick="switchTab('macroTab', this)" style="display: none;">
+          <div class="tab-card-icon">🛡️</div>
+          <div class="tab-card-name">تقویم کلان ۱۱ شاخصه</div>
+          <div class="tab-card-sub">شبیه‌ساز سناریو و FedWatch</div>
+        </button>
+
+        <button class="tab-card-btn" data-hub="MACRO" id="btnNavCoalition" onclick="switchTab('coalitionTab', this)" style="display: none;">
+          <div class="tab-card-icon">🏛️</div>
+          <div class="tab-card-name">ائتلاف غول‌های بانکی</div>
+          <div class="tab-card-sub">انباشت نهادی و گزارش COT</div>
+        </button>
+
+        <button class="tab-card-btn" data-hub="MACRO" id="btnNavCross" onclick="switchTab('crossTab', this)" style="display: none;">
+          <div class="tab-card-icon">🌐</div>
+          <div class="tab-card-name">همبستگی دارایی‌ها</div>
+          <div class="tab-card-sub">انس طلا، نفت و شاخص دلار</div>
+        </button>
+
+        <button class="tab-card-btn" data-hub="MACRO" id="btnNavGeopolitics" onclick="switchTab('geopoliticsTab', this)" style="display: none;">
+          <div class="tab-card-icon">🌐</div>
+          <div class="tab-card-name">فاندامنتال & ژئوپلیتیک</div>
+          <div class="tab-card-sub">شاخص ریسک جهانی GPR</div>
+        </button>
+
+        <button class="tab-card-btn" data-hub="MACRO" id="btnNavOptions" onclick="switchTab('optionsTab', this)" style="display: none;">
+          <div class="tab-card-icon">🎲</div>
+          <div class="tab-card-name">آپشن و گامای بازار</div>
+          <div class="tab-card-sub">Max Pain و تمایلات اختیار معامله</div>
+        </button>
+
+        <button class="tab-card-btn" data-hub="MACRO" id="btnNavChat" onclick="switchTab('chatTab', this)" style="display: none;">
+          <div class="tab-card-icon">🤖</div>
+          <div class="tab-card-name">مشاور هوشمند AI</div>
+          <div class="tab-card-sub">چت زنده تحلیلی داوجونز</div>
+        </button>
+
+      </div>
     </div>
 
     <!-- ==================== TAB 1: RADAR (DOW 30 LEADERS) ==================== -->
@@ -3834,6 +3875,7 @@
   <script>
     // State variables
     let _activeInterval = '1m';
+    let _lastLiveTrendoPrice = 0;
     let _activeTab = 'radarTab';
     let _macroTargetEpoch = 1791981000; // US CPI release
     let _lastPrice = null;
@@ -5321,7 +5363,7 @@
         });
       }
 
-      const pCurr = (_lastLiveTrendoPrice && _lastLiveTrendoPrice > 10000) ? _lastLiveTrendoPrice : 51705.5;
+      const pCurr = (typeof _lastLiveTrendoPrice !== 'undefined' && _lastLiveTrendoPrice > 10000) ? _lastLiveTrendoPrice : (typeof _lastPrice !== 'undefined' && _lastPrice > 10000 ? _lastPrice : 51705.5);
       const priceBadge = document.getElementById('analysis360PriceBadge');
       if (priceBadge) {
         priceBadge.innerHTML = `🔵 نرخ زنده ترندو: ${Number(pCurr).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`;
@@ -6852,7 +6894,8 @@
     function drawJournalEquityCurve(records) {
       const canvas = document.getElementById('journalEquityCanvas');
       if (!canvas) return;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext ? canvas.getContext('2d') : null;
+      if (!ctx) return;
       const w = canvas.width;
       const h = canvas.height;
       ctx.clearRect(0, 0, w, h);
@@ -6864,7 +6907,7 @@
       const chronological = [...(records || [])].reverse();
       chronological.forEach(r => {
         const pts = Number(r.pnl_pts || 0);
-        const dollarPnl = pts * 0.10; // 0.01 lot in Trendo = /bin/bash.10/pt
+        const dollarPnl = pts * 0.10; // 0.01 lot in Trendo = $0.10/pt
         baseBalance += dollarPnl;
         curve.push(Math.max(0.1, baseBalance));
       });
@@ -6930,13 +6973,13 @@
         if (idx === points.length - 1) {
           ctx.fillStyle = '#ffd700';
           ctx.font = 'bold 11px monospace';
-          ctx.fillText( + p.val.toFixed(2), p.x - 25, p.y - 10);
+          ctx.fillText('$' + p.val.toFixed(2), p.x - 25, p.y - 10);
         }
       });
 
       const latestBal = curve[curve.length - 1];
       const curEl = document.getElementById('eqCurrentVal');
-      if (curEl) curEl.textContent =  + latestBal.toFixed(2);
+      if (curEl) curEl.textContent = '$' + latestBal.toFixed(2);
       const growthPct = ((latestBal - 10.0) / 10.0 * 100).toFixed(1);
       const grEl = document.getElementById('eqGrowthPct');
       if (grEl) grEl.textContent = (growthPct >= 0 ? '+' : '') + growthPct + '٪';
@@ -7982,6 +8025,101 @@
         loadTelegramConfig();
       }, 500);
     });
-  </script>
+  
+
+    /* =========================================================================
+       US30 SUPREME ARBITER CLIENT ENGINE & COUNTDOWN TIMER
+       ========================================================================= */
+    let _us30ArbRemaining = 180; // 3 minutes
+    let _us30ArbTimer = null;
+
+    function initUS30ArbiterCountdown() {
+      if (_us30ArbTimer) clearInterval(_us30ArbTimer);
+      _us30ArbTimer = setInterval(() => {
+        _us30ArbRemaining--;
+        if (_us30ArbRemaining <= 0) {
+          _us30ArbRemaining = 180;
+          fetchUS30ArbiterData();
+        }
+        updateUS30ArbCountdownUI();
+      }, 1000);
+      updateUS30ArbCountdownUI();
+    }
+
+    function updateUS30ArbCountdownUI() {
+      const el = document.getElementById('us30ArbiterCountdown');
+      if (!el) return;
+      const m = Math.floor(_us30ArbRemaining / 60);
+      const s = _us30ArbRemaining % 60;
+      el.innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    async function fetchUS30ArbiterData(force = false) {
+      if (force) {
+        _us30ArbRemaining = 180;
+        showToast("دروازه‌بان در حال ارزیابی ائتلاف ۷ ماژول داوجونز است...");
+      }
+      try {
+        const res = await fetch('/api/us30/supreme-arbiter');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.ok || !data.verdict) return;
+
+        const v = data.verdict;
+        const actBadge = document.getElementById('us30ArbiterActionBadge');
+        const scorePill = document.getElementById('us30ArbiterScorePill');
+        const reasonEl = document.getElementById('us30ArbiterReasonText');
+        const levelsBox = document.getElementById('us30ArbiterLevelsBox');
+        const updEl = document.getElementById('us30ArbLastUpdate');
+
+        if (scorePill) scorePill.innerText = `امتیاز همگرایی: ${v.score || 0}/100`;
+        if (updEl) updEl.innerText = `آخرین بررسی: ${v.timestamp || 'اکنون'}`;
+
+        if (v.approved) {
+          const isBuy = v.action === 'BUY';
+          if (actBadge) {
+            actBadge.innerText = isBuy ? "👑 سیگنال خرید طلایی تک‌تیرانداز (BUY APPROVED)" : "👑 سیگنال فروش طلایی تک‌تیرانداز (SELL APPROVED)";
+            actBadge.style.background = isBuy ? "rgba(0, 230, 118, 0.18)" : "rgba(255, 51, 102, 0.18)";
+            actBadge.style.color = isBuy ? "#00e676" : "#ff3366";
+            actBadge.style.borderColor = isBuy ? "#00e676" : "#ff3366";
+          }
+          if (reasonEl) {
+            const reasonsHtml = (v.reasons || []).map(r => `• ${r}`).join('<br>');
+            reasonEl.innerHTML = `<b>تاییدیه ائتلاف وال‌استریت:</b><br>${reasonsHtml}<br><span style="color:#ffd700;">${v.anti_front_running}</span>`;
+          }
+          if (levelsBox) {
+            levelsBox.style.display = 'grid';
+            document.getElementById('us30ArbEntry').innerText = Number(v.entry).toLocaleString(undefined, {minimumFractionDigits: 1});
+            document.getElementById('us30ArbSl').innerText = Number(v.sl).toLocaleString(undefined, {minimumFractionDigits: 1});
+            document.getElementById('us30ArbTp1').innerText = Number(v.tp1).toLocaleString(undefined, {minimumFractionDigits: 1});
+            document.getElementById('us30ArbTp2').innerText = Number(v.tp2).toLocaleString(undefined, {minimumFractionDigits: 1});
+            document.getElementById('us30ArbTp3').innerText = Number(v.tp3).toLocaleString(undefined, {minimumFractionDigits: 1});
+          }
+        } else {
+          if (actBadge) {
+            actBadge.innerText = "⏳ در وضعیت صبر و رصد نهادی (WAIT)";
+            actBadge.style.background = "rgba(255, 215, 0, 0.15)";
+            actBadge.style.color = "#ffd700";
+            actBadge.style.borderColor = "#ffd700";
+          }
+          if (reasonEl) {
+            reasonEl.innerHTML = `<b>دلیل دروازه‌بان برای عدم ورود:</b> ${v.reason || 'عدم همسویی کامل ماژول‌های وال‌استریت'}`;
+          }
+          if (levelsBox) levelsBox.style.display = 'none';
+        }
+      } catch (e) {
+        console.warn("Arbiter fetch error:", e);
+      }
+    }
+
+    // Auto-init on load
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        initUS30ArbiterCountdown();
+        fetchUS30ArbiterData();
+      }, 800);
+    });
+
+</script>
 </body>
 </html>
