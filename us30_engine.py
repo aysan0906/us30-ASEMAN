@@ -715,7 +715,7 @@ def ticker(interval: str = "1h") -> Dict[str, Any]:
         chg = _round_price(last - prev, fetched.display_scale, 0)
         chg_pct = _round_raw((last - prev) / prev * 100 if prev else 0, 2)
     except Exception:
-        p, chg, chg_pct = 51250.0, 120.0, 0.24
+        p, chg, chg_pct = 52000.0, 0.0, 0.24
 
     out = _clean({
         "ok": True,

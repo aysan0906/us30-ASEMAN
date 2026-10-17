@@ -53,7 +53,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://us30-aseman-1.onrender.com", "https://us30-aseman.onrender.com", "http://localhost:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -83,7 +83,7 @@ async def headers(request: Request, call_next):
 
     # 5. Enterprise Content-Security-Policy with iframe preview permission
     response.headers["Content-Security-Policy"] = (
-        "frame-ancestors *; "
+        "frame-ancestors 'self' https://*.onrender.com; "
         "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; "
         "img-src 'self' https: data: blob:; "
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: https://s3.tradingview.com; "
@@ -246,11 +246,11 @@ def get_analysis_360_data(interval: str = "15m", price: Optional[float] = None) 
             if t.get("ok"):
                 price = float(t.get("bid", 52000.0) or 52000.0)
             else:
-                cash_info = dow_cash.freshest()
+                cash_info = dcash.freshest()
                 price = float(cash_info.get("best", {}).get("index", 52000.0) or 52000.0)
         except Exception:
             try:
-                cash_info = dow_cash.freshest()
+                cash_info = dcash.freshest()
                 price = float(cash_info.get("best", {}).get("index", 52000.0) or 52000.0)
             except Exception:
                 price = 52000.0
@@ -372,7 +372,7 @@ def get_us30_unified_signals_api():
         import us30_unified_signals as uus
         p_curr = 50865.0
         try:
-            cash_info = dow_cash.freshest()
+            cash_info = dcash.freshest()
             p_curr = float(cash_info.get("best", {}).get("index", 50865.0) or 50865.0)
         except Exception:
             pass
@@ -517,7 +517,7 @@ def dow_guard(
 
 
 @app.get("/api/dow/cash")
-def dow_cash():
+def dow_cash_endpoint():
     return dowres.cash()
 
 
@@ -853,7 +853,7 @@ def dow_suite(
 # ============================================================================
 TG_CONFIG_FILE = APP_DIR / "telegram_config.json"
 _us30_sentinel_stats = {
-    "is_running": True,
+    "is_running": False,
     "last_check_utc": None,
     "last_check_tehran": None,
     "signals_sent_total": 0,
@@ -862,7 +862,7 @@ _us30_sentinel_stats = {
 }
 
 _us30_interactive_bot_stats = {
-    "is_running": True,
+    "is_running": False,
     "last_poll_utc": None,
     "last_update_id": 0,
     "queries_answered_total": 0,
@@ -983,7 +983,7 @@ def is_us30_market_in_active_session() -> tuple[bool, str, Dict[str, Any]]:
 def get_us30_telegram_config() -> Dict[str, Any]:
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
     chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
-    auto_pilot = True
+    auto_pilot = False
     interval_m = 15
     min_score = 70
 
@@ -1236,7 +1236,7 @@ def telegram_send(req: US30TelegramSendRequest):
             if t_data.get("ok"):
                 p_curr = float(t_data.get("bid", 51240.0))
             else:
-                cash_info = dow_cash.freshest()
+                cash_info = dcash.freshest()
                 p_curr = float(cash_info.get("best", {}).get("index", 51240.0) or 51240.0)
         except Exception:
             pass
@@ -1587,7 +1587,7 @@ def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trend
             t_data = engine.ticker(interval)
             p_curr = float(t_data.get("price", 0.0) or 0.0)
             if p_curr <= 0:
-                cash_info = dow_cash.freshest()
+                cash_info = dcash.freshest()
                 p_curr = float(cash_info.get("best", {}).get("index", 51250.0) or 51250.0)
         except Exception:
             p_curr = 51250.0
