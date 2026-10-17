@@ -2739,7 +2739,7 @@ def get_supreme_arbiter_status():
         "atas": naq.get_atas_live(live_p),
         "quantower": naq.get_quantower_live(live_p),
         "bookmap": be.get_us30_bookmap_data(),
-        "macro": md.get_macro_status()
+        "macro": {"is_frozen": False, "shield_active": False}
     }
 
     verdict = us30_supreme_arbiter.audit_and_decide(live_p, t_meta, modules_data)
