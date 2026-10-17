@@ -303,7 +303,7 @@ def get_analysis_360_data(interval: str = "15m", price: Optional[float] = None) 
             "premium": {"range": f"{fvg_prem_low} - {fvg_prem_high}", "status": "محدوده نقدینگی پرمیوم (گران) — شناسایی سود BSL"}
         },
         "confluence": {
-            "overall_score": None, "status": "WAIT_DATA",
+            "overall_score": None, "demo": True, "tradable": False, "status": "WAIT_DATA",
             "alignment_pct": None,
             "sweep_verdict": f"Sweep نقدینگی SSL در تایم‌فریم {tf} تکمیل شده؛ حرکت مگنتی به سوی BSL در جریان است.",
             "stop_loss_safeguard": "حد ضرر امن و استاندارد ۱۲ تا ۱۴ پوینت پشت اوردر بلاک ۵ دقیقه (ریسک ۱.۲ تا ۱.۴ دلار برای حساب ۱۰ دلار ترندو)"
@@ -988,7 +988,7 @@ def get_us30_telegram_config() -> Dict[str, Any]:
                 cfg = json.load(f)
                 bot_token = bot_token or cfg.get("bot_token", "")
                 chat_id = chat_id or cfg.get("chat_id", "")
-                auto_pilot = cfg.get("auto_pilot", True)
+                auto_pilot = cfg.get("auto_pilot", False)
                 interval_m = cfg.get("interval_minutes", 15)
                 min_score = cfg.get("min_score", 70)
         except Exception:
@@ -2491,7 +2491,7 @@ def us30_sentinel_auto_loop():
                     except Exception:
                         pass
 
-            if real_tok and real_chat and cfg.get("auto_pilot", True) and _us30_sentinel_stats.get("is_running", True):
+            if real_tok and real_chat and cfg.get("auto_pilot", False) and _us30_sentinel_stats.get("is_running", True):
                 now_ts = time.time()
                 last_sent = _us30_sentinel_stats.get("last_sent_epoch", 0)
                 interval_secs = cfg.get("interval_minutes", 15) * 60
