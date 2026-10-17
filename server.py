@@ -14,13 +14,8 @@ Pattern follows ASEMAN crypto source:
 
 
 import sys, subprocess
-try:
-    import fastapi
-    import uvicorn
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "fastapi", "uvicorn", "--quiet"])
-    import fastapi
-    import uvicorn
+import fastapi
+import uvicorn
 
 import os
 from pathlib import Path
@@ -180,7 +175,7 @@ def analyze(
     global _analysis_cache
     now = time.time()
     fresh_bool = bool(getattr(fresh, "default", fresh))
-    cache_key = f"{interval}:{bars}:{int(fresh_bool)}"
+    cache_key = f"{interval}:{bars}:{int(fresh_bool)}:{equity}:{risk_pct}:{guard_balance}:{guard_leverage}:{guard_lot}"
     if not fresh and cache_key in _analysis_cache and (now - _analysis_cache[cache_key]["time"] < 60.0):
         return _analysis_cache[cache_key]["data"]
 
@@ -213,7 +208,7 @@ def analyze(
         if cache_key in _analysis_cache:
             return _analysis_cache[cache_key]["data"]
         t_data = engine.ticker(interval)
-        p_curr = float(t_data.get("price", 51240.0) or 51240.0)
+        p_curr = float(t_data.get("price", 52000.0) or 52000.0)
         chg = float(t_data.get("change", 0.0) or 0.0)
         bias = -1 if chg < 0 else 1
         data = {
@@ -308,8 +303,8 @@ def get_analysis_360_data(interval: str = "15m", price: Optional[float] = None) 
             "premium": {"range": f"{fvg_prem_low} - {fvg_prem_high}", "status": "محدوده نقدینگی پرمیوم (گران) — شناسایی سود BSL"}
         },
         "confluence": {
-            "overall_score": 91,
-            "alignment_pct": 100,
+            "overall_score": None, "status": "WAIT_DATA",
+            "alignment_pct": None,
             "sweep_verdict": f"Sweep نقدینگی SSL در تایم‌فریم {tf} تکمیل شده؛ حرکت مگنتی به سوی BSL در جریان است.",
             "stop_loss_safeguard": "حد ضرر امن و استاندارد ۱۲ تا ۱۴ پوینت پشت اوردر بلاک ۵ دقیقه (ریسک ۱.۲ تا ۱.۴ دلار برای حساب ۱۰ دلار ترندو)"
         },
@@ -501,7 +496,7 @@ def dow_guard(
         return _guard_cache["data"]
 
     t_data = engine.ticker(interval)
-    p_curr = float(t_data.get("price", 51240.0) or 51240.0)
+    p_curr = float(t_data.get("price", 52000.0) or 52000.0)
     chg = float(t_data.get("change", 0.0) or 0.0)
 
     dummy_data = {
@@ -686,7 +681,7 @@ def dow_context(with_mtf: bool = Query(False)):
 @app.get("/api/dow/orderflow")
 def dow_orderflow(interval: str = Query("1h")):
     t_data = engine.ticker(interval)
-    p_curr = float(t_data.get("price", 51240.0) or 51240.0)
+    p_curr = float(t_data.get("price", 52000.0) or 52000.0)
     chg = float(t_data.get("change", 0.0) or 0.0)
 
     # Dynamic FVG & Liquidity Zones based on real price and interval scale
@@ -1133,7 +1128,7 @@ def format_us30_master_signal_telegram(ms_data: Dict[str, Any]) -> str:
     tehran_str = tehran_time.strftime("%H:%M:%S (%Y/%m/%d)")
     valid_until = (tehran_time + timedelta(hours=2)).strftime("%H:%M")
 
-    p = float(ms_data.get("current_price", 51240.0) or 51240.0)
+    p = float(ms_data.get("current_price", 52000.0) or 52000.0)
     direction = ms_data.get("direction", "BUY")
     dir_fa = ms_data.get("direction_fa", "خرید قوی نهادی")
     dir_emoji = "🚀" if direction == "BUY" else ("🔻" if direction == "SELL" else "⏸️")
@@ -1229,15 +1224,15 @@ def telegram_send(req: US30TelegramSendRequest):
             return JSONResponse(status_code=400, content={"success": False, "message": "توکن ربات یا شناسه چت تنظیم نشده است. لطفاً توکن ربات و شناسه چت را در کادرهای بالا وارد کرده و دکمه ذخیره تنظیمات را بزنید."})
 
         # Fetch current price (Prioritize Trendo Broker Official Live Tick)
-        p_curr = 51240.0
+        p_curr = 52000.0
         try:
             import trendo_engine
             t_data = trendo_engine.get_trendo_us30_live()
             if t_data.get("ok"):
-                p_curr = float(t_data.get("bid", 51240.0))
+                p_curr = float(t_data.get("bid", 52000.0))
             else:
                 cash_info = dcash.freshest()
-                p_curr = float(cash_info.get("best", {}).get("index", 51240.0) or 51240.0)
+                p_curr = float(cash_info.get("best", {}).get("index", 52000.0) or 52000.0)
         except Exception:
             pass
 
@@ -2328,10 +2323,10 @@ def dow_bookmap_endpoint(timeframe: str = Query("15m")):
 def dow_ninjatrader_endpoint(timeframe: str = Query("15m")):
     try:
         import ninja_atas_quant_engine as naq
-        p = 51240.0
+        p = 52000.0
         try:
             cash = dowres.cash()
-            p = float(cash.get("price", 51240.0) or 51240.0)
+            p = float(cash.get("price", 52000.0) or 52000.0)
         except Exception:
             pass
         return naq.get_ninjatrader_live(p, timeframe=timeframe)
@@ -2342,10 +2337,10 @@ def dow_ninjatrader_endpoint(timeframe: str = Query("15m")):
 def dow_atas_endpoint():
     try:
         import ninja_atas_quant_engine as naq
-        p = 51240.0
+        p = 52000.0
         try:
             cash = dowres.cash()
-            p = float(cash.get("price", 51240.0) or 51240.0)
+            p = float(cash.get("price", 52000.0) or 52000.0)
         except Exception:
             pass
         return naq.get_atas_live(p)
@@ -2356,10 +2351,10 @@ def dow_atas_endpoint():
 def dow_quantower_endpoint():
     try:
         import ninja_atas_quant_engine as naq
-        p = 51240.0
+        p = 52000.0
         try:
             cash = dowres.cash()
-            p = float(cash.get("price", 51240.0) or 51240.0)
+            p = float(cash.get("price", 52000.0) or 52000.0)
         except Exception:
             pass
         return naq.get_quantower_live(p)
@@ -2370,10 +2365,10 @@ def dow_quantower_endpoint():
 def dow_geopolitics_endpoint():
     try:
         import ninja_atas_quant_engine as naq
-        p = 51240.0
+        p = 52000.0
         try:
             cash = dowres.cash()
-            p = float(cash.get("price", 51240.0) or 51240.0)
+            p = float(cash.get("price", 52000.0) or 52000.0)
         except Exception:
             pass
         return naq.get_geopolitical_live(p)
@@ -2384,10 +2379,10 @@ def dow_geopolitics_endpoint():
 def dow_sierrachart_endpoint(timeframe: str = Query("15m")):
     try:
         import ninja_atas_quant_engine as naq
-        p = 51240.0
+        p = 52000.0
         try:
             cash = dowres.cash()
-            p = float(cash.get("price", 51240.0) or 51240.0)
+            p = float(cash.get("price", 52000.0) or 52000.0)
         except Exception:
             pass
         return naq.get_sierrachart_live(p, timeframe=timeframe)
@@ -2398,10 +2393,10 @@ def dow_sierrachart_endpoint(timeframe: str = Query("15m")):
 def dow_master_signal_endpoint():
     try:
         import ninja_atas_quant_engine as naq
-        p = 51240.0
+        p = 52000.0
         try:
             cash = dowres.cash()
-            p = float(cash.get("price", 51240.0) or 51240.0)
+            p = float(cash.get("price", 52000.0) or 52000.0)
         except Exception:
             pass
         return naq.get_master_confluence_signal(p)
@@ -2727,7 +2722,7 @@ def get_supreme_arbiter_status():
     """
     import trendo_engine
     t_meta = trendo_engine.get_trendo_us30_live()
-    live_p = float(t_meta.get("bid", 51240.0))
+    live_p = float(t_meta.get("bid", 52000.0))
 
     import ninja_atas_quant_engine as naq
     import bookmap_engine as be
