@@ -842,594 +842,203 @@
         </div>
       </div>
       <!-- Timeframe Switcher Bar -->
-      <div class="timeframe-pill-bar">
-        <span style="font-size: 0.8rem; color: #ffd700; font-weight: 800; margin-left: 6px;">⏱️ تایم‌فریم ستاپ معامله‌گری:</span>
-        <button class="tf-pill active" data-tf="1m" onclick="switchTimeframe('1m')">⚡ 1m (میکرو-اسکالپ تک‌تیرانداز)</button>
-        <button class="tf-pill" data-tf="5m" onclick="switchTimeframe('5m')">5m (اسکالپ سریع)</button>
-        <button class="tf-pill" data-tf="15m" onclick="switchTimeframe('15m')">15m (مومنتوم)</button>
-        <button class="tf-pill" data-tf="30m" onclick="switchTimeframe('30m')">30m (سشن مارکت)</button>
-        <button class="tf-pill" data-tf="1h" onclick="switchTimeframe('1h')">1h (دی‌ترید نهادی)</button>
-        <button class="tf-pill" data-tf="4h" onclick="switchTimeframe('4h')">4h (سوئینگ چندروزه)</button>
-        <button class="tf-pill" data-tf="1d" onclick="switchTimeframe('1d')">1D (ماژور کلان)</button>
-      </div>
-
-      <div class="hero-grid">
-        <!-- Direction & Grade -->
-        <div>
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-            <span style="font-size: 0.76rem; color: var(--text-muted);">
-              سیگنال تجمیعی ۵ ماژول | <span id="heroSetupTitle" style="color: #00d2ff; font-weight: 800;">🏛️ ستاپ دی‌ترید ۱ ساعته نهادی</span>
-            </span>
-            <span id="heroSignalGrade" style="background: rgba(255, 179, 0, 0.15); color: #ffb300; border: 1px solid #ffb300; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 0.75rem;">
-              GRADE --
-            </span>
-          </div>
-
-          <div id="heroSignalAction" style="font-size: 1.5rem; font-weight: 900; color: #ffb300; margin-bottom: 4px;">
-            ⏳ در حال ارزیابی ۵ ماژول تحلیلی...
-          </div>
-
-          <div style="font-size: 0.78rem; color: #94a3b8; line-height: 1.5;">
-            وضعیت همگرایی: <span id="heroConfluenceScore" style="color: #fff; font-weight: 700;">پایش زنده ائتلاف بانک‌ها، FVG و نقدینگی...</span>
-          </div>
-
-          <div style="margin-top: 10px; display: flex; gap: 8px;">
-            <span id="heroRiskRewardBadge" style="background: rgba(255, 209, 102, 0.15); color: #ffd166; border: 1px solid rgba(255, 209, 102, 0.3); padding: 3px 10px; border-radius: 6px; font-size: 0.74rem; font-family: var(--font-mono); font-weight: 800;">
-              R:R 1:2.6
-            </span>
-            <span id="heroAtrBadge" style="background: rgba(255, 255, 255, 0.05); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.1); padding: 3px 10px; border-radius: 6px; font-size: 0.74rem; font-family: var(--font-mono);">
-              نوسان ATR: 135 pts
-            </span>
-          </div>
-        </div>
-
-        <!-- Levels: Entry, SL, TP1, TP2, TP3 -->
-        <div>
-          <div style="font-size: 0.74rem; color: #94a3b8; margin-bottom: 8px;">
-            🎯 سطوح ریاضی معامله (محاسبه‌شده بر پایه نقدینگی و نوسان تایم‌فریم انتخابی):
-          </div>
-
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px;">
-            <!-- Entry -->
-            <div class="target-box" style="border-right: 3px solid #00d2ff;">
-              <div class="target-title">قیمت ورود قطعی</div>
-              <div class="target-val" id="heroEntryZone" style="color: #00d2ff; font-size: 0.92rem;">-</div>
-              <div class="target-pts" id="heroEntrySub" style="color: #38bdf8;">با رسیدن خط ترندو اردر بزنید</div>
-            </div>
-
-            <!-- Stop Loss -->
-            <div class="target-box" style="border-right: 3px solid #ff3366;">
-              <div class="target-title">حد ضرر (SL)</div>
-              <div class="target-val" id="heroStopLoss" style="color: #ff3366;">51,465.0</div>
-              <div class="target-pts" id="heroStopLossPts" style="color: #ff3366;">-135 pts</div>
-            </div>
-
-            <!-- TP1 -->
-            <div class="target-box" style="border-right: 3px solid #00e676;">
-              <div class="target-title">تارگت اول (TP1)</div>
-              <div class="target-val" id="heroTp1" style="color: #00e676;">51,789.0</div>
-              <div class="target-pts" id="heroTp1Pts" style="color: #00e676;">+189 pts</div>
-            </div>
-
-            <!-- TP2 -->
-            <div class="target-box" style="border-right: 3px solid #00e676;">
-              <div class="target-title">تارگت دوم (TP2)</div>
-              <div class="target-val" id="heroTp2" style="color: #00e676;">51,951.0</div>
-              <div class="target-pts" id="heroTp2Pts" style="color: #00e676;">+351 pts</div>
-            </div>
-
-            <!-- TP3 -->
-            <div class="target-box" style="border-right: 3px solid #ffd700;">
-              <div class="target-title">تارگت سوم (TP3)</div>
-              <div class="target-val" id="heroTp3" style="color: #ffd700;">52,208.0</div>
-              <div class="target-pts" id="heroTp3Pts" style="color: #ffd700;">+608 pts</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick Action Trigger -->
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <button onclick="sendQuickPrompt('دستور دقیق ورود به این ستاپ چیه؟')" style="background: linear-gradient(135deg, #00d2ff, #00e676); color: #000; font-weight: 800; border: none; border-radius: 8px; padding: 12px; cursor: pointer; font-size: 0.85rem; box-shadow: 0 4px 15px rgba(0, 210, 255, 0.3);">
-            💬 راهنمای اجرای ستاپ با هوش مصنوعی
-          </button>
-          <button onclick="switchTab('chartTab', document.getElementById('btnNavChart'))" style="background: rgba(255, 255, 255, 0.08); color: #fff; font-weight: 700; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 10px; cursor: pointer; font-size: 0.8rem;">
-            📊 نمایش روی نمودار تریدینگ‌ویو
-          </button>
-        </div>
-      </div>
-
-      <!-- 15-MODULE INSTITUTIONAL CONFLUENCE MATRIX -->
-      <div style="margin-top: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-        <span style="font-size: 0.84rem; font-weight: 800; color: #ffd700; display: flex; align-items: center; gap: 6px;">
-          <span>⚡</span> ماتریس اجماع و همگرایی ۱۵ ماژول وال‌استریت (15-Pillar Confluence Matrix)
-        </span>
-        <span id="heroConfluenceScore" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1px solid #ffd700; padding: 3px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 800;">
-          ۱۵ ماژول در حال همگام‌سازی...
-        </span>
-      </div>
-      <div class="confluence-checklist" id="heroConfluenceChecklist">
-        <div class="checklist-item"><span>🏛️ ائتلاف بانک‌های وال‌استریت:</span><strong style="color: #00e676;">🟢 تایید ائتلاف</strong></div>
-        <div class="checklist-item"><span>🌊 جریان سفارشات و خلأ FVG:</span><strong style="color: #00e676;">🟢 عدم تعادل خرید</strong></div>
-        <div class="checklist-item"><span>🛡️ سپر اخبار کلان و فدرال رزرو:</span><strong style="color: #00e676;">🟢 فیوز سبز</strong></div>
-        <div class="checklist-item"><span>🔥 بوک‌مپ و عمق نقدینگی:</span><strong style="color: #00e676;">🟢 تراز دلتا مثبت</strong></div>
-      </div>
-
-      <!-- 6-FILTER INSTITUTIONAL VALIDATION BAR -->
-      <div style="margin-top: 14px; padding: 12px 14px; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(0, 210, 255, 0.25); border-radius: 10px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
-          <span style="font-size: 0.8rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
-            <span>🛡️</span> وضعیت ۶ فیلتر اعتبارسنجی نهادی وال‌استریت (VIX, VWAP, SMT, News, ۵ غول داوجونز، سشن طلایی نیویورک):
-          </span>
-          <span id="heroFiltersPassedBadge" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 3px 10px; border-radius: 6px; font-size: 0.74rem; font-family: var(--font-mono); font-weight: 800;">
-            ۶ از ۶ فیلتر تایید شد
-          </span>
-        </div>
-        <div id="heroValidationFiltersGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; font-size: 0.75rem;">
-          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: #cbd5e1;">۱. فیلتر نوسان VIX:</span>
-            <strong style="color: #00e676;">🟢 تایید تعادل نوسان</strong>
-          </div>
-          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: #cbd5e1;">۲. خط VWAP سشن:</span>
-            <strong style="color: #00e676;">🟢 انطباق با VWAP</strong>
-          </div>
-          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: #cbd5e1;">۳. همسویی دو قلوی SMT:</span>
-            <strong style="color: #00e676;">🟢 همسویی S&P500</strong>
-          </div>
-          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: #cbd5e1;">۴. فیوز محافظ اخبار و اسپرد:</span>
-            <strong style="color: #00e676;">🟢 فیوز سبز اخبار</strong>
-          </div>
-          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: #cbd5e1;">۵. ائتلاف ۵ غول داوجونز:</span>
-            <strong style="color: #00e676;">🟢 تایید ۵ غول</strong>
-          </div>
-          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: #cbd5e1;">۶. سشن طلایی نیویورک:</span>
-            <strong style="color: #00e676;">🔥 سشن فعال</strong>
-          </div>
-        </div>
-      </div>
-
-      <!-- DOW TOP 5 HEAVYWEIGHTS LIVE TICKER STRIP -->
-      <div id="dowHeavyweightsStrip" style="margin-top: 10px; padding: 10px 14px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(0, 210, 255, 0.25); border-radius: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 0.8rem; font-weight: 800; color: #00d2ff; display: flex; align-items: center; gap: 5px;">
-            <span>🏛️</span> نبض ۵ غول تعیین‌کننده داوجونز (۳۷٪ کل شاخص):
-          </span>
-          <span id="hwConsensusBadge" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 800;">
-            در حال پایش زنده...
-          </span>
-        </div>
-        <div id="hwTickersRow" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-family: var(--font-mono); font-size: 0.76rem;">
-          <span style="color: #94a3b8;">در حال استعلام نرخ لحظه‌ای و اثر پوینتی UNH, GS, MSFT, CAT, HD...</span>
-        </div>
-      </div>
-
-      <!-- 3 EXECUTION TRIGGERS ROW -->
-      <div style="margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px;">
-        <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 0.76rem; color: #94a3b8;">🎯 پنجره سیلور بولت:</span>
-          <strong id="heroSbBadge" style="font-size: 0.74rem; color: #ffd166; font-family: var(--font-mono);">⏱️ در انتظار ۱۷:۳۰</strong>
-        </div>
-        <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 0.76rem; color: #94a3b8;">📈 روبان مومنتوم EMA:</span>
-          <strong id="heroEmaBadge" style="font-size: 0.74rem; color: #00e676; font-family: var(--font-mono);">🟢 گسترش مومنتوم صعودی</strong>
-        </div>
-        <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 0.76rem; color: #94a3b8;">📊 ظرفیت نوسان ADR:</span>
-          <strong id="heroAdrBadge" style="font-size: 0.74rem; color: #00e676; font-family: var(--font-mono);">🟢 باز (۵۶٪ پر شده)</strong>
-        </div>
-      </div>
-
-      <!-- INSTITUTIONAL RADARS: SMT TRIAD & LIQUIDITY SWEEP HUNTER -->
-      <div style="margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 8px;">
-        <!-- 1. SMT Triad Divergence Radar (US30 vs NDX vs SPX) -->
-        <div style="padding: 10px 14px; background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <span style="font-size: 0.78rem; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 5px;">
-              <span>📡</span> ۱. رادار واگرایی پول هوشمند (SMT Divergence Radar)
-            </span>
-            <span id="smtTriadBadge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 800;">
-              در حال پایش سه‌قلوها...
-            </span>
-          </div>
-          <div id="smtTriadGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: center; font-size: 0.72rem; margin-bottom: 6px;">
-            <div style="background: rgba(0,0,0,0.35); padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.06);">
-              <span style="color: #ffd700; font-weight: 700;">US30 (داوجونز)</span><br>
-              <strong id="smtUs30Val" style="color: #00e676; font-family: var(--font-mono);">+0.62%</strong>
-            </div>
-            <div style="background: rgba(0,0,0,0.35); padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.06);">
-              <span style="color: #cbd5e1;">SPX (اس‌اندپی)</span><br>
-              <strong id="smtSpxVal" style="color: #38bdf8; font-family: var(--font-mono);">+0.45%</strong>
-            </div>
-            <div style="background: rgba(0,0,0,0.35); padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.06);">
-              <span style="color: #cbd5e1;">NDX (نزدک)</span><br>
-              <strong id="smtNdxVal" style="color: #94a3b8; font-family: var(--font-mono);">+0.42%</strong>
-            </div>
-          </div>
-          <div id="smtDescText" style="font-size: 0.7rem; color: #cbd5e1; line-height: 1.4; background: rgba(0,0,0,0.25); padding: 4px 8px; border-radius: 4px; border-right: 3px solid #38bdf8;">
-            ارزیابی همگام نوسان سه‌قلوهای وال‌استریت جهت کشف انباشت یا توزیع پنهان پول هوشمند.
-          </div>
-        </div>
-
-        <!-- 2. Liquidity Sweep Hunter (Fake Breakouts vs Institutional Expansion) -->
-        <div style="padding: 10px 14px; background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255, 209, 102, 0.35); border-radius: 8px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <span style="font-size: 0.78rem; font-weight: 800; color: #ffd166; display: flex; align-items: center; gap: 5px;">
-              <span>🧲</span> ۲. فیلتر شکار استاپ‌های فیک (Liquidity Sweep Hunter)
-            </span>
-            <span id="sweepHunterBadge" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 800;">
-              جریان ایمن (Clean Flow)
-            </span>
-          </div>
-          <div id="sweepLevelsGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.72rem; margin-bottom: 6px;">
-            <div style="background: rgba(0,0,0,0.35); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between;">
-              <span style="color: #94a3b8;">سقف روز (PDH):</span>
-              <strong id="sweepPdhVal" style="color: #ffd166; font-family: var(--font-mono);">--</strong>
-            </div>
-            <div style="background: rgba(0,0,0,0.35); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between;">
-              <span style="color: #94a3b8;">کف روز (PDL):</span>
-              <strong id="sweepPdlVal" style="color: #00e676; font-family: var(--font-mono);">--</strong>
-            </div>
-          </div>
-          <div id="sweepAdviceText" style="font-size: 0.7rem; color: #cbd5e1; line-height: 1.4; background: rgba(0,0,0,0.25); padding: 4px 8px; border-radius: 4px; border-right: 3px solid #ffd166;">
-            رصد زنده استخرهای نقدینگی BSL و SSL جهت تفکیک شکست واقعی سازمانی از تله‌های استاپ‌هانتینگ.
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======================================================== -->
-    <!-- MASTER INSTITUTIONAL SIGNAL COCKPIT (9-PILLAR CONFLUENCE) -->
-    <!-- ======================================================== -->
-    <!-- COLLAPSIBLE ACCORDION FOR MASTER SIGNAL COCKPIT -->
-    <div onclick="toggleMasterCockpitAccordion()" style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, rgba(255, 215, 0, 0.09), rgba(0, 210, 255, 0.05)); border: 1px solid rgba(255, 215, 0, 0.35); border-radius: 10px; padding: 11px 18px; margin-top: 14px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='#ffd700'" onmouseout="this.style.borderColor='rgba(255, 215, 0, 0.35)'">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 1.25rem;">👑</span>
-        <strong style="color: #ffd700; font-size: 0.95rem;">کادر تخصصی سیگنال‌دهی همگرا (Master Institutional Signal Cockpit)</strong>
-        <span style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800;">سنتز ۹ پلتفرم</span>
-      </div>
-      <div style="display: flex; align-items: center; gap: 6px; color: #cbd5e1; font-size: 0.82rem;">
-        <span id="msToggleLabel">بستن / باز کردن کادر</span>
-        <span id="msToggleChevron" style="font-size: 1.1rem; color: #ffd700; transition: transform 0.3s;">▼</span>
-      </div>
-    </div>
-    <div class="master-signal-cockpit" id="masterSignalCockpit" style="margin-top: 18px; margin-bottom: 24px; background: radial-gradient(circle at top right, rgba(0, 210, 255, 0.15), rgba(10, 15, 30, 0.98) 60%), linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(0, 230, 118, 0.08)); border: 1.5px solid rgba(255, 215, 0, 0.55); border-radius: 16px; padding: 22px; box-shadow: 0 15px 45px rgba(0, 0, 0, 0.75), 0 0 30px rgba(255, 215, 0, 0.15); position: relative; overflow: hidden;">
       
-      <!-- Ambient Header Glow & Title -->
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 16px; margin-bottom: 18px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="width: 50px; height: 50px; border-radius: 12px; background: linear-gradient(135deg, #ffd700, #ff8c00); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 4px 18px rgba(255, 215, 0, 0.45);">
-            👑
-          </div>
+    <!-- =========================================================================
+         🚀 4-STAGE INSTITUTIONAL PIPELINE & UNIFIED MASTER SIGNAL COCKPIT (US30)
+         معماری یکپارچه، خط تولید ۴ مرحله‌ای و تک‌سیگنال قطعی وال‌استریت
+         ========================================================================= -->
+    
+    <!-- STAGE PIPELINE COMMAND CENTER -->
+    <div id="signalPipelineCommandCenter" style="background: linear-gradient(135deg, rgba(11, 15, 25, 0.98), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: 14px; padding: 18px 22px; margin-bottom: 22px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; overflow: hidden;">
+      <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #38bdf8, #a855f7, #ffd700, #00e676);"></div>
+      
+      <!-- Top Bar: Title & Countdown Timer -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.6rem; filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));">⚡</span>
           <div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <h2 style="font-size: 1.35rem; font-weight: 900; color: #fff; margin: 0; letter-spacing: -0.5px;">کادر تخصصی سیگنال‌دهی همگرا (Master Institutional Signal Cockpit)</h2>
-              <span id="msPulseBadge" style="background: rgba(0, 230, 118, 0.2); color: #00e676; border: 1px solid #00e676; padding: 2px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 800;">
-                ● سیگنال فعال وال‌استریت
-              </span>
+            <div style="font-size: 1.1rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+              خط تولید و فیلترینگ خودکار سیگنال داو جونز (US30 4-Stage Pipeline)
+              <span style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 2px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 800;">اکانت ۱۰ دلاری محفوظ</span>
             </div>
-            <p style="font-size: 0.8rem; color: #cbd5e1; margin-top: 4px; line-height: 1.5;">
-              سنتز زنده و هوشمند ۹ پلتفرم نقدینگی: <strong>نینجاتریدر</strong>، <strong>بوک‌مپ</strong>، <strong>ائتلاف ۵ بانک</strong>، <strong>اتاس</strong>، <strong>سییرا چارت</strong>، <strong>کوانت‌تاور</strong>، <strong>اردر فلو</strong>، <strong>فاندامنتال</strong> و <strong>ژئوپلیتیک</strong>
-            </p>
+            <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px;">
+              از رادار ۱۲ لیدر سنگین‌وزن تا سنتز ۹ پلتفرم، ۸ لایه دفاعی دروازه‌بان، استاپ ۱۲.۸ پوینتی و فیبوناچی OTE
+            </div>
           </div>
         </div>
 
-        <div style="display: flex; gap: 10px; align-items: center;">
-          <span id="msConfluenceScoreBadge" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(0, 230, 118, 0.25)); color: #ffd700; border: 1px solid #ffd700; padding: 6px 16px; border-radius: 8px; font-size: 0.95rem; font-weight: 900; font-family: var(--font-mono); box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);">
-            همگرایی: در حال محاسبه...
-          </span>
-          <span id="msTimeBadge" class="mono" style="font-size: 0.75rem; color: #94a3b8; background: rgba(0,0,0,0.4); padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
-            ساعت ایران: --:--:--
-          </span>
-        </div>
-      </div>
-
-      <!-- Core Signal Action Bar -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px; align-items: center;">
-        <div style="background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(0, 230, 118, 0.35); border-radius: 12px; padding: 16px; position: relative;">
-          <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 6px;">جهت نهایی معامله مشترک ۹ ابزار:</div>
-          <div id="msDirectionText" style="font-size: 1.55rem; font-weight: 900; color: #00e676; display: flex; align-items: center; gap: 8px;">
-            <span>🟢</span> خرید قوی نهادی (Institutional Strong BUY)
+        <!-- Scan Countdown & Manual Audit Button -->
+        <div style="display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(56, 189, 248, 0.25); padding: 6px 14px; border-radius: 10px;">
+          <div style="text-align: right;">
+            <div style="font-size: 0.68rem; color: #94a3b8;">شمارش معکوس اسکن ائتلاف:</div>
+            <div id="us30ArbiterCountdown" style="font-family: var(--font-mono); font-size: 1.15rem; font-weight: 900; color: #38bdf8; letter-spacing: 1px;">03:00</div>
           </div>
-          <div id="msSetupSubtitle" style="font-size: 0.78rem; color: #ffd166; margin-top: 6px;">
-            ستاپ شکار نقدینگی و ورود در پولبک دیسکانت (SMC + Order Flow)
-          </div>
-          <div style="display: flex; gap: 8px; margin-top: 10px;">
-            <span style="font-size: 0.74rem; background: rgba(0, 210, 255, 0.15); color: #00d2ff; padding: 2px 8px; border-radius: 4px; font-weight: 700;">
-              ریسک به ریوارد: 1:3.7
-            </span>
-            <span id="msLotSizeBadge" style="font-size: 0.74rem; background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 2px 8px; border-radius: 4px; font-weight: 800;">
-              حجم پیشنهادی: 0.01 لات (حساب $10 ترندو)
-            </span>
-          </div>
-        </div>
-
-        <!-- Exact Target Levels Grid -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
-          <!-- Entry Zone -->
-          <div style="background: rgba(0, 210, 255, 0.08); border-right: 3px solid #00d2ff; border-radius: 8px; padding: 10px;">
-            <div style="font-size: 0.72rem; color: #94a3b8;">🎯 قیمت ورود قطعی</div>
-            <div id="msEntryZoneVal" class="mono" style="font-size: 1rem; font-weight: 800; color: #00d2ff; margin-top: 2px;">-</div>
-            <div style="font-size: 0.68rem; color: #38bdf8; margin-top: 2px;">ورود در پولبک ترندو</div>
-          </div>
-
-          <!-- Stop Loss -->
-          <div style="background: rgba(255, 51, 102, 0.08); border-right: 3px solid #ff3366; border-radius: 8px; padding: 10px;">
-            <div style="font-size: 0.72rem; color: #94a3b8;">🛑 حد ضرر امن (SL)</div>
-            <div id="msStopLossVal" class="mono" style="font-size: 1rem; font-weight: 800; color: #ff3366; margin-top: 2px;">-</div>
-            <div id="msStopLossPts" style="font-size: 0.68rem; color: #ff3366; margin-top: 2px;">-13 pts (-$1.30 ریسک)</div>
-          </div>
-
-          <!-- TP1 -->
-          <div style="background: rgba(0, 230, 118, 0.08); border-right: 3px solid #00e676; border-radius: 8px; padding: 10px;">
-            <div style="font-size: 0.72rem; color: #94a3b8;">🟢 تارگت اول (TP1)</div>
-            <div id="msTp1Val" class="mono" style="font-size: 1rem; font-weight: 800; color: #00e676; margin-top: 2px;">-</div>
-            <div id="msTp1Pts" style="font-size: 0.68rem; color: #00e676; margin-top: 2px;">+24 pts (+$2.40 سود)</div>
-          </div>
-
-          <!-- TP2 -->
-          <div style="background: rgba(0, 230, 118, 0.08); border-right: 3px solid #00e676; border-radius: 8px; padding: 10px;">
-            <div style="font-size: 0.72rem; color: #94a3b8;">🟢 تارگت دوم (TP2)</div>
-            <div id="msTp2Val" class="mono" style="font-size: 1rem; font-weight: 800; color: #00e676; margin-top: 2px;">-</div>
-            <div id="msTp2Pts" style="font-size: 0.68rem; color: #00e676; margin-top: 2px;">+48 pts (+$4.80 سود)</div>
-          </div>
-
-          <!-- TP3 -->
-          <div style="background: rgba(255, 215, 0, 0.08); border-right: 3px solid #ffd700; border-radius: 8px; padding: 10px;">
-            <div style="font-size: 0.72rem; color: #94a3b8;">🏆 تارگت سوم (TP3)</div>
-            <div id="msTp3Val" class="mono" style="font-size: 1rem; font-weight: 800; color: #ffd700; margin-top: 2px;">-</div>
-            <div id="msTp3Pts" style="font-size: 0.68rem; color: #ffd700; margin-top: 2px;">+75 pts (+$7.50 سود)</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 9-PILLAR CONFLUENCE MATRIX GRID -->
-      <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-          <strong style="color: #ffd700; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
-            <span>📋</span> ماتریس ارزیابی همگرایی ۹ گانه (Confluence Matrix Checklist)
-          </strong>
-          <span id="msConsensusRatio" style="font-size: 0.72rem; color: #94a3b8;">۸ از ۹ ابزار هم‌جهت با خرید</span>
-        </div>
-
-        <div id="msChecklistGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px;">
-          <!-- Dynamically populated 9 pillar cards -->
-        </div>
-      </div>
-
-      <!-- Institutional Plain Persian Playbook -->
-      <div style="background: rgba(255, 215, 0, 0.04); border: 1px solid rgba(255, 215, 0, 0.2); border-radius: 10px; padding: 14px; font-size: 0.82rem; line-height: 1.8; color: #cbd5e1;">
-        <strong style="color: #ffd700; font-size: 0.86rem; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-          <span>💡</span> راهنمای عملیاتی اجرای سیگنال برای تریدرها (به زبان ساده):
-        </strong>
-        <p id="msPlaybookText" style="margin: 0;">
-          سیگنال خرید فوق با تایید همزمان دلتای مثبت نینجاتریدر، دیوارهای حمایتی بوک‌مپ، سفارشات بالای ۵۰ لات اتاس و واگرایی صعودی سییرا چارت صادر شده است. در محدوده اعلامی پوزیشن خرید باز کنید و با رسیدن به تارگت اول (+۱۱۵ پوینت)، نیمی از سود را ذخیره و مابقی را ریسک‌فری نمایید.
-        </p>
-      </div>
-
-    </div>
-
-    <!-- ======================================================== -->
-    <!-- 6 ADVANCED INSTITUTIONAL MODULES SUITE                   -->
-    <!-- ======================================================== -->
-    <div class="elite-suite-container">
-      <div class="elite-suite-header">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(135deg, rgba(0, 210, 255, 0.2), rgba(168, 85, 247, 0.2)); border: 1px solid rgba(0, 210, 255, 0.4); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
-            🏛️
-          </div>
-          <div>
-            <h2 style="font-size: 1.15rem; font-weight: 900; color: #fff; margin: 0;">شش ماژول طلایی وال‌استریت (Wall Street Institutional Suite)</h2>
-            <span style="font-size: 0.76rem; color: #94a3b8;">کالبدشکافی زنده سشن‌ها، دیوارهای گاما، تیک نیویورک، تله جوداس، ضریب مقسوم‌علیه و حراج MOC</span>
-          </div>
-        </div>
-        <div style="display: flex; gap: 10px; align-items: center;">
-          <span id="eliteLastUpdateBadge" style="background: rgba(0, 210, 255, 0.12); color: #00d2ff; border: 1px solid rgba(0, 210, 255, 0.3); padding: 4px 12px; border-radius: 6px; font-size: 0.74rem; font-family: var(--font-mono); font-weight: 700;">
-            🔄 به‌روزرسانی زنده: فعال
-          </span>
-          <button class="btn" id="btnToggleElite" onclick="toggleEliteSuite()" style="background: rgba(0, 210, 255, 0.15); border: 1px solid rgba(0, 210, 255, 0.35); color: #00d2ff; padding: 5px 14px; border-radius: 8px; font-size: 0.76rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
-            <span id="eliteToggleIcon">▲</span>
-            <span id="eliteToggleText">بستن کشو ۶ ماژول</span>
+          <button onclick="fetchUS30ArbiterData(true)" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-size: 0.76rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
+            <span>🔄</span> اسکن آنی
           </button>
         </div>
       </div>
 
-      <!-- COLLAPSIBLE CONTAINER FOR 6 ELITE MODULES -->
-      <div id="eliteSuiteCollapsible" style="transition: all 0.35s ease; display: block;">
-        <div class="elite-suite-grid">
-        <!-- MODULE 1: KILLZONES & ORB -->
-        <div class="elite-card">
-          <div>
-            <div class="elite-card-title">
-              <span>⏱️ ۱. سشن‌های وال‌استریت & بریک‌اوت ORB</span>
-              <span id="eliteKzVolScore" style="font-size: 0.72rem; color: #ffd166; font-family: var(--font-mono); font-weight: 800; background: rgba(255, 209, 102, 0.15); padding: 2px 6px; border-radius: 4px;">نوسان: ۵ / ۵</span>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">سشن فعال:</span>
-              <strong id="eliteKzZone" style="color: #00e676; font-size: 0.78rem;">در حال پایش سشن...</strong>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">وضعیت ستاپ ORB:</span>
-              <strong id="eliteOrbStatus" style="color: #ffd166; font-size: 0.78rem;">محاسبه دامنه بازگشایی...</strong>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">دامنه ۱۵ دقیقه اول:</span>
-              <span id="eliteOrbLevels" class="elite-val-badge" style="background: rgba(255, 255, 255, 0.05); color: #fff;">سقف: -- | کف: --</span>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">اهداف معاملاتی ORB:</span>
-              <span id="eliteOrbTargets" style="font-size: 0.74rem; color: #38bdf8; font-family: var(--font-mono);">تارگت ۱: -- | تارگت ۲: --</span>
-            </div>
+      <!-- 4 Connected Pipeline Stages -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+        
+        <!-- STAGE 1: DOW LEADERS & MACRO -->
+        <div style="background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 10px; padding: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 0.72rem; font-weight: 800; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 8px; border-radius: 6px;">مرحله ۱</span>
+            <span style="font-size: 0.68rem; color: #38bdf8;">رادار ۱۲ لیدر داو ۳۰</span>
           </div>
-          <div class="elite-note-box" id="eliteKzAdvice">
-            💡 ستاپ ORB بر مبنای شکست تثبیت‌شده سقف/کف ۱۵ دقیقه ابتدایی سشن نیویورک با تارگت‌های ۱.۵ برابری اجرا می‌شود.
+          <div style="font-size: 0.88rem; font-weight: 800; color: #fff; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+            <span>🎯</span> کشف جهت وال‌استریت
+          </div>
+          <div style="font-size: 0.74rem; color: #94a3b8; line-height: 1.5; min-height: 38px;">
+            پایش لحظه‌ای ۱۲ سهم تعیین‌کننده (UNH, GS, MSFT) و همبستگی اوراق قرضه آمریکا
+          </div>
+          <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.72rem; color: #cbd5e1; display: flex; justify-content: space-between;">
+            <span>اثر پوینتی لیدرها:</span>
+            <strong style="color: #00e676;" id="pipeRadarStatus">+82.4 pts (صعودی)</strong>
           </div>
         </div>
 
-        <!-- MODULE 2: GEX & OPTION WALLS -->
-        <div class="elite-card">
-          <div>
-            <div class="elite-card-title">
-              <span>🎲 ۲. دیوارهای گاما & سطوح آپشن نهادی</span>
-              <span id="eliteGexNet" class="elite-val-badge" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.3);">GEX: +145M$</span>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">رژیم گاما:</span>
-              <strong id="eliteGexRegime" style="color: #00e676; font-size: 0.78rem;">گامای مثبت نهادی</strong>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">دیوار مقاومت کال (Call Wall):</span>
-              <span id="eliteGexCallWall" class="elite-val-badge" style="background: rgba(255, 51, 102, 0.15); color: #ff3366; border: 1px solid rgba(255, 51, 102, 0.3);">52,005 (سقف آهنین)</span>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">دیوار حمایت پوت (Put Wall):</span>
-              <span id="eliteGexPutWall" class="elite-val-badge" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.3);">51,005 (کف بتنی)</span>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">تراز چرخش صفر / Max Pain:</span>
-              <span style="font-family: var(--font-mono); font-size: 0.76rem; color: #ffd166;">Zero: <span id="eliteGexZeroFlip">51,480</span> | Pain: <span id="eliteGexMaxPain">51,350</span></span>
-            </div>
+        <!-- STAGE 2: ORDER FLOW SYNTHESIS -->
+        <div style="background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 10px; padding: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 0.72rem; font-weight: 800; color: #a855f7; background: rgba(168, 85, 247, 0.12); padding: 2px 8px; border-radius: 6px;">مرحله ۲</span>
+            <span style="font-size: 0.68rem; color: #a855f7;">سنتز جریان سفارشات</span>
           </div>
-          <div class="elite-note-box" id="eliteGexDesc">
-            💡 در رژیم گامای مثبت، مارکت‌میکرها نوسان بازار را مهار کرده و قیمت به سمت میانگین بازمی‌گردد.
+          <div style="font-size: 0.88rem; font-weight: 800; color: #fff; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+            <span>🌊</span> ارزیابی نهادی
+          </div>
+          <div style="font-size: 0.74rem; color: #94a3b8; line-height: 1.5; min-height: 38px;">
+            کلاسترهای نینجاتریدر + دیوارهای بوک‌مپ + خریدهای بلوکی ATAS + پروفایل کوانت‌تاور
+          </div>
+          <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.72rem; color: #cbd5e1; display: flex; justify-content: space-between;">
+            <span>همسویی پلتفرم‌ها:</span>
+            <strong style="color: #a855f7;" id="pipeOrderflowStatus">تایید حجم و دلتای CVD</strong>
           </div>
         </div>
 
-        <!-- MODULE 3: NYSE INTERNALS -->
-        <div class="elite-card">
-          <div>
-            <div class="elite-card-title">
-              <span>📊 ۳. داخلی‌های بورس نیویورک & رادار ضدتله</span>
-              <span id="eliteTrapStatus" style="font-size: 0.72rem; color: #38bdf8; font-weight: 800;">تایید جریان نقدینگی</span>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">شاخص تیک نیویورک ($TICK):</span>
-              <span id="eliteTickVal" class="elite-val-badge" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.3);">+485</span>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">وضعیت سفارشات تیک:</span>
-              <strong id="eliteTickLabel" style="color: #00e676; font-size: 0.78rem;">خرید تهاجمی نهادی</strong>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">شاخص حجم ترامپ ($TRIN):</span>
-              <span style="font-family: var(--font-mono); font-weight: 800; color: #00e676;"><span id="eliteTrinVal">0.82</span> (<span id="eliteTrinLabel" style="font-size: 0.74rem;">برتری پرحجم خریداران</span>)</span>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">وسعت صعود/نزول سهام:</span>
-              <span id="eliteBreadthStatus" style="color: #ffd166; font-size: 0.76rem; font-family: var(--font-mono);">۱۹ مثبت / ۱۱ منفی</span>
-            </div>
+        <!-- STAGE 3: SUPREME ARBITER (8-LAYER DEFENSE) -->
+        <div style="background: rgba(15, 23, 42, 0.65); border: 1.5px solid rgba(255, 215, 0, 0.35); border-radius: 10px; padding: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 0.72rem; font-weight: 800; color: #ffd700; background: rgba(255, 215, 0, 0.12); padding: 2px 8px; border-radius: 6px;">مرحله ۳ (قاضی نهایی)</span>
+            <span style="font-size: 0.68rem; color: #ffd700;">فیلتر ۸ لایه دفاعی</span>
           </div>
-          <div class="elite-note-box" id="eliteTrapNote">
-            💡 سیستم رادار تله‌شناسی با انطباق تیک نیویورک و قیمت، تله‌های گاوی و خرسی فیک را در لحظه فاش می‌کند.
+          <div style="font-size: 0.88rem; font-weight: 800; color: #ffd700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+            <span>🛡️</span> دروازه‌بان هوشمند
+          </div>
+          <div style="font-size: 0.74rem; color: #94a3b8; line-height: 1.5; min-height: 38px;">
+            پایش تله‌های نقدینگی، اسپرد ترندو، فیوز اخبار کلان و رد ۹۰٪ معاملات پرریسک
+          </div>
+          <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.72rem; color: #cbd5e1; display: flex; justify-content: space-between;">
+            <span>حفاظت اکانت ۱۰ دلاری:</span>
+            <strong style="color: #ffd700;">استاپ اکید ۱۲.۸ pt ($۱.۲۸)</strong>
           </div>
         </div>
 
-        <!-- MODULE 4: ICT LIQUIDITY & JUDAS SWING -->
-        <div class="elite-card">
-          <div>
-            <div class="elite-card-title">
-              <span>🎯 ۴. استخرهای نقدینگی & تله جوداس (ICT)</span>
-              <span id="eliteJudasBias" class="elite-val-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">RANGE ACCUMULATION</span>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">سقف روز قبل (PDH):</span>
-              <span id="elitePdhVal" class="elite-val-badge" style="background: rgba(255, 51, 102, 0.15); color: #ff3366;">51,760.0 (+185 pts)</span>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">کف روز قبل (PDL):</span>
-              <span id="elitePdlVal" class="elite-val-badge" style="background: rgba(0, 230, 118, 0.15); color: #00e676;">51,330.0 (-245 pts)</span>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">مگنت نقدینگی خرید (BSL):</span>
-              <span id="eliteBslTarget" style="font-size: 0.74rem; color: #f43f5e; font-weight: 700;">سقف دیروز در 51,760.0</span>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">مگنت نقدینگی فروش (SSL):</span>
-              <span id="eliteSslTarget" style="font-size: 0.74rem; color: #10b981; font-weight: 700;">کف دیروز در 51,330.0</span>
-            </div>
+        <!-- STAGE 4: FIBONACCI OTE GOLDEN MASTER SIGNAL -->
+        <div style="background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(0, 230, 118, 0.35); border-radius: 10px; padding: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 0.72rem; font-weight: 800; color: #00e676; background: rgba(0, 230, 118, 0.12); padding: 2px 8px; border-radius: 6px;">مرحله ۴</span>
+            <span style="font-size: 0.68rem; color: #00e676;">فیبوناچی OTE & خروجی</span>
           </div>
-          <div class="elite-note-box" id="eliteJudasStatus">
-            💡 ردیاب تله جوداس شکار استاپ‌های سقف و کف روز قبل در ۳۰ دقیقه اول گشایش نیویورک را پایش می‌کند.
+          <div style="font-size: 0.88rem; font-weight: 800; color: #fff; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+            <span>🎯</span> تک‌سیگنال جامع و قطعی
+          </div>
+          <div style="font-size: 0.74rem; color: #94a3b8; line-height: 1.5; min-height: 38px;">
+            ورود در تراز طلایی ۷۰.۵٪، اهداف ۲۷.۲- و ۶۱.۸- و ثبت اتمیک در ژورنال و تلگرام
+          </div>
+          <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.72rem; color: #cbd5e1; display: flex; justify-content: space-between;">
+            <span>وضعیت نهایی:</span>
+            <strong style="color: #00e676;">۱ معامله طلایی در روز</strong>
           </div>
         </div>
 
-        <!-- MODULE 5: DOW DIVISOR IMPACT -->
-        <div class="elite-card">
-          <div>
-            <div class="elite-card-title">
-              <span>⚖️ ۵. ضریب مقسوم‌علیه داو & تابلوی پوینت‌ها</span>
-              <span id="eliteMultiplierVal" class="elite-val-badge" style="background: rgba(255, 209, 102, 0.15); color: #ffd166;">6.59 pts / $1</span>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">مقسوم‌علیه رسمی ۲۰۲۶:</span>
-              <span id="eliteDivisorVal" class="elite-val-badge" style="background: rgba(255, 255, 255, 0.05); color: #cbd5e1;">0.1517275</span>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">مجموع پوینت‌های تولیدی:</span>
-              <strong id="eliteNetPtsVal" style="color: #00e676; font-family: var(--font-mono); font-size: 0.85rem;">+194.3 pts</strong>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">برترین محرک صعود:</span>
-              <span id="eliteTopBullish" style="font-size: 0.74rem; color: #00e676; font-weight: 700;">GS: +68.4 pts</span>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">برترین ترمز نزول:</span>
-              <span id="eliteTopBearish" style="font-size: 0.74rem; color: #ff3366; font-weight: 700;">UNH: -42.1 pts</span>
-            </div>
-          </div>
-          <div class="elite-note-box" id="eliteHealthVerdict">
-            💡 بررسی سلامت صعود: هر ۱ دلار تغییر قیمت در سهام سنگین‌وزن داو، شاخص را ۶.۶ پوینت جابه‌جا می‌کند.
-          </div>
-        </div>
-
-        <!-- MODULE 6: MOC CLOSING AUCTION -->
-        <div class="elite-card">
-          <div>
-            <div class="elite-card-title">
-              <span>⏳ ۶. رادار عدم تعادل حراج پایانی (MOC)</span>
-              <span id="eliteMocCountdown" class="elite-val-badge" style="background: rgba(244, 63, 94, 0.15); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.3);">00:35:12</span>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">فاز معاملاتی پایانی:</span>
-              <strong id="eliteMocPhase" style="color: #ffd166; font-size: 0.78rem;">پیش از حراج پایانی (MOC)</strong>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">حجم عدم تعادل صندوق‌ها:</span>
-              <span id="eliteMocImbalance" class="elite-val-badge" style="background: rgba(0, 230, 118, 0.15); color: #00e676;">+1.42B$ (خرید سنگین)</span>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">سیگنال اسکالپ ۱۰ دقیقه آخر:</span>
-              <strong id="eliteMocBias" style="color: #00e676; font-family: var(--font-mono);">BUY SCALP</strong>
-            </div>
-            <div class="elite-row">
-              <span style="color: #94a3b8;">برنامه حرکتی اسکالپ:</span>
-              <span id="eliteMocScalpTarget" style="font-size: 0.72rem; color: #38bdf8; font-family: var(--font-mono);">انتظار: ۴۰-۷۵ pts | تارگت: +60 pts</span>
-            </div>
-          </div>
-          <div class="elite-note-box" id="eliteMocAdvice">
-            💡 رأس ساعت ۲۳:۲۰ تهران عدم تعادل تسویه صندوق‌های چند تریلیون دلاری وال‌استریت برای ۱۰ دقیقه پایانی فاش می‌شود.
-          </div>
-        </div>
-      </div>
       </div>
     </div>
 
-    <!-- COLLAPSIBLE ACCORDION FOR 21 MODULES -->
-    <div onclick="toggleModulesAccordion()" style="display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; padding: 12px 18px; margin-top: 14px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='rgba(0,210,255,0.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.12)'">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 1.25rem;">📂</span>
-        <strong style="color: #fff; font-size: 0.95rem;">فهرست ۲۱ ماژول و ابزار تحلیلی وال‌استریت (کلیک برای باز/بسته‌شدن)</strong>
-        <span id="modulesCountBadge" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border: 1px solid rgba(0,210,255,0.3); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700;">۲۱ ماژول فعال</span>
+    <!-- =========================================================================
+         🌟 UNIFIED MASTER SIGNAL COCKPIT (تک‌سیگنال جامع و یکتای داو جونز)
+         ========================================================================= -->
+    <div id="us30ArbiterCockpit" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.98)); border: 2px solid #38bdf8; border-radius: 14px; padding: 20px 24px; margin-bottom: 24px; box-shadow: 0 10px 35px rgba(0,0,0,0.6); position: relative; overflow: hidden;">
+      <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #38bdf8, #a855f7, #ffd700, #00e676);"></div>
+      
+      <!-- Top Title Bar & Status -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 14px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <span style="font-size: 32px; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.5));">🎯</span>
+          <div>
+            <div style="font-size: 1.15rem; font-weight: 900; color: #fff; display: flex; align-items: center; gap: 10px;">
+              اتاق فرمان تک‌سیگنال جامع داو جونز (US30 Unified Master Signal)
+              <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); padding: 2px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 800;">تک‌مضراب نهادی</span>
+              <span id="us30ArbiterScorePill" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1px solid #ffd700; padding: 2px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 800;">امتیاز همگرایی: ۰/۱۰۰</span>
+            </div>
+            <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 3px;">
+              تنها مرجع رسمی معاملاتی: مبتنی بر تایم‌فریم ۱۵ دقیقه، تاییدیه ۴ ساعته، بافر ضد هانت و اهداف ضد فرانت‌رانینگ
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 0.75rem; color: #94a3b8;" id="us30ArbLastUpdate">آخرین بررسی: اکنون</span>
+        </div>
       </div>
-      <div style="display: flex; align-items: center; gap: 6px; color: #94a3b8; font-size: 0.82rem;">
-        <span id="modToggleLabel">مشاهده همه تب‌ها</span>
-        <span id="modToggleChevron" style="font-size: 1.1rem; color: #00d2ff; transition: transform 0.3s;">▼</span>
+
+      <!-- Live Verdict Banner -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: rgba(0,0,0,0.3); padding: 14px 18px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 0.85rem; color: #94a3b8;">حکم نهایی داور:</span>
+          <span id="us30ArbiterActionBadge" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1.5px solid #ffd700; padding: 5px 14px; border-radius: 8px; font-weight: 900; font-size: 0.95rem;">
+            ⏳ در وضعیت صبر و رصد نهادی (WAIT)
+          </span>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <span style="font-size: 0.76rem; background: rgba(0, 230, 118, 0.12); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.3); padding: 3px 8px; border-radius: 6px; font-weight: 700;">
+            📐 فیبوناچی OTE: آماده و فعال
+          </span>
+          <span style="font-size: 0.76rem; background: rgba(255, 215, 0, 0.12); color: #ffd700; border: 1px solid rgba(255, 215, 0, 0.3); padding: 3px 8px; border-radius: 6px; font-weight: 700;">
+            🛡️ ۸ لایه دفاعی: آنلاین
+          </span>
+        </div>
       </div>
+
+      <!-- Rationale / Reason Description -->
+      <div id="us30ArbiterReasonText" style="font-size: 0.84rem; color: #cbd5e1; line-height: 1.7; background: rgba(11, 17, 30, 0.6); padding: 12px 16px; border-radius: 8px; border-right: 3px solid #38bdf8; margin-bottom: 16px;">
+        ستاپ بدون ریسک با تاییدیه ۸ لایه در حال حاضر وجود ندارد. سیستم صبورانه منتظر شکار نقدینگی و ورود در تراز OTE فیبوناچی است...
+      </div>
+
+      <!-- Execution Levels Grid (Displayed upon approval) -->
+      <div id="us30ArbiterLevelsBox" style="display: none; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px;">
+        <div style="background: #0b111e; padding: 10px; border-radius: 8px; border: 1px solid #1e293b; text-align: center;">
+          <div style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 2px;">نقطه ورود دقیق OTE (70.5%)</div>
+          <div style="font-size: 1.15rem; font-weight: 900; color: #38bdf8; font-family: monospace;" id="us30ArbEntry">---</div>
+        </div>
+        <div style="background: #0b111e; padding: 10px; border-radius: 8px; border: 1px solid rgba(239, 83, 80, 0.4); text-align: center;">
+          <div style="font-size: 0.72rem; color: #ef5350; margin-bottom: 2px;">استاپ قطعی ضد هانت (۱۲.۸ pt)</div>
+          <div style="font-size: 1.15rem; font-weight: 900; color: #ef5350; font-family: monospace;" id="us30ArbSl">---</div>
+        </div>
+        <div style="background: #0b111e; padding: 10px; border-radius: 8px; border: 1px solid rgba(0, 230, 118, 0.4); text-align: center;">
+          <div style="font-size: 0.72rem; color: #00e676; margin-bottom: 2px;">تارگت ۱ (ریسک‌فری 0.0%)</div>
+          <div style="font-size: 1.15rem; font-weight: 900; color: #00e676; font-family: monospace;" id="us30ArbTp1">---</div>
+        </div>
+        <div style="background: #0b111e; padding: 10px; border-radius: 8px; border: 1px solid rgba(0, 230, 118, 0.4); text-align: center;">
+          <div style="font-size: 0.72rem; color: #00e676; margin-bottom: 2px;">تارگت ۲ (اکستنشن ۲۷.۲-)</div>
+          <div style="font-size: 1.15rem; font-weight: 900; color: #00e676; font-family: monospace;" id="us30ArbTp2">---</div>
+        </div>
+        <div style="background: #0b111e; padding: 10px; border-radius: 8px; border: 1px solid rgba(0, 230, 118, 0.4); text-align: center;">
+          <div style="font-size: 0.72rem; color: #00e676; margin-bottom: 2px;">تارگت ۳ (اکستنشن ۶۱.۸-)</div>
+          <div style="font-size: 1.15rem; font-weight: 900; color: #00e676; font-family: monospace;" id="us30ArbTp3">---</div>
+        </div>
+      </div>
+
+      <!-- Institutional Fibonacci OTE Confluence Pill (Always Visible) -->
+      <div style="background: rgba(0, 210, 255, 0.06); border: 1px solid rgba(0, 210, 255, 0.25); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.78rem;">
+        <span style="color: #cbd5e1;">📐 <b>سیستم محاسبه فیبوناچی نهادی (ICT OTE Confluence):</b> ورود طلایی در تراز تخفیف ۷۰.۵٪ • استاپ محافظتی پشت ۷۸.۶٪ و اردر بلاک • اهداف سود بر مبنای اکستنشن ۲۷.۲-٪ و ۶۱.۸-٪ با بافر ضد فرانت‌رانینگ</span>
+        <span style="color: #38bdf8; font-weight: 800; font-family: monospace; background: rgba(56, 189, 248, 0.15); padding: 2px 8px; border-radius: 4px;">FIBONACCI OTE: ARMED & READY 🎯</span>
+      </div>
+
     </div>
-    
+
     <!-- =========================================================================
          4 INSTITUTIONAL HUBS CONTROLLER (ساماندهی ۲۱ ماژول در ۴ هاب خلوت و تخصصی)
          ========================================================================= -->
@@ -1599,118 +1208,6 @@
     </div>
 
     
-    <!-- =========================================================================
-         🌟 US30 SUPREME ARBITER COCKPIT & 8-LAYER INSTITUTIONAL WALL STREET ENGINE
-         ========================================================================= -->
-    <div id="us30ArbiterCockpit" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.98)); border: 2px solid #38bdf8; border-radius: 14px; padding: 20px 24px; margin-bottom: 24px; box-shadow: 0 10px 35px rgba(0,0,0,0.6); position: relative; overflow: hidden;">
-      <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #38bdf8, #a855f7, #ffd700, #00e676);"></div>
-      
-      <!-- Top Title Bar & Status -->
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 14px;">
-        <div style="display: flex; align-items: center; gap: 14px;">
-          <span style="font-size: 32px; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.5));">🛡️</span>
-          <div>
-            <div style="font-size: 1.15rem; font-weight: 900; color: #fff; display: flex; align-items: center; gap: 10px;">
-              داوری عالی و دروازه‌بان داو جونز (US30 Supreme Arbiter)
-              <span style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 2px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 800;">اکانت ۱۰ دلاری محفوظ</span>
-              <span id="us30ArbiterScorePill" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1px solid #ffd700; padding: 2px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 800;">امتیاز همگرایی: ۰/۱۰۰</span>
-            </div>
-            <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 3px;">
-              نظارت بر ۸ لایه دفاعی وال‌استریت • استاپ اکید ۱۲.۸ پوینتی ($۱.۲۸) • نقطه ورود OTE تراز ۷۰.۵٪ • رد ۹۰٪ نویزها
-            </div>
-          </div>
-        </div>
-
-        <!-- Scan Countdown & Manual Audit Button -->
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <div style="background: rgba(0,0,0,0.4); border: 1px solid #334155; padding: 6px 14px; border-radius: 8px; text-align: right;">
-            <div style="font-size: 0.68rem; color: #94a3b8;">اسکن دوره‌ای بعدی:</div>
-            <div id="us30ArbiterCountdown" style="font-size: 1.05rem; font-weight: 800; color: #38bdf8; font-family: monospace;">03:00</div>
-          </div>
-          <button onclick="fetchUS30ArbiterData(true)" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff; border: none; padding: 9px 16px; border-radius: 8px; font-size: 0.82rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
-            <span>⚡</span> ارزیابی فوری
-          </button>
-        </div>
-      </div>
-
-      <!-- Live Verdict Banner -->
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: rgba(0,0,0,0.3); padding: 14px 18px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); margin-bottom: 16px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 0.85rem; color: #94a3b8;">حکم نهایی داور:</span>
-          <span id="us30ArbiterActionBadge" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1.5px solid #ffd700; padding: 5px 14px; border-radius: 8px; font-weight: 900; font-size: 0.95rem;">
-            ⏳ در وضعیت صبر و رصد نهادی (WAIT)
-          </span>
-        </div>
-        <div style="font-size: 0.78rem; color: #94a3b8;" id="us30ArbLastUpdate">
-          آخرین بررسی: در حال فراخوانی...
-        </div>
-      </div>
-
-      <!-- Rationale / Reason Description -->
-      <div id="us30ArbiterReasonText" style="font-size: 0.84rem; color: #cbd5e1; line-height: 1.7; background: rgba(11, 17, 30, 0.6); padding: 12px 16px; border-radius: 8px; border-right: 3px solid #38bdf8; margin-bottom: 16px;">
-        سیستم در حال ارزیابی پیوسته ۷ ماژول جریان سفارشات (ATAS, Bookmap, NinjaTrader, Quantower, Trendo Spread, Macro Shield) و تطبیق با فیبوناچی OTE است...
-      </div>
-
-      <!-- Execution Levels Grid (Displayed upon approval) -->
-      <div id="us30ArbiterLevelsBox" style="display: none; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px;">
-        <div style="background: #0b111e; padding: 10px; border-radius: 8px; border: 1px solid #1e293b; text-align: center;">
-          <div style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 2px;">نقطه ورود OTE (70.5%)</div>
-          <div style="font-size: 1.1rem; font-weight: 900; color: #38bdf8; font-family: monospace;" id="us30ArbEntry">---</div>
-        </div>
-        <div style="background: #0b111e; padding: 10px; border-radius: 8px; border: 1px solid rgba(239, 83, 80, 0.4); text-align: center;">
-          <div style="font-size: 0.72rem; color: #ef5350; margin-bottom: 2px;">استاپ قطعی (۱۲.۸ pt)</div>
-          <div style="font-size: 1.1rem; font-weight: 900; color: #ef5350; font-family: monospace;" id="us30ArbSl">---</div>
-        </div>
-        <div style="background: #0b111e; padding: 10px; border-radius: 8px; border: 1px solid rgba(0, 230, 118, 0.4); text-align: center;">
-          <div style="font-size: 0.72rem; color: #00e676; margin-bottom: 2px;">تارگت ۱ (ریسک‌فری 0.0%)</div>
-          <div style="font-size: 1.1rem; font-weight: 900; color: #00e676; font-family: monospace;" id="us30ArbTp1">---</div>
-        </div>
-        <div style="background: #0b111e; padding: 10px; border-radius: 8px; border: 1px solid rgba(0, 230, 118, 0.4); text-align: center;">
-          <div style="font-size: 0.72rem; color: #00e676; margin-bottom: 2px;">تارگت ۲ (اکستنشن ۲۷.۲-)</div>
-          <div style="font-size: 1.1rem; font-weight: 900; color: #00e676; font-family: monospace;" id="us30ArbTp2">---</div>
-        </div>
-        <div style="background: #0b111e; padding: 10px; border-radius: 8px; border: 1px solid rgba(0, 230, 118, 0.4); text-align: center;">
-          <div style="font-size: 0.72rem; color: #00e676; margin-bottom: 2px;">تارگت ۳ (اکستنشن ۶۱.۸-)</div>
-          <div style="font-size: 1.1rem; font-weight: 900; color: #00e676; font-family: monospace;" id="us30ArbTp3">---</div>
-        </div>
-      </div>
-
-      <!-- Institutional Fibonacci OTE & 8-Layer Defense Grid -->
-      <div style="margin-top: 14px; background: rgba(0, 210, 255, 0.04); border: 1px solid rgba(0, 210, 255, 0.2); border-radius: 10px; padding: 14px 16px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
-          <span style="font-size: 0.85rem; font-weight: 800; color: #38bdf8;">⚡ ۸ لایه دفاعی هوشمند و انطباق فیبوناچی وال‌استریت (US30 Gatekeeper):</span>
-          <span style="font-size: 0.72rem; color: #00e676; font-weight: 700; background: rgba(0, 230, 118, 0.12); padding: 2px 8px; border-radius: 4px;">FIBONACCI OTE CONFLUENCE: ARMED ✅</span>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; font-size: 0.73rem;">
-          <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px; border-right: 2px solid #00d2ff;">
-            <strong style="color: #00d2ff;">۱. اسپرد زنده ترندو:</strong> حداکثر ۱.۸ pt
-          </div>
-          <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px; border-right: 2px solid #00e676;">
-            <strong style="color: #00e676;">۲. سپر اخبار کلان:</strong> آتش‌بس در CPI/FOMC
-          </div>
-          <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px; border-right: 2px solid #ffd700;">
-            <strong style="color: #ffd700;">۳. معاملات سنگین ATAS:</strong> تایید حجم بزرگ
-          </div>
-          <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px; border-right: 2px solid #a855f7;">
-            <strong style="color: #a855f7;">۴. فوت‌پرینت نینجاتریدر:</strong> دلتای CVD مثبت
-          </div>
-          <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px; border-right: 2px solid #f97316;">
-            <strong style="color: #f97316;">۵. هیت‌مپ بوک‌مپ:</strong> نفوذ به دیوارهای لیمیت
-          </div>
-          <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px; border-right: 2px solid #ec4899;">
-            <strong style="color: #ec4899;">۶. کانال ارزش کوانت‌تاور:</strong> ریجکت VAL / VAH
-          </div>
-          <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px; border-right: 2px solid #38bdf8;">
-            <strong style="color: #38bdf8;">۷. تراز طلایی OTE:</strong> ورود در ۷۰.۵٪ فیبوناچی
-          </div>
-          <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px; border-right: 2px solid #eab308;">
-            <strong style="color: #eab308;">۸. تارگت ضد فرانت‌رانینگ:</strong> اهداف ۲۷.۲- و ۶۱.۸-
-          </div>
-        </div>
-      </div>
-
-    </div>
-
     <!-- ==================== TAB 1: RADAR (DOW 30 LEADERS) ==================== -->
     <div id="radarTab" class="tab-pane active">
       <div class="content-card">
@@ -4126,6 +3623,72 @@
     });
 
     // 2. TIMEFRAME SWITCHER
+    
+    // =========================================================================
+    // 🏛️ 4 INSTITUTIONAL HUBS CONTROLLER (Switch between CMD, OF, TECH, MACRO)
+    // =========================================================================
+    window.switchUS30Hub = function(hubKey) {
+      console.log("[US30 HUB] Switching to hub:", hubKey);
+      const hubNames = {
+        'CMD': '۱. اتاق فرماندهی & سیگنال طلایی',
+        'OF': '۲. اوردر فلو & پلتفرم‌های نهادی',
+        'TECH': '۳. چارت زنده، لیدرهای داو & ساختار SMC',
+        'MACRO': '۴. تحلیل کلان، ائتلاف بانک‌ها & ژئوپلیتیک'
+      };
+      
+      const hubColors = {
+        'CMD': { activeBg: 'linear-gradient(135deg, #0284c7, #2563eb)', border: '#38bdf8', color: '#fff' },
+        'OF': { activeBg: 'linear-gradient(135deg, #ea580c, #c2410c)', border: '#ff8c00', color: '#fff' },
+        'TECH': { activeBg: 'linear-gradient(135deg, #9333ea, #7e22ce)', border: '#a855f7', color: '#fff' },
+        'MACRO': { activeBg: 'linear-gradient(135deg, #16a34a, #15803d)', border: '#00e676', color: '#fff' }
+      };
+
+      // Update Hub Button States
+      ['CMD', 'OF', 'TECH', 'MACRO'].forEach(k => {
+        const btn = document.getElementById('hubBtn_' + k);
+        if (btn) {
+          if (k === hubKey) {
+            btn.classList.add('active');
+            btn.style.background = hubColors[k].activeBg;
+            btn.style.color = '#fff';
+            btn.style.borderColor = hubColors[k].border;
+            btn.style.boxShadow = '0 0 15px ' + hubColors[k].border + '55';
+          } else {
+            btn.classList.remove('active');
+            btn.style.background = 'rgba(15, 23, 42, 0.7)';
+            btn.style.color = '#94a3b8';
+            btn.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+            btn.style.boxShadow = 'none';
+          }
+        }
+      });
+
+      const labelEl = document.getElementById('activeHubNameDisplay');
+      if (labelEl && hubNames[hubKey]) {
+        labelEl.innerText = hubNames[hubKey];
+      }
+
+      // Filter Sub-Tabs according to data-hub attribute
+      let firstVisibleBtn = null;
+      document.querySelectorAll('.tab-card-btn').forEach(btn => {
+        const btnHub = btn.getAttribute('data-hub');
+        if (!btnHub || btnHub === hubKey) {
+          btn.style.display = 'flex';
+          if (!firstVisibleBtn) firstVisibleBtn = btn;
+        } else {
+          btn.style.display = 'none';
+        }
+      });
+
+      // Automatically activate the first tab of this hub if current tab is hidden
+      const currentActiveBtn = document.querySelector('.tab-card-btn.active');
+      if (!currentActiveBtn || currentActiveBtn.style.display === 'none') {
+        if (firstVisibleBtn) {
+          firstVisibleBtn.click();
+        }
+      }
+    };
+
     function switchTab(tabId, btn) {
       _activeTab = tabId;
       document.querySelectorAll('.tab-card-btn').forEach(b => b.classList.remove('active'));
