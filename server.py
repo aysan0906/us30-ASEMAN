@@ -878,7 +878,7 @@ class DowAdvisorQuestionRequest(BaseModel):
 class US30TelegramConfigRequest(BaseModel):
     bot_token: Optional[str] = ""
     chat_id: Optional[str] = ""
-    auto_pilot: Optional[bool] = True
+    auto_pilot: Optional[bool] = False
     interval_minutes: Optional[int] = 15
     min_score: Optional[int] = 70
 
