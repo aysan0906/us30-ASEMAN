@@ -786,7 +786,7 @@
         <strong id="sessionStatusFa">سشن بازار: بازار وال‌استریت (NYSE Regular Session)</strong>
       </div>
       <div style="display: flex; gap: 18px; font-family: var(--font-mono); font-size: 0.8rem; align-items: center; flex-wrap: wrap;">
-        <div>📅 <span id="clockShamsiDate" style="color: #ffd700; font-family: 'Vazirmatn'; font-weight: 700;">سه‌شنبه، ۱۴ مهر ۱۴۰۵</span></div>
+        <div>📅 <span id="clockShamsiDate" style="color: #ffd700; font-family: 'Vazirmatn'; font-weight: 700;">شنبه، ۲۵ مهر ۱۴۰۵</span></div>
         <div>🇮🇷 تهران: <span id="clockTehran" style="color: #00d2ff; font-weight: 800;">15:42:00</span></div>
         <div>🇺🇸 نیویورک: <span id="clockNY" style="color: #ffd166; font-weight: 800;">08:12:00</span></div>
         <div>⏳ زنگ وال‌استریت: <span id="sessionCountdown" style="color: #00e676; font-weight: 800;">01:17:40</span></div>
@@ -1313,7 +1313,7 @@
           <!-- Speculators Card -->
           <div style="background: rgba(0, 230, 118, 0.06); border: 1px solid rgba(0, 230, 118, 0.25); border-radius: 8px; padding: 14px;">
             <div style="font-size: 0.75rem; color: #94a3b8;">صندوق‌های سرمایه‌گذاری (Large Speculators)</div>
-            <div style="font-size: 1.35rem; font-weight: 800; color: #00e676; margin-top: 4px; font-family: var(--font-mono);" id="cotSpecNet">+۱۰,۰۲۶ لانگ</div>
+            <div style="font-size: 1.35rem; font-weight: 800; color: #00e676; margin-top: 4px; font-family: var(--font-mono);" id="cotSpecNet">+۹,۸۴۴ لانگ</div>
             <div style="font-size: 0.72rem; color: #cbd5e1; margin-top: 4px;" id="cotSpecDetails">خرید: ۲۲,۴۹۰ | فروش: ۱۲,۶۴۶ (برتری ۱.۸x)</div>
           </div>
 
@@ -2174,8 +2174,8 @@
           </div>
         </div>
 
-        <div id="kellyResultBox" style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 8px; border-right: 4px solid #00d2ff;">
-          حجم پیشنهادی: <strong>0.21 لات</strong> | حداکثر مبلغ ریسک: <strong>۱۵۰ دلار</strong> (۱.۵٪ از حساب)
+        <div id="kellyResultBox" style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 8px; border-right: 4px solid #00e676;">
+          حجم پیشنهادی (حساب ۱۰ دلاری): <strong style="color: #00e676;">0.01 لات مینی</strong> | حداکثر ریسک: <strong style="color: #ffd700;">۱.۳۰ دلار</strong> (با استاپ ۱۳ پوینت)
         </div>
       </div>
     </div>
@@ -3507,7 +3507,7 @@
         }).format(now);
         document.getElementById('clockShamsiDate').textContent = shamsiDateStr;
       } catch (e) {
-        document.getElementById('clockShamsiDate').textContent = 'سه‌شنبه، ۱۴ مهر ۱۴۰۵';
+        document.getElementById('clockShamsiDate').textContent = 'شنبه، ۲۵ مهر ۱۴۰۵';
       }
 
       // Tehran Time (HH:MM:SS)
@@ -4523,16 +4523,16 @@
 
         // Speculators
         const spec = data.speculators || {};
+        const sLong = safeFormatNum(spec.long, 22490);
+        const sShort = safeFormatNum(spec.short, 12646);
+        const sNet = sLong - sShort; // Strictly mathematically calculated!
         const specNet = document.getElementById('cotSpecNet');
         if (specNet) {
-          const sNet = safeFormatNum(spec.net, 9844);
           specNet.textContent = `${sNet >= 0 ? '+' : ''}${sNet.toLocaleString('en-US')} لانگ`;
           specNet.style.color = sNet >= 0 ? '#00e676' : '#ff3366';
         }
         const specDet = document.getElementById('cotSpecDetails');
         if (specDet) {
-          const sLong = safeFormatNum(spec.long, 22490);
-          const sShort = safeFormatNum(spec.short, 12646);
           specDet.textContent = `خرید: ${sLong.toLocaleString('en-US')} | فروش: ${sShort.toLocaleString('en-US')} (${spec.bias_fa || 'برتری خرید'})`;
         }
 
@@ -4822,7 +4822,7 @@
     }
 
     function getFallbackAnalysis360(pCurr, interval) {
-      const p = Number(pCurr) || 51705.5;
+      const p = Number(pCurr) || 52000.0;
       return {
         ok: true,
         price: p,
@@ -4872,7 +4872,7 @@
 
     function renderAnalysis360UI(data, box, pCurr, interval) {
       if (!data || !box) return;
-      const p = Number(data.price || pCurr || 51705.5);
+      const p = Number(data.price || pCurr || 52000.0);
       const st = data.structure || {};
       const mtf = data.mtf_matrix || {};
       const liq = data.liquidity || {};
@@ -5039,7 +5039,7 @@
         });
       }
 
-      const pCurr = (typeof _lastLiveTrendoPrice !== 'undefined' && _lastLiveTrendoPrice > 10000) ? _lastLiveTrendoPrice : (typeof _lastPrice !== 'undefined' && _lastPrice > 10000 ? _lastPrice : 51705.5);
+      const pCurr = (typeof _lastLiveTrendoPrice !== 'undefined' && _lastLiveTrendoPrice > 10000) ? _lastLiveTrendoPrice : (typeof _lastPrice !== 'undefined' && _lastPrice > 10000 ? _lastPrice : 52000.0);
       const priceBadge = document.getElementById('analysis360PriceBadge');
       if (priceBadge) {
         priceBadge.innerHTML = `🔵 نرخ زنده ترندو: ${Number(pCurr).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`;

@@ -15,7 +15,7 @@ TEHRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 _CACHE = {}
 _CACHE_TS = 0.0
 
-def get_smt_and_sweep_data(current_price: float = 51705.5) -> Dict[str, Any]:
+def get_smt_and_sweep_data(current_price: float = 52000.0) -> Dict[str, Any]:
     """Calculate institutional SMT divergence and Liquidity Sweep metrics."""
     global _CACHE, _CACHE_TS
     now = time.time()
@@ -151,7 +151,7 @@ def get_smt_and_sweep_data(current_price: float = 51705.5) -> Dict[str, Any]:
     return res
 
 if __name__ == "__main__":
-    data = get_smt_and_sweep_data(51705.5)
+    data = get_smt_and_sweep_data(52000.0)
     print("SMT Badge:", data["smt"]["badge"])
     print("Sweep Title:", data["sweep_hunter"]["title"])
     print("Advice:", data["sweep_hunter"]["advice"])

@@ -118,10 +118,10 @@ def get_trendo_us30_live(timeout: float = 2.0) -> Dict[str, Any]:
         "broker": "Trendo Broker (کالیبره‌شده)",
         "symbol": "US30",
         "name": "DOW JONES",
-        "bid": 51705.5,
-        "ask": round(51705.5 + sim_spread, 2),
+        "bid": 52000.0,
+        "ask": round(52000.0 + sim_spread, 2),
         "spread": sim_spread,
-        "mid": round(51705.5 + sim_spread / 2, 2),
+        "mid": round(52000.0 + sim_spread / 2, 2),
         "change_pts": 0.0,
         "change_pct": 0.0,
         "session_label": "سشن نیویورک" if is_ny_session else "سشن لندن / آسیا",
@@ -135,7 +135,7 @@ def get_trendo_us30_live(timeout: float = 2.0) -> Dict[str, Any]:
 def compute_trendo_sniper_levels(direction: str, sl_pts: float = 13.0, tp1_pts: float = 24.0, tp2_pts: float = 48.0) -> Dict[str, Any]:
     """Compute exact Trendo execution levels accounting for Bid (blue) vs Ask (red) lines."""
     t_data = get_trendo_us30_live()
-    bid = t_data.get("bid", 51705.5)
+    bid = t_data.get("bid", 52000.0)
     ask = t_data.get("ask", 51706.7)
     spread = t_data.get("spread", 1.2)
 

@@ -244,17 +244,17 @@ def get_analysis_360_data(interval: str = "15m", price: Optional[float] = None) 
             import trendo_engine
             t = trendo_engine.get_trendo_us30_live(timeout=1.5)
             if t.get("ok"):
-                price = float(t.get("bid", 51705.0) or 51705.0)
+                price = float(t.get("bid", 52000.0) or 52000.0)
             else:
                 cash_info = dow_cash.freshest()
-                price = float(cash_info.get("best", {}).get("index", 51705.0) or 51705.0)
+                price = float(cash_info.get("best", {}).get("index", 52000.0) or 52000.0)
         except Exception:
             try:
                 cash_info = dow_cash.freshest()
-                price = float(cash_info.get("best", {}).get("index", 51705.0) or 51705.0)
+                price = float(cash_info.get("best", {}).get("index", 52000.0) or 52000.0)
             except Exception:
-                price = 51705.0
-    p = round(float(price or 51705.0), 1)
+                price = 52000.0
+    p = round(float(price or 52000.0), 1)
     tf = str(interval or "15m").lower().strip()
 
     # Dynamic scaling based on selected timeframe
@@ -2441,10 +2441,10 @@ def dow_smt_and_sweep():
         try:
             import trendo_engine
             t_tick = trendo_engine.get_trendo_tick()
-            p = float(t_tick.get("bid", 51705.5) or 51705.5)
+            p = float(t_tick.get("bid", 52000.0) or 52000.0)
         except Exception:
             t_data = engine.ticker("1h")
-            p = float(t_data.get("price", 51705.5) or 51705.5)
+            p = float(t_data.get("price", 52000.0) or 52000.0)
         import smt_and_sweep_engine
         return smt_and_sweep_engine.get_smt_and_sweep_data(p)
     except Exception as e:
