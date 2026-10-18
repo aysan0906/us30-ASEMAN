@@ -46,24 +46,22 @@ def _fetch_trendo_raw(timeout: float = 2.0) -> Optional[Dict[str, Any]]:
                     change_pts = round(bid - yesterday_close, 1) if yesterday_close > 0 else 0.0
                     change_pct = round((change_pts / yesterday_close) * 100, 2) if yesterday_close > 0 else 0.0
 
-                    return {
-                        "ok": True,
-                        "broker": "Trendo Broker (ترندو)",
-                        "symbol": "US30",
-                        "name": "DOW JONES",
-                        "bid": bid,           # خط آبی (فروش / چارت)
-                        "ask": ask,           # خط قرمز (خرید)
-                        "spread": spread,     # اسپرد جاری
-                        "mid": round((ask + bid) / 2, 2),
-                        "change_pts": change_pts,
-                        "change_pct": change_pct,
-                        "session_label": session_label,
-                        "is_ny_session": is_ny_session,
-                        "expected_spread": 0.7 if is_ny_session else 1.2,
-                        "tehran_time": now_tehran.strftime("%H:%M:%S"),
-                        "source": "Trendo Broker Official Live Tick Feed",
-                        "status": "LIVE_DIRECT"
-                    }
+                        # Strict P0-01 Fix: Never return fake 52000 quote with ok=True!
+    return {
+        "ok": False,
+        "broker": "Trendo Broker",
+        "symbol": "US30",
+        "name": "DOW JONES",
+        "bid": None,
+        "ask": None,
+        "spread": None,
+        "mid": None,
+        "tradable": False,
+        "is_synthetic": True,
+        "error": "عدم دسترسی به قیمت زنده ترندو",
+        "status": "UNAVAILABLE",
+        "timestamp": time.time()
+    }
     except Exception:
         pass
     return None
@@ -113,23 +111,21 @@ def get_trendo_us30_live(timeout: float = 2.0) -> Dict[str, Any]:
     now_tehran = datetime.now(TEHRAN_TZ)
     is_ny_session = (now_tehran.hour >= 16 and now_tehran.minute >= 30) or (17 <= now_tehran.hour <= 23)
     sim_spread = 0.7 if is_ny_session else 1.2
+        # Strict P0-01 Fix: Never return fake 52000 quote with ok=True!
     return {
-        "ok": True,
-        "broker": "Trendo Broker (کالیبره‌شده)",
+        "ok": False,
+        "broker": "Trendo Broker",
         "symbol": "US30",
         "name": "DOW JONES",
-        "bid": 52000.0,
-        "ask": round(52000.0 + sim_spread, 2),
-        "spread": sim_spread,
-        "mid": round(52000.0 + sim_spread / 2, 2),
-        "change_pts": 0.0,
-        "change_pct": 0.0,
-        "session_label": "سشن نیویورک" if is_ny_session else "سشن لندن / آسیا",
-        "is_ny_session": is_ny_session,
-        "expected_spread": sim_spread,
-        "tehran_time": now_tehran.strftime("%H:%M:%S"),
-        "source": "Trendo Broker Official Live Tick Feed",
-        "status": "LIVE_DIRECT"
+        "bid": None,
+        "ask": None,
+        "spread": None,
+        "mid": None,
+        "tradable": False,
+        "is_synthetic": True,
+        "error": "عدم دسترسی به قیمت زنده ترندو",
+        "status": "UNAVAILABLE",
+        "timestamp": time.time()
     }
 
 def compute_trendo_sniper_levels(direction: str, sl_pts: float = 13.0, tp1_pts: float = 24.0, tp2_pts: float = 48.0) -> Dict[str, Any]:

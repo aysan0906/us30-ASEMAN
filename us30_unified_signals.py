@@ -303,8 +303,18 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
     if is_valid_scalp_lock:
         # Retain 100% frozen values
         scalp_is_long = (_LOCKED_SCALP_STATE["direction"] == "LONG")
-        scalp_dir_str = "خرید (LONG)" if scalp_is_long else "فروش (SHORT)"
-        scalp_dir_emoji = "🟢" if scalp_is_long else "🔴"
+        if scalp_is_neutral:
+            scalp_dir_str = "صبر / عدم معامله (NEUTRAL)"
+            scalp_dir_emoji = "⚪"
+            scalp_dir_code = "NEUTRAL"
+        elif scalp_is_long:
+            scalp_dir_str = "خرید (LONG)"
+            scalp_dir_emoji = "🟢"
+            scalp_dir_code = "LONG"
+        else:
+            scalp_dir_str = "فروش (SHORT)"
+            scalp_dir_emoji = "🔴"
+            scalp_dir_code = "SHORT"
         scalp_entry = _LOCKED_SCALP_STATE["entry"]
         scalp_sl = _LOCKED_SCALP_STATE["sl"]
         scalp_tp1 = _LOCKED_SCALP_STATE["tp1"]

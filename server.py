@@ -1230,7 +1230,7 @@ def telegram_send(req: US30TelegramSendRequest):
             return JSONResponse(status_code=400, content={"success": False, "message": "توکن ربات یا شناسه چت تنظیم نشده است. لطفاً توکن ربات و شناسه چت را در کادرهای بالا وارد کرده و دکمه ذخیره تنظیمات را بزنید."})
 
         # Fetch current price (Prioritize Trendo Broker Official Live Tick)
-        p_curr = 52000.0
+        p_curr = None
         try:
             import trendo_engine
             t_data = trendo_engine.get_trendo_us30_live()
