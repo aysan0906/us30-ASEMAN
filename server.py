@@ -365,13 +365,13 @@ def aseman_alpha():
 def get_us30_unified_signals_api():
     try:
         import us30_unified_signals as uus
-        p_curr = 50865.0
+        p_curr = None
         try:
             cash_info = dcash.freshest()
             p_curr = float(cash_info.get("best", {}).get("index", 50865.0) or 50865.0)
         except Exception:
             pass
-        data = uus.get_us30_unified_signals(p_curr)
+        data = uus.get_us30_unified_signals(p_curr or None)
         return {"ok": True, "data": data}
     except Exception as e:
         return {"ok": False, "error": str(e)}
@@ -1244,7 +1244,7 @@ def telegram_send(req: US30TelegramSendRequest):
 
         # Send Unified Signal (Minimal Schema Requested by User)
         import us30_unified_signals as uus
-        unif = uus.get_us30_unified_signals(p_curr)
+        unif = uus.get_us30_unified_signals(p_curr or None)
         target_sig_type = (req.signal_type or "scalp").lower()
         
         if target_sig_type == "swing":
@@ -1796,7 +1796,7 @@ def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trend
     }
     lock_validity_sec = lock_durations.get(interval, 300)
 
-    cached_setup = _LOCKED_COMPOSITE_SETUPS.get(interval)
+    cached_setup = _LOCKED_COMPOSITE_SETUPS.get(f"{interval}_{broker}")
     is_valid_lock = (
         cached_setup is not None
         and now_epoch < cached_setup.get("expires_at", 0)
@@ -1849,7 +1849,7 @@ def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trend
         tp3_pts = setup_spec["tp3"]
 
         import us30_unified_signals as uus
-        unif = uus.get_us30_unified_signals(p_curr)
+        unif = uus.get_us30_unified_signals(p_curr or None)
         if interval in ["1m", "5m"]:
             sig_source = unif.get("scalp", {})
         else:
@@ -1881,7 +1881,7 @@ def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trend
             entry_high = round(p_curr + 20, 1)
         setup_title = cfg["name"]
 
-        _LOCKED_COMPOSITE_SETUPS[interval] = {
+        _LOCKED_COMPOSITE_SETUPS[f"{interval}_{broker}"] = {
             "entry_low": entry_low,
             "entry_high": entry_high,
             "sl_price": sl_price,

@@ -120,7 +120,7 @@ def get_us30_live_price(prefer_trendo: bool = True) -> float:
             return p
     except Exception:
         pass
-    return 51280.0
+    return None
 
 
 
@@ -155,6 +155,13 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
 
     if current_price is None or current_price <= 0:
         current_price = get_us30_live_price()
+    if current_price is None or current_price <= 10000:
+        return {
+            "ok": False,
+            "tradable": False,
+            "error": "LIVE_PRICE_UNAVAILABLE",
+            "message": "قیمت معتبر بازار در دسترس نیست؛ تولید سیگنال متوقف شد."
+        }
 
     # 1. Fetch modules safely
     bm = {}
@@ -251,7 +258,19 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
         scalp_is_short = False
     else:
         scalp_is_neutral = False
-        scalp_is_long = (score_long > score_short)
+        # Three-way decision: Only take action if score is valid and above conviction threshold!
+    if score_long == score_short or max(score_long, score_short) < 65:
+        scalp_is_neutral = True
+        scalp_is_long = False
+        scalp_is_short = False
+    elif score_long > score_short:
+        scalp_is_neutral = False
+        scalp_is_long = True
+        scalp_is_short = False
+    else:
+        scalp_is_neutral = False
+        scalp_is_long = False
+        scalp_is_short = True
         scalp_is_short = (score_short > score_long)
     scalp_dir_str = "خرید (LONG)" if scalp_is_long else "فروش (SHORT)"
     scalp_dir_emoji = "🟢" if scalp_is_long else "🔴"
