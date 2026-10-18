@@ -1,5 +1,5 @@
-import uuid
 from __future__ import annotations
+import uuid
 from us30_supreme_arbiter import us30_supreme_arbiter
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
