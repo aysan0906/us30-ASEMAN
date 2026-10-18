@@ -200,8 +200,8 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
     atas_tps = atas.get("tape_speed", {}).get("trades_per_sec", 45)
 
     # REAL DYNAMIC MARKET STRUCTURE (SMC, CHoCH, VWAP, EMA & TRENDO PRICE ACTION)
-    smc_bias = -1
-    htf_bias = -1
+    smc_bias = 0
+    htf_bias = 0
     try:
         import us30_engine as ue
         analysis_data = ue.build_analysis("15m")
@@ -244,7 +244,15 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
     elif bm.get("imbalance_pct", 0) > 3.0: score_long += 15
 
     # Determine real direction
-    scalp_is_long = (score_long > score_short)
+    # Strict Direction Determination: Equality or low conviction MUST yield NEUTRAL / WAIT!
+    if score_long == score_short or max(score_long, score_short) < 65:
+        scalp_is_neutral = True
+        scalp_is_long = False
+        scalp_is_short = False
+    else:
+        scalp_is_neutral = False
+        scalp_is_long = (score_long > score_short)
+        scalp_is_short = (score_short > score_long)
     scalp_dir_str = "خرید (LONG)" if scalp_is_long else "فروش (SHORT)"
     scalp_dir_emoji = "🟢" if scalp_is_long else "🔴"
 
@@ -267,8 +275,9 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
         lk_sl = _LOCKED_SCALP_STATE["sl"]
         lk_tp2 = _LOCKED_SCALP_STATE["tp2"]
         hit_tp = (current_price >= lk_tp2) if lk_dir == "LONG" else (current_price <= lk_tp2)
-        # Only expire when either 45 minutes have elapsed OR final TP2 is reached
-        if hit_tp:
+        hit_sl = (current_price <= lk_sl) if lk_dir == "LONG" else (current_price >= lk_sl)
+        # Expire lock immediately if final target reached OR Stop Loss hit!
+        if hit_tp or hit_sl:
             is_valid_scalp_lock = False
             _LOCKED_SCALP_STATE["active"] = False
 

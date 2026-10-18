@@ -28,6 +28,7 @@ import requests
 
 
 INTERVAL_PERIODS = {
+    "1m": "7d",
     "5m": "60d",
     "15m": "60d",
     "30m": "60d",
