@@ -410,7 +410,7 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
             "tp1_pts": scalp_tp1_pts,
             "tp2_pts": scalp_tp2_pts,
             "tp3_pts": scalp_tp3_pts,
-            "direction": "LONG" if scalp_is_long else "SHORT",
+            "direction": scalp_dir_code,
             "created_at": now_epoch,
             "expires_at": now_epoch + 2700,  # 45 minutes locked
             "time_str": tehran_time_str,

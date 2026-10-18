@@ -89,8 +89,8 @@ _remote_at = 0.0
 _REFRESH_AFTER = float(os.environ.get("SNAPSHOT_REFRESH_AFTER", "900"))
 
 # کلید مشترک هوشمند. مقدار پیش‌فرض امن دارد تا حتی بدون نیاز به تنظیم متغیر در رندر، کار کند.
-_DEFAULT_KEY = "aseman_us30_snapshot_2026"
-_KEY = (os.environ.get("SNAPSHOT_KEY") or _DEFAULT_KEY).strip()
+_DEFAULT_KEY = ""
+_KEY = os.environ.get("SNAPSHOT_KEY", "").strip()
 
 # حداکثر عمر قابل قبول برای یک نتیجه ذخیره شده (ثانیه).
 # ⚠ اصلاح ۲۰۲۶-۰۹-۳۰: پیش فرض از ۴۵ دقیقه به ۴ ساعت رفت.

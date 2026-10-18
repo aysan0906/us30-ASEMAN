@@ -27,7 +27,7 @@ import json, time, threading, urllib.request, urllib.parse, socket
 socket.setdefaulttimeout(4.0)
 from datetime import datetime, timedelta, timezone
 
-from fastapi import Depends, FastAPI, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -220,7 +220,7 @@ def analyze(
         if cache_key in _analysis_cache:
             return _analysis_cache[cache_key]["data"]
         t_data = engine.ticker(interval)
-        p_curr = float(t_data.get("price", 52000.0) or 52000.0)
+        p_curr = float(t_data.get("price") or 0.0)
         chg = float(t_data.get("change", 0.0) or 0.0)
         bias = -1 if chg < 0 else 1
         data = {
@@ -251,17 +251,17 @@ def get_analysis_360_data(interval: str = "15m", price: Optional[float] = None) 
             import trendo_engine
             t = trendo_engine.get_trendo_us30_live(timeout=1.5)
             if t.get("ok"):
-                price = float(t.get("bid", 52000.0) or 52000.0)
+                price = float(t.get("bid") or 0.0)
             else:
                 cash_info = dcash.freshest()
-                price = float(cash_info.get("best", {}).get("index", 52000.0) or 52000.0)
+                price = float(cash_info.get("best", {}).get("index") or 0.0)
         except Exception:
             try:
                 cash_info = dcash.freshest()
-                price = float(cash_info.get("best", {}).get("index", 52000.0) or 52000.0)
+                price = float(cash_info.get("best", {}).get("index") or 0.0)
             except Exception:
-                price = 52000.0
-    p = round(float(price or 52000.0), 1)
+                price = 0.0
+    p = round(float(price or 0.0), 1)
     tf = str(interval or "15m").lower().strip()
 
     # Dynamic scaling based on selected timeframe
@@ -510,22 +510,27 @@ def dow_guard(
 ):
     global _guard_cache
     now = time.time()
-    if not fresh and _guard_cache and (now - _guard_cache.get("time", 0.0) < 45.0):
-        return _guard_cache["data"]
+    # Cache key includes all query parameters
+    cache_key = f"{interval}_{bars}_{balance}_{leverage}_{lot}"
+    if isinstance(_guard_cache, dict) and not fresh:
+        cached = _guard_cache.get(cache_key)
+        if cached and (now - cached.get("time", 0.0) < 20.0):
+            return cached["data"]
 
-    t_data = engine.ticker(interval)
-    p_curr = float(t_data.get("price", 52000.0) or 52000.0)
-    chg = float(t_data.get("change", 0.0) or 0.0)
-
-    dummy_data = {
-        "ok": True,
-        "price": {"last": p_curr, "open": p_curr - 20, "high": p_curr + 60, "low": p_curr - 80},
-        "signal": {"direction": -1 if chg < 0 else 1, "score": 75.0, "action_fa": "تحلیل گارد"},
-        "indicators": {"atr": 135.0, "rsi": 44.0},
-        "market": {"is_open": True}
-    }
-    res = execguard.evaluate(dummy_data, interval=interval, balance=balance, leverage=leverage, lot=lot)
-    _guard_cache = {"time": now, "data": res}
+    # Use REAL analysis rather than dummy 75 score / 135 atr
+    analysis = engine.build_analysis(symbol="US30", interval=interval, bars=bars, use_cache=not fresh)
+    if not analysis or not analysis.get("ok"):
+        return {
+            "ok": False,
+            "trade_allowed": False,
+            "status": "FAIL_CLOSED_NO_DATA",
+            "reason": "عدم دسترسی به داده‌های زنده و تحلیل بازار جهت ارزیابی ریسک",
+            "timestamp": now
+        }
+    res = execguard.evaluate(analysis, interval=interval, balance=balance, leverage=leverage, lot=lot)
+    if not isinstance(_guard_cache, dict):
+        _guard_cache = {}
+    _guard_cache[cache_key] = {"time": now, "data": res}
     return res
 
 
@@ -699,7 +704,7 @@ def dow_context(with_mtf: bool = Query(False)):
 @app.get("/api/dow/orderflow")
 def dow_orderflow(interval: str = Query("1h")):
     t_data = engine.ticker(interval)
-    p_curr = float(t_data.get("price", 52000.0) or 52000.0)
+    p_curr = float(t_data.get("price") or 0.0)
     chg = float(t_data.get("change", 0.0) or 0.0)
 
     # Dynamic FVG & Liquidity Zones based on real price and interval scale
@@ -1146,7 +1151,7 @@ def format_us30_master_signal_telegram(ms_data: Dict[str, Any]) -> str:
     tehran_str = tehran_time.strftime("%H:%M:%S (%Y/%m/%d)")
     valid_until = (tehran_time + timedelta(hours=2)).strftime("%H:%M")
 
-    p = float(ms_data.get("current_price", 52000.0) or 52000.0)
+    p = float(ms_data.get("current_price") or 0.0)
     direction = ms_data.get("direction", "BUY")
     dir_fa = ms_data.get("direction_fa", "خرید قوی نهادی")
     dir_emoji = "🚀" if direction == "BUY" else ("🔻" if direction == "SELL" else "⏸️")
@@ -1964,7 +1969,7 @@ def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trend
     # Connect Option Walls from Module 10 / Elite GEX to anchor TP3
     try:
         gex_info = elite.get_gex_and_option_walls(p_curr)
-        call_w = float(gex_info.get("call_wall", 52000.0))
+        call_w = float(gex_info.get("call_wall") or 0.0)
         put_w = float(gex_info.get("put_wall", 51000.0))
         if action == "BUY" and tp3_price > call_w and abs(call_w - p_curr) > tp2_pts + 30.0:
             tp3_price = call_w
@@ -2056,10 +2061,10 @@ def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trend
         mod8_desc = "سازگاری نرخ بازده اوراق و دلار با شاخص داوجونز"
 
     # Module 9: Options Gamma & Walls
-    call_w_val = 52000.0
+    call_w_val = 0.0
     put_w_val = 51000.0
     try:
-        call_w_val = float(gex_info.get("call_wall", 52000.0))
+        call_w_val = float(gex_info.get("call_wall") or 0.0)
         put_w_val = float(gex_info.get("put_wall", 51000.0))
     except Exception:
         pass
@@ -2341,10 +2346,10 @@ def dow_bookmap_endpoint(timeframe: str = Query("15m")):
 def dow_ninjatrader_endpoint(timeframe: str = Query("15m")):
     try:
         import ninja_atas_quant_engine as naq
-        p = 52000.0
+        p = 0.0
         try:
             cash = dowres.cash()
-            p = float(cash.get("price", 52000.0) or 52000.0)
+            p = float(cash.get("price") or 0.0)
         except Exception:
             pass
         return naq.get_ninjatrader_live(p, timeframe=timeframe)
@@ -2355,10 +2360,10 @@ def dow_ninjatrader_endpoint(timeframe: str = Query("15m")):
 def dow_atas_endpoint():
     try:
         import ninja_atas_quant_engine as naq
-        p = 52000.0
+        p = 0.0
         try:
             cash = dowres.cash()
-            p = float(cash.get("price", 52000.0) or 52000.0)
+            p = float(cash.get("price") or 0.0)
         except Exception:
             pass
         return naq.get_atas_live(p)
@@ -2369,10 +2374,10 @@ def dow_atas_endpoint():
 def dow_quantower_endpoint():
     try:
         import ninja_atas_quant_engine as naq
-        p = 52000.0
+        p = 0.0
         try:
             cash = dowres.cash()
-            p = float(cash.get("price", 52000.0) or 52000.0)
+            p = float(cash.get("price") or 0.0)
         except Exception:
             pass
         return naq.get_quantower_live(p)
@@ -2383,10 +2388,10 @@ def dow_quantower_endpoint():
 def dow_geopolitics_endpoint():
     try:
         import ninja_atas_quant_engine as naq
-        p = 52000.0
+        p = 0.0
         try:
             cash = dowres.cash()
-            p = float(cash.get("price", 52000.0) or 52000.0)
+            p = float(cash.get("price") or 0.0)
         except Exception:
             pass
         return naq.get_geopolitical_live(p)
@@ -2397,10 +2402,10 @@ def dow_geopolitics_endpoint():
 def dow_sierrachart_endpoint(timeframe: str = Query("15m")):
     try:
         import ninja_atas_quant_engine as naq
-        p = 52000.0
+        p = 0.0
         try:
             cash = dowres.cash()
-            p = float(cash.get("price", 52000.0) or 52000.0)
+            p = float(cash.get("price") or 0.0)
         except Exception:
             pass
         return naq.get_sierrachart_live(p, timeframe=timeframe)
@@ -2411,10 +2416,10 @@ def dow_sierrachart_endpoint(timeframe: str = Query("15m")):
 def dow_master_signal_endpoint():
     try:
         import ninja_atas_quant_engine as naq
-        p = 52000.0
+        p = 0.0
         try:
             cash = dowres.cash()
-            p = float(cash.get("price", 52000.0) or 52000.0)
+            p = float(cash.get("price") or 0.0)
         except Exception:
             pass
         return naq.get_master_confluence_signal(p)
@@ -2454,10 +2459,10 @@ def dow_smt_and_sweep():
         try:
             import trendo_engine
             t_tick = trendo_engine.get_trendo_tick()
-            p = float(t_tick.get("bid", 52000.0) or 52000.0)
+            p = float(t_tick.get("bid") or 0.0)
         except Exception:
             t_data = engine.ticker("1h")
-            p = float(t_data.get("price", 52000.0) or 52000.0)
+            p = float(t_data.get("price") or 0.0)
         import smt_and_sweep_engine
         return smt_and_sweep_engine.get_smt_and_sweep_data(p)
     except Exception as e:
@@ -2740,7 +2745,7 @@ def get_supreme_arbiter_status():
     """
     import trendo_engine
     t_meta = trendo_engine.get_trendo_us30_live()
-    live_p = float(t_meta.get("bid", 52000.0))
+    live_p = float(t_meta.get("bid") or 0.0)
 
     import ninja_atas_quant_engine as naq
     import bookmap_engine as be
