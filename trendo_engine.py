@@ -80,8 +80,6 @@ def _fetch_trendo_raw(timeout: float = 2.0) -> Optional[Dict[str, Any]]:
         "status": "UNAVAILABLE",
         "timestamp": time.time()
     }
-        pass
-    return None
 
 def _trendo_background_poller():
     """Background worker daemon to keep Trendo price permanently hot in memory."""
