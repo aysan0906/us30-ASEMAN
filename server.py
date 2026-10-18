@@ -27,7 +27,7 @@ import json, time, threading, urllib.request, urllib.parse, socket
 socket.setdefaulttimeout(4.0)
 from datetime import datetime, timedelta, timezone
 
-from fastapi import FastAPI, Query, Request
+from fastapi import Depends, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
