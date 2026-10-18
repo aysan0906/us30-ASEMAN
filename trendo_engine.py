@@ -46,7 +46,25 @@ def _fetch_trendo_raw(timeout: float = 2.0) -> Optional[Dict[str, Any]]:
                     change_pts = round(bid - yesterday_close, 1) if yesterday_close > 0 else 0.0
                     change_pct = round((change_pts / yesterday_close) * 100, 2) if yesterday_close > 0 else 0.0
 
-                        # Strict P0-01 Fix: Never return fake 52000 quote with ok=True!
+                    # Successfully fetched real live trendo quote
+                    return {
+                        "ok": True,
+                        "broker": "Trendo Broker",
+                        "symbol": "US30",
+                        "name": "DOW JONES",
+                        "bid": bid,
+                        "ask": ask,
+                        "spread": spread,
+                        "mid": round((ask + bid) / 2, 2),
+                        "change_pts": change_pts,
+                        "change_pct": change_pct,
+                        "status": "LIVE_DIRECT",
+                        "timestamp": time.time()
+                    }
+    except Exception:
+        pass
+
+    # Strict P0-01 Fix: Never return fake 52000 quote with ok=True!
     return {
         "ok": False,
         "broker": "Trendo Broker",
@@ -62,7 +80,6 @@ def _fetch_trendo_raw(timeout: float = 2.0) -> Optional[Dict[str, Any]]:
         "status": "UNAVAILABLE",
         "timestamp": time.time()
     }
-    except Exception:
         pass
     return None
 
