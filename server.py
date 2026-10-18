@@ -404,7 +404,13 @@ def aseman_golden(
     d = direction.upper()
     if d == "AUTO":
         sig = data.get("signal", {})
-        d = "LONG" if int(sig.get("direction", 0) or 0) >= 0 else "SHORT"
+        raw_dir = int(sig.get("direction", 0) or 0)
+    if raw_dir > 0:
+        d = "LONG"
+    elif raw_dir < 0:
+        d = "SHORT"
+    else:
+        d = "NEUTRAL" # 0 strictly means NEUTRAL / WAIT, NEVER LONG!
     return aseman.AsemanGoldenFiltersUS30.evaluate(data, d)
 
 
