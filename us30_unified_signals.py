@@ -271,9 +271,18 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
         scalp_is_neutral = False
         scalp_is_long = False
         scalp_is_short = True
-        scalp_is_short = (score_short > score_long)
-    scalp_dir_str = "خرید (LONG)" if scalp_is_long else "فروش (SHORT)"
-    scalp_dir_emoji = "🟢" if scalp_is_long else "🔴"
+    if scalp_is_neutral:
+        scalp_dir_str = "صبر / عدم معامله (NEUTRAL)"
+        scalp_dir_code = "NEUTRAL"
+        scalp_dir_emoji = "⚪"
+    elif scalp_is_long:
+        scalp_dir_str = "خرید (LONG)"
+        scalp_dir_code = "LONG"
+        scalp_dir_emoji = "🟢"
+    else:
+        scalp_dir_str = "فروش (SHORT)"
+        scalp_dir_code = "SHORT"
+        scalp_dir_emoji = "🔴"
 
     # Micro Stop Loss strictly 13.0 points ($1.30 in 0.01 lot for $10 account)
     micro_sl_pts = 13.0
@@ -414,7 +423,7 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
         "signal_type_fa": "میکرو-اسکالپ تک‌تیرانداز داوجونز (Sniper 1m / 15m)",
         "timeframe": "1m (تک‌تیرانداز پیش‌دستانه)",
         "direction": scalp_dir_str,
-        "direction_code": "LONG" if scalp_is_long else "SHORT",
+        "direction_code": scalp_dir_code,
         "direction_emoji": scalp_dir_emoji,
         "entry": scalp_entry,
         "entry_fmt": f"${scalp_entry:,.1f}",
@@ -433,7 +442,7 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
         "tp3_fmt": f"${scalp_tp3:,.1f} (+{scalp_tp3_pts} پوینت / +${scalp_tp3_pts*0.1:.2f})",
         "leverage_recommended": "1:500 یا 1:1000 ترندو",
         "lot_recommended": "0.01 لات استاندارد (مارجین امن حساب ۱۰ دلاری)",
-        "entry_instruction_fa": f"کاشت لیمیت خرید (Buy Limit) در پولبک به تراز {scalp_entry:,.1f} (پشت شلف نقدینگی و VWAP)" if scalp_is_long else f"کاشت لیمیت فروش (Sell Limit) در پولبک به تراز {scalp_entry:,.1f} (زیر دیواره عرضه و VWAP)",
+        "entry_instruction_fa": "وضعیت بازار خنثی یا پرریسک است. در حال حاضر ورود مجاز نیست." if scalp_is_neutral else (f"کاشت لیمیت خرید (Buy Limit) در پولبک به تراز {scalp_entry:,.1f} (پشت شلف نقدینگی و VWAP)" if scalp_is_long else f"کاشت لیمیت فروش (Sell Limit) در پولبک به تراز {scalp_entry:,.1f} (زیر دیواره عرضه و VWAP)"),
         "date_tehran": tehran_date_str,
         "time_tehran": tehran_time_str,
         "holding_duration": "۲ الی ۱۰ دقیقه (خروج سریع)",

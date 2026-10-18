@@ -1109,7 +1109,7 @@ def dispatch_to_telegram_raw(token: str, chat: str, message: str) -> Dict[str, A
 def telegram_config():
     return get_us30_telegram_config()
 
-@app.post("/api/telegram/config")
+@app.post("/api/telegram/config", dependencies=[Depends(verify_admin_auth)])
 def save_telegram_config(cfg: US30TelegramConfigRequest):
     try:
         existing = {}
@@ -1247,10 +1247,10 @@ def telegram_send(req: US30TelegramSendRequest):
             import trendo_engine
             t_data = trendo_engine.get_trendo_us30_live()
             if t_data.get("ok"):
-                p_curr = float(t_data.get("bid", 52000.0))
+                p_curr = t_data.get("bid")
             else:
                 cash_info = dcash.freshest()
-                p_curr = float(cash_info.get("best", {}).get("index", 52000.0) or 52000.0)
+                p_curr = cash_info.get("best", {}).get("index")
         except Exception:
             pass
 
@@ -1464,7 +1464,7 @@ def journal_toggle_pause():
         "message": f"وضعیت ثبت سیگنال ژورنال به حالت «{status_label}» تغییر یافت."
     }
 
-@app.post("/api/journal/reset")
+@app.post("/api/journal/reset", dependencies=[Depends(verify_admin_auth)])
 def journal_reset():
     try:
         if DISPATCHED_SIGNALS_FILE.exists():
@@ -1501,7 +1501,7 @@ def journal_reset():
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
-@app.post("/api/telegram/toggle-autopilot")
+@app.post("/api/telegram/toggle-autopilot", dependencies=[Depends(verify_admin_auth)])
 def telegram_toggle_autopilot():
     try:
         current_state = _us30_sentinel_stats.get("is_running", True)

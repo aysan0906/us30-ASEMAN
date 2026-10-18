@@ -146,9 +146,15 @@ def get_trendo_us30_live(timeout: float = 2.0) -> Dict[str, Any]:
 def compute_trendo_sniper_levels(direction: str, sl_pts: float = 13.0, tp1_pts: float = 24.0, tp2_pts: float = 48.0) -> Dict[str, Any]:
     """Compute exact Trendo execution levels accounting for Bid (blue) vs Ask (red) lines."""
     t_data = get_trendo_us30_live()
-    bid = t_data.get("bid", 52000.0)
-    ask = t_data.get("ask", 51706.7)
-    spread = t_data.get("spread", 1.2)
+    if not t_data or not t_data.get("ok") or not t_data.get("bid"):
+        return {
+            "ok": False,
+            "tradable": False,
+            "error": "قیمت زنده ترندو برای محاسبه سطوح اسنایپر در دسترس نیست."
+        }
+    bid = float(t_data["bid"])
+    ask = float(t_data.get("ask", bid + 1.2))
+    spread = float(t_data.get("spread", round(ask - bid, 1)))
 
     is_buy = (direction.upper() in ["BUY", "LONG", "خرید"])
 
