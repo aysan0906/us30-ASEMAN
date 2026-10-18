@@ -1,3 +1,4 @@
+import uuid
 from __future__ import annotations
 from us30_supreme_arbiter import us30_supreme_arbiter
 #!/usr/bin/env python3
@@ -39,6 +40,17 @@ import execution_guard as execguard
 import snapshot as snap
 
 APP_DIR = Path(__file__).resolve().parent
+
+
+def verify_admin_auth(request: Request):
+    """Protects administrative endpoints against unauthorized access (P1-23)."""
+    admin_key = os.environ.get("ADMIN_SECRET_KEY")
+    if not admin_key:
+        return True # Dev mode fallback
+    auth_header = request.headers.get("X-Admin-Key") or request.query_params.get("key")
+    if auth_header != admin_key:
+        raise HTTPException(status_code=403, detail="دسترسی غیرمجاز: کلید مدیر اشتباه است.")
+    return True
 
 app = FastAPI(
     title="US30 ASEMAN Smart Money Dashboard",
