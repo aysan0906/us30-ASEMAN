@@ -518,7 +518,7 @@ def dow_guard(
             return cached["data"]
 
     # Use REAL analysis rather than dummy 75 score / 135 atr
-    analysis = engine.build_analysis(symbol="US30", interval=interval, bars=bars, use_cache=not fresh)
+    analysis = engine.build_analysis(interval=interval, bars=bars, force=fresh)
     if not analysis or not analysis.get("ok"):
         return {
             "ok": False,

@@ -355,7 +355,20 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
 
         # Institutional Limit Pullback Entry (NEVER chase at market top/bottom)
         # Entry zone is placed 4.0 to 6.5 points in pullback towards VWAP/FVG discount
-        if scalp_is_long:
+        if scalp_is_neutral:
+            scalp_entry = None
+            entry_low = None
+            entry_high = None
+            scalp_sl = None
+            scalp_tp1 = None
+            scalp_tp2 = None
+            scalp_tp3 = None
+            scalp_tp1_pts = 0
+            scalp_tp2_pts = 0
+            scalp_tp3_pts = 0
+            _LOCKED_SCALP_STATE = None
+            lock_status_note = "⚪ وضعیت بازار خنثی / بدون ستاپ معتبر (سیستم در حالت صبر)"
+        elif scalp_is_long:
             pullback_dist = 5.0
             scalp_entry = round(t_bid - pullback_dist, 1)
             entry_low = round(scalp_entry - 2.5, 1)
@@ -377,6 +390,24 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
             scalp_tp1_pts = int(round(scalp_tp1 - scalp_entry))
             scalp_tp2_pts = int(round(scalp_tp2 - scalp_entry))
             scalp_tp3_pts = int(round(scalp_tp3 - scalp_entry))
+
+            _LOCKED_SCALP_STATE = {
+                "active": True,
+                "entry": scalp_entry,
+                "sl": scalp_sl,
+                "tp1": scalp_tp1,
+                "tp2": scalp_tp2,
+                "tp3": scalp_tp3,
+                "tp1_pts": scalp_tp1_pts,
+                "tp2_pts": scalp_tp2_pts,
+                "tp3_pts": scalp_tp3_pts,
+                "direction": scalp_dir_code,
+                "created_at": now_epoch,
+                "expires_at": now_epoch + 2700,
+                "time_str": tehran_time_str,
+                "date_str": tehran_date_str
+            }
+            lock_status_note = "⚡ ستاپ خرید تازه صادر و قفل شد (مجهز به فیلتر ضد فرانت‌رانینگ)"
         else:
             pullback_dist = 5.0
             scalp_entry = round(t_ask + pullback_dist, 1)
@@ -400,23 +431,23 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
             scalp_tp2_pts = int(round(scalp_entry - scalp_tp2))
             scalp_tp3_pts = int(round(scalp_entry - scalp_tp3))
 
-        _LOCKED_SCALP_STATE = {
-            "active": True,
-            "entry": scalp_entry,
-            "sl": scalp_sl,
-            "tp1": scalp_tp1,
-            "tp2": scalp_tp2,
-            "tp3": scalp_tp3,
-            "tp1_pts": scalp_tp1_pts,
-            "tp2_pts": scalp_tp2_pts,
-            "tp3_pts": scalp_tp3_pts,
-            "direction": scalp_dir_code,
-            "created_at": now_epoch,
-            "expires_at": now_epoch + 2700,  # 45 minutes locked
-            "time_str": tehran_time_str,
-            "date_str": tehran_date_str
-        }
-        lock_status_note = "⚡ ستاپ تازه صادر و قفل شد (مجهز به فیلتر ضد فرانت‌رانینگ)"
+            _LOCKED_SCALP_STATE = {
+                "active": True,
+                "entry": scalp_entry,
+                "sl": scalp_sl,
+                "tp1": scalp_tp1,
+                "tp2": scalp_tp2,
+                "tp3": scalp_tp3,
+                "tp1_pts": scalp_tp1_pts,
+                "tp2_pts": scalp_tp2_pts,
+                "tp3_pts": scalp_tp3_pts,
+                "direction": scalp_dir_code,
+                "created_at": now_epoch,
+                "expires_at": now_epoch + 2700,
+                "time_str": tehran_time_str,
+                "date_str": tehran_date_str
+            }
+            lock_status_note = "⚡ ستاپ فروش تازه صادر و قفل شد (مجهز به فیلتر ضد فرانت‌رانینگ)"
 
     scalp_signal = {
         "signal_type": "SCALP",
