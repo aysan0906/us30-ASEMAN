@@ -19,7 +19,7 @@ market_hours.py — منبع واحد حقیقت برای ساعت بازار
 from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from zoneinfo import ZoneInfo
 
 NY = ZoneInfo("America/New_York")

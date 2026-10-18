@@ -13,7 +13,7 @@ elite_modules.py — The 6 Advanced Institutional Modules for US30 Terminal:
 from __future__ import annotations
 import time, json, urllib.request
 from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 DIVISOR_2026 = 0.15172752563132
 POINT_MULTIPLIER = 1.0 / DIVISOR_2026 # ~6.59 pts per $1 move
@@ -487,6 +487,31 @@ def get_all_elite_modules(current_price: float = 51570.0, price_change: float = 
 # ========================================================
 
 _vix_cache = {"time": 0, "data": None}
+
+
+def get_macro_economic_shield() -> Dict[str, Any]:
+    """پل به فیوز کلان رسمی پروژه (AsemanMacroShieldUS30.get_macro_shield_status).
+
+    کلیدهای برگشتی نرمال‌سازی شده‌اند تا فیلتر ۴ (News Spike Breaker) روی آن‌ها
+    به صورت یکنواخت کار کند و در صورت در دسترس نبودن ماژول، حالت امن برگردد.
+    """
+    try:
+        import aseman_resources
+        info = aseman_resources.AsemanMacroShieldUS30.get_macro_shield_status()
+        color = str(info.get("shield_color", "GREEN")).upper()
+        status = "LOCKED" if color == "RED" else ("CAUTION" if color == "YELLOW" else "PASS")
+        return {
+            "status": status,
+            "minutes_to_next": abs(int(info.get("countdown_seconds", 9999) or 9999)) / 60.0,
+            "shield_color": color,
+            "shield_state": info.get("shield_state", ""),
+            "next_event": info.get("next_event", ""),
+            "countdown_fmt": info.get("countdown_fmt", ""),
+        }
+    except Exception:
+        return {"status": "PASS", "minutes_to_next": 9999.0, "shield_color": "GREEN",
+                "shield_state": "", "next_event": "", "countdown_fmt": ""}
+
 
 def get_vix_and_smt_data(current_price: Optional[float] = None):
     now = time.time()

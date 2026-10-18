@@ -1,6 +1,5 @@
 from __future__ import annotations
 import uuid
-from us30_supreme_arbiter import us30_supreme_arbiter
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -27,6 +26,7 @@ import json, time, threading, urllib.request, urllib.parse, socket
 socket.setdefaulttimeout(4.0)
 from datetime import datetime, timedelta, timezone
 
+from us30_supreme_arbiter import us30_supreme_arbiter
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -1074,7 +1074,6 @@ def format_us30_composite_telegram(data: Dict[str, Any]) -> str:
 ━━━━━━━━━━━━━━━━━━━━""".strip()
 
 format_us30_telegram_signal = format_us30_composite_telegram
-format_us30_master_signal_telegram = format_us30_composite_telegram
 
 def dispatch_to_telegram_raw(token: str, chat: str, message: str) -> Dict[str, Any]:
     try:
@@ -2733,7 +2732,6 @@ threading.Thread(target=us30_sentinel_auto_loop, daemon=True).start()
 threading.Thread(target=us30_telegram_interactive_poller, daemon=True).start()
 
 if __name__ == "__main__":
-    import uvicorn
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
 
@@ -2749,7 +2747,6 @@ def get_supreme_arbiter_status():
 
     import ninja_atas_quant_engine as naq
     import bookmap_engine as be
-    import macro_data as md
 
     modules_data = {
         "trendo": t_meta,
