@@ -69,8 +69,13 @@ class DowAIAdvisor:
                 sc = unif.get("scalp", {})
                 align = unif.get("alignment_status", "")
                 align_note = unif.get("alignment_note", "")
+                source_warning = ""
+                if not isinstance(unif, dict) or unif.get("tradable") is not True:
+                    source_warning = ("\n\n⚠️ <b>هشدار منبع داده:</b> فید کندلی نماد اجرایی واقعی US30 تأیید نشده است؛ "
+                                      "جهت‌ها و سطوح زیر <b>سیگنال معاملاتی نیستند</b> و فقط جنبهٔ آموزشی دارند.")
 
                 return f"""### 🏛️ تحلیل جامع و فوق‌تخصصی سوئینگ تریدینگ (۴ ساعته) برای شاخص داوجونز (US30)
+{source_warning}
 
 #### ❓ سیگنال سوئینگ تریدینگ داوجونز از چه چیزی می‌آید و خاستگاه آن چیست؟
 سیگنال سوئینگ تریدینگ (Swing Trading) داوجونز بر خلاف اسکالپ که وابسته به اردرهای ثانیه‌ای و نوسانات چند دقیقه‌ای است، از **تجمیع ۶ مؤلفه ساختاری کلان و میان‌مدت ۴ ساعته و چندروزه وال‌استریت** شکل می‌گیرد:
@@ -112,12 +117,19 @@ class DowAIAdvisor:
                 from market_hours import is_us30_market_in_active_session
 
                 t_tick = trendo_engine.get_trendo_us30_live()
-                p_bid = float(t_tick.get("bid", price) or price)
-                p_ask = float(t_tick.get("ask", p_bid + 1.2) or p_bid + 1.2)
-                p_spread = float(t_tick.get("spread", 1.2) or 1.2)
-                
+                trendo_ok = isinstance(t_tick, dict) and t_tick.get("ok") is True and t_tick.get("bid") is not None
+                if trendo_ok:
+                    p_bid = float(t_tick.get("bid"))
+                    p_ask = float(t_tick.get("ask") if t_tick.get("ask") is not None else p_bid)
+                    p_spread = float(t_tick.get("spread") if t_tick.get("spread") is not None else round(p_ask - p_bid, 2))
+                    trendo_line = f"نرخ لحظه‌ای ترندو: <code>Bid: {p_bid:,.2f} | Ask: {p_ask:,.2f}</code> (اسپرد: <code>{p_spread:.2f} pt</code>)"
+                else:
+                    trendo_line = "نرخ لحظه‌ای ترندو: <b>در دسترس نیست</b> (قیمت و اسپرد بروکر نمایش داده نمی‌شود)"
+
                 bm = bookmap_engine.get_us30_bookmap_data()
-                bm_imb = bm.get("imbalance_pct", +15.0)
+                bm_ok = isinstance(bm, dict) and bm.get("ok") is True and bm.get("imbalance_pct") is not None
+                bm_line = (f"تراز دفتر سفارشات بوک‌مپ: <b>{float(bm.get('imbalance_pct')):+.1f}٪</b>"
+                           if bm_ok else "تراز دفتر سفارشات بوک‌مپ: <b>در دسترس نیست (اتصال بوک‌مپ برقرار نشده)</b>")
 
                 market_active, market_reason, sess = is_us30_market_in_active_session()
                 sess_label = sess.get("label", "سشن معاملاتی")
@@ -125,8 +137,8 @@ class DowAIAdvisor:
                 return f"""### 🧠 موتور حل تضاد و داوری چندمتغیره مشاور هوشمند وال‌استریت (Conflict Resolver)
 
 #### ⚖️ کالبدشکافی تضاد ماژول‌ها در لحظه جاری ({time_str} به وقت ایران):
-نرخ لحظه‌ای ترندو: <code>Bid: {p_bid:,.2f} | Ask: {p_ask:,.2f}</code> (اسپرد: <code>{p_spread:.2f} pt</code>)
-وضعیت سشن: <b>{sess_label}</b> | تراز دفتر سفارشات بوک‌مپ: <b>{bm_imb:+.1f}٪</b>
+{trendo_line}
+وضعیت سشن: <b>{sess_label}</b> | {bm_line}
 
 ---
 
@@ -270,6 +282,9 @@ $$\\text{{DJIA Price}} = \\frac{{\\sum \\text{{قیمت هر سهم ۳۰ شرک�
             except Exception:
                 pass
 
+            if not isinstance(nt_data, dict) or nt_data.get("ok") is not True:
+                return "ترمینال نینجاتریدر متصل نیست؛ CVD و SuperDOM واقعی در دسترس نیست و دادهٔ شبیه‌سازی‌شده هم نمایش داده نمی‌شود."
+
             cvd = nt_data.get("cvd", {})
             vwap = nt_data.get("vwap", {})
             dom = nt_data.get("super_dom", [])
@@ -301,6 +316,9 @@ $$\\text{{DJIA Price}} = \\frac{{\\sum \\text{{قیمت هر سهم ۳۰ شرک�
                 atas_data = naq.get_atas_live(price)
             except Exception:
                 pass
+
+            if not isinstance(atas_data, dict) or atas_data.get("ok") is not True:
+                return "ترمینال اتاس متصل نیست؛ Big Trades و نوار تراکنش واقعی در دسترس نیست و دادهٔ شبیه‌سازی‌شده نمایش داده نمی‌شود."
 
             tape = atas_data.get("speed_of_tape", {})
             b_trades = atas_data.get("big_trades", [])
@@ -492,6 +510,9 @@ $$\\text{{DJIA Price}} = \\frac{{\\sum \\text{{قیمت هر سهم ۳۰ شرک�
                 cot_info = cftc_cot_engine.get_us30_cot_report()
             except Exception:
                 pass
+
+            if not isinstance(cot_info, dict) or cot_info.get("ok") is not True:
+                return "گزارش CFTC CoT در دسترس نیست؛ اعداد ثابت یا شبیه‌سازی‌شده به‌عنوان دادهٔ رسمی نمایش داده نمی‌شود."
 
             spec = cot_info.get("speculators", {})
             t_analysis = cot_info.get("trend_analysis_6_weeks", {})
@@ -709,9 +730,11 @@ $$\\text{{DJIA Price}} = \\frac{{\\sum \\text{{قیمت هر سهم ۳۰ شرک�
             import trendo_engine
             from market_hours import is_us30_market_in_active_session
             t_tick = trendo_engine.get_trendo_us30_live()
-            p_bid = float(t_tick.get("bid", 51705.5) or 51705.5)
-            p_ask = float(t_tick.get("ask", p_bid + 1.2) or p_bid + 1.2)
-            p_spread = float(t_tick.get("spread", 1.2) or 1.2)
+            if not isinstance(t_tick, dict) or t_tick.get("ok") is not True or t_tick.get("bid") is None:
+                return "قیمت زنده ترندو در دسترس نیست؛ Bid/Ask نمایش داده نمی‌شود. وضعیت بازار را از داشبورد ببینید."
+            p_bid = float(t_tick.get("bid"))
+            p_ask = float(t_tick.get("ask") if t_tick.get("ask") is not None else p_bid)
+            p_spread = float(t_tick.get("spread") if t_tick.get("spread") is not None else round(p_ask - p_bid, 2))
             active, reason, sess = is_us30_market_in_active_session()
 
             now_tehran = datetime.now(TEHRAN_TZ)
@@ -747,10 +770,12 @@ $$\\text{{DJIA Price}} = \\frac{{\\sum \\text{{قیمت هر سهم ۳۰ شرک�
         try:
             import cftc_cot_engine as cce
             cot = cce.get_us30_cot_report()
+            if not isinstance(cot, dict) or cot.get("ok") is not True:
+                return "گزارش CFTC CoT در دسترس نیست؛ اعداد ثابت یا شبیه‌سازی‌شده به‌عنوان دادهٔ رسمی نمایش داده نمی‌شود."
             spec = cot.get("speculators", {})
             comm = cot.get("commercials", {})
             ret = cot.get("retail", {}) or cot.get("non_reportable", {})
-            oi = cot.get("open_interest", 90051)
+            oi = cot.get("open_interest")
             t_str = datetime.now(TEHRAN_TZ).strftime("%Y/%m/%d %H:%M")
 
             return f"""🏛️ <b>گزارش رسمی تعهدات معامله‌گران وال‌استریت (CFTC CoT)</b>

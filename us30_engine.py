@@ -123,6 +123,7 @@ def _live_dow_cash() -> Dict[str, Any]:
             rows = data.get("data", [])
             if rows:
                 d = rows[0].get("d", [])
+                live_symbol = str(rows[0].get("s") or "FOREXCOM:US30")
                 price = float(d[0])
                 chg_pct = float(d[1])
                 chg_abs = float(d[2])

@@ -137,7 +137,11 @@ def get_trendo_us30_live(timeout: float = 2.0) -> Dict[str, Any]:
     # If network temporarily unavailable, use last cached value
     with _TRENDO_LOCK:
         if _TRENDO_CACHE:
-            return _TRENDO_CACHE
+            stale = dict(_TRENDO_CACHE)
+            stale["age_seconds"] = round(now - _TRENDO_CACHE_TS, 3)
+            stale["status"] = "STALE_CACHE"
+            stale["is_synthetic"] = False
+            return stale
 
     # Synthetic fallback if first boot before network connects
     now_tehran = datetime.now(TEHRAN_TZ)

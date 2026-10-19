@@ -128,7 +128,7 @@ def block_trades(df: pd.DataFrame, z_thr: float = 2.2) -> Dict:
                 vol_x=round(float(v[i] / vm[i]), 2) if vm[i] else None,
                 side=("خرید" if clv[i] > 0.25 else
                       "فروش" if clv[i] < -0.25 else "خنثی"),
-                move_pct=round(float((c[i] - o[i]) / o[i] * 100), 3),
+                move_pct=round(float((c[i] - o[i]) / o[i] * 100), 3) if o[i] != 0 else 0.0,
             ))
     recent = [x for x in items if x["i"] >= len(df) - 60]
     nb = sum(1 for x in recent if x["side"] == "خرید")

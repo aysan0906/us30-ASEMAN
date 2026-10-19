@@ -17,6 +17,7 @@ import io
 import json
 import numpy as np
 import os
+import threading
 import time
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
@@ -40,6 +41,9 @@ HORIZON = {"5m": 12, "15m": 8, "30m": 6, "1h": 8, "1d": 5}
 
 # آستانه موفقیت بر حسب ATR
 WIN_ATR = 0.75
+
+# قفل read-modify-write: درخواست های همزمان رکورد همدیگر را گم نکنند.
+_LOCK = threading.Lock()
 
 
 def _now():
@@ -126,23 +130,24 @@ def record(decision: Dict, asset: str, interval: str,
                    if isinstance(p, dict) and p.get("weight")},
             outcome=None, checked=False)
 
-        rows = _load()
-        for i, r in enumerate(rows):
-            if r.get("id") == rid:
-                if r.get("checked"):
-                    return dict(ok=True, id=rid, skipped="قبلا ارزیابی شده")
-                rec["updates"] = int(r.get("updates", 1)) + 1
-                rec["ts"] = r["ts"]          # زمان اولین تصمیم می ماند
-                rec["price"] = r["price"]    # قیمت ورود اولیه می ماند
-                # نمایش هم باید با همان قیمت اولیه بخواند
-                rec["price_display"] = r.get(
-                    "price_display", round(float(r["price"]) * sc, 4))
-                rows[i] = rec
-                _save(rows)
-                return dict(ok=True, id=rid, updated=True)
-        with io.open(PATH, "a", encoding="utf-8") as f:
-            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
-        return dict(ok=True, id=rid, created=True)
+        with _LOCK:
+            rows = _load()
+            for i, r in enumerate(rows):
+                if r.get("id") == rid:
+                    if r.get("checked"):
+                        return dict(ok=True, id=rid, skipped="قبلا ارزیابی شده")
+                    rec["updates"] = int(r.get("updates", 1)) + 1
+                    rec["ts"] = r["ts"]          # زمان اولین تصمیم می ماند
+                    rec["price"] = r["price"]    # قیمت ورود اولیه می ماند
+                    # نمایش هم باید با همان قیمت اولیه بخواند
+                    rec["price_display"] = r.get(
+                        "price_display", round(float(r["price"]) * sc, 4))
+                    rows[i] = rec
+                    _save(rows)
+                    return dict(ok=True, id=rid, updated=True)
+            with io.open(PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+            return dict(ok=True, id=rid, created=True)
     except Exception as e:
         return dict(ok=False, error=str(e)[:150])
 
@@ -164,9 +169,11 @@ def _load() -> List[Dict]:
 
 
 def _save(rows: List[Dict]):
-    with io.open(PATH, "w", encoding="utf-8") as f:
+    tmp = PATH + ".tmp"
+    with io.open(tmp, "w", encoding="utf-8") as f:
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    os.replace(tmp, PATH)
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -243,7 +250,8 @@ def merge(incoming: List[Dict]) -> Dict:
     rows = sorted(cur.values(), key=lambda x: str(x.get("ts") or ""))
     if len(rows) > MAX_ROWS:              # قدیمی ترین ها حذف می شوند
         rows = rows[-MAX_ROWS:]
-    _save(rows)
+    with _LOCK:
+        _save(rows)
     return dict(ok=True, before=before, after=len(rows),
                 added=added, updated=updated)
 
@@ -291,7 +299,7 @@ def evaluate(limit: int = 500) -> Dict:
             if getattr(idx, "tz", None) is not None:
                 t0 = t0.tz_convert(idx.tz)
             else:
-                t0 = t0.tz_localize(None)
+                t0 = t0.tz_convert(None)
             after = df[idx > t0]
             k = HORIZON.get(iv, 8)
             if len(after) < k:
@@ -364,7 +372,8 @@ def evaluate(limit: int = 500) -> Dict:
         for i, r in enumerate(rows):
             if r["id"] in byid:
                 rows[i] = byid[r["id"]]
-        _save(rows)
+        with _LOCK:
+            _save(rows)
     out = summary()
     out["newly_checked"] = done
     return out

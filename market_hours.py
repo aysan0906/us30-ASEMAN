@@ -278,17 +278,25 @@ def upcoming_holidays(n: int = 5, ts: Optional[datetime] = None) -> List[Dict]:
 
 def is_us30_market_in_active_session() -> Tuple[bool, str, Dict[str, Any]]:
     """
-    Checks if the US30 market is within the allowed institutional trading window:
-    1. Weekdays only: Monday to Friday (Saturday & Sunday 100% closed).
-    2. Session Window: From London Open (07:00 UTC / 10:30 Iran) to New York Close (21:00 UTC / 00:30 Iran).
+    پنجره نهادی معاملاتی US30 (نمای فیوچرز شاخص داوجونز):
+    1. روزهای کاری: دوشنبه تا جمعه (شنبه و یکشنبه ۱۰۰٪ تعطیل).
+    2. تعطیلات رسمی NYSE: بازار کاملاً بسته است (Fail-Closed، هیچ سیگنالی ارسال نمی‌شود).
+    3. پنجره سشن: از گشایش لندن (۰۷:۰۰ UTC / ۱۰:۳۰ ایران) تا پایان نیویورک.
+       پایان نیویورک در فصل DST آمریکا ۲۰:۰۰ UTC و در بقیه سال ۲۱:۰۰ UTC است.
+    4. نیم‌روزهای معاملاتی (جمعه پس از شکرگزاری، شب کریسمس، شب روز استقلال):
+       بسته شدن زودتر در ۱۳:۰۰ نیویورک.
     """
     now_utc = datetime.now(ZoneInfo("UTC"))
+    st = market_status(now_utc)
     weekday = now_utc.weekday()  # 0=Monday, 4=Friday, 5=Saturday, 6=Sunday
     hour_utc = now_utc.hour
     minute_utc = now_utc.minute
     time_val_utc = hour_utc + (minute_utc / 60.0)
 
-    # 1. Weekend Check (Saturday & Sunday)
+    # پایان سشن نیویورک به وقت UTC: با DST ساعت ۲۰:۰۰، بدون DST ساعت ۲۱:۰۰
+    ny_close_utc = 20.0 if st["dst"] else 21.0
+
+    # 1. تعطیلات آخر هفته
     if weekday == 5:  # Saturday
         return False, "بازار داوجونز در روز شنبه تعطیل است (تعطیلات آخر هفته وال‌استریت)", {
             "is_open": False,
@@ -304,7 +312,17 @@ def is_us30_market_in_active_session() -> Tuple[bool, str, Dict[str, Any]]:
             "countdown": "بازگشایی سشن لندن: فردا دوشنبه ساعت ۱۰:۳۰ صبح به وقت ایران"
         }
 
-    # 2. Weekday Hours Check (Monday to Friday: 07:00 UTC to 21:00 UTC)
+    # 2. تعطیلات رسمی NYSE
+    if st["is_holiday"]:
+        holiday_name = st.get("holiday_name") or "تعطیل رسمی"
+        return False, f"بازار داوجونز به دلیل تعطیل رسمی وال‌استریت بسته است — {holiday_name}", {
+            "is_open": False,
+            "phase": "NYSE_HOLIDAY",
+            "label": f"تعطیل رسمی ({holiday_name})",
+            "countdown": f"بازگشایی: {st['next_open_tehran']} به وقت ایران"
+        }
+
+    # 3. قبل از گشایش لندن
     if time_val_utc < 7.0:
         return False, "خارج از ساعات فعال (قبل از بازگشایی بازار لندن)", {
             "is_open": False,
@@ -312,8 +330,22 @@ def is_us30_market_in_active_session() -> Tuple[bool, str, Dict[str, Any]]:
             "label": "پیش‌گشایش (قبل از بازگشایی لندن)",
             "countdown": "بازگشایی سشن لندن: ساعت ۱۰:۳۰ صبح به وقت ایران"
         }
-    elif time_val_utc >= 21.0:
-        if weekday == 4:  # Friday after 21:00 UTC
+
+    # 4. نیم‌روز معاملاتی: بسته شدن زودتر در ۱۳:۰۰ نیویورک
+    if st["is_half_day"]:
+        # 13:00 NY = 17:00 UTC با DST / 18:00 UTC بدون DST
+        half_close_utc = 17.0 if st["dst"] else 18.0
+        if time_val_utc >= half_close_utc:
+            half_name = st.get("half_day_name") or "نیم‌روز معاملاتی"
+            return False, f"پایان معاملات نیم‌روز ({half_name})", {
+                "is_open": False,
+                "phase": "HALF_DAY_CLOSED",
+                "label": f"پایان معاملات — {half_name}",
+                "countdown": "بازگشایی سشن لندن: ساعت ۱۰:۳۰ صبح روز معاملاتی بعد به وقت ایران"
+            }
+    elif time_val_utc >= ny_close_utc:
+        # 5. پایان سشن نیویورک (DST-aware)
+        if weekday == 4:  # Friday after NY close
             return False, "پایان معاملات هفته در بازار نیویورک (بازار بسته شد)", {
                 "is_open": False,
                 "phase": "FRIDAY_CLOSED",
@@ -328,12 +360,13 @@ def is_us30_market_in_active_session() -> Tuple[bool, str, Dict[str, Any]]:
                 "countdown": "بازگشایی سشن لندن: ساعت ۱۰:۳۰ صبح فردا"
             }
 
+    # پنجره فعال (دوشنبه تا جمعه، ۰۷:۰۰ UTC تا پایان نیویورک)
     session_name = "سشن نیویورک" if time_val_utc >= 13.5 else ("هم‌پوشانی طلایی لندن و نیویورک" if time_val_utc >= 12.0 else "سشن لندن")
     return True, f"بازار داوجونز فعال است ({session_name})", {
         "is_open": True,
         "phase": "MARKET_ACTIVE",
         "label": f"بازار فعال ({session_name})",
-        "countdown": "سیگنال‌دهی تلگرام مجاز و فعال (از گشایش لندن ۱۰:۳۰ تا پایان نیویورک ۰۰:۳۰)"
+        "countdown": "سیگنال‌دهی تلگرام مجاز و فعال (از گشایش لندن ۱۰:۳۰ تا پایان نیویورک)"
     }
 
 

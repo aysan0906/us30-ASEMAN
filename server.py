@@ -465,6 +465,7 @@ def aseman_golden(
     if not _analysis_is_real_index(data):
         return {"ok": False, "trade_allowed": False, "status": "PROXY_DATA_BLOCKED", "message": "کندل‌های نماد اجرایی US30 در دسترس نیستند."}
     d = direction.upper()
+    raw_dir = 0
     if d == "AUTO":
         sig = data.get("signal", {})
         raw_dir = int(sig.get("direction", 0) or 0)
@@ -474,6 +475,17 @@ def aseman_golden(
         d = "SHORT"
     else:
         d = "NEUTRAL" # 0 strictly means NEUTRAL / WAIT, NEVER LONG!
+    if d == "NEUTRAL":
+        # Fail-closed: موتور فیلتر طلایی فقط حالت‌های LONG و SHORT را تشخیص می‌دهد
+        # (هر رشته غیر LONG وارد شاخه‌های SHORT می‌شود)؛ بنابراین در بازار خنثی
+        # به‌جای ساخت سیگنال جهت‌دار، حکم انتظار برمی‌گردد.
+        return {
+            "ok": False,
+            "trade_allowed": False,
+            "status": "NEUTRAL_WAIT",
+            "direction": "NEUTRAL",
+            "message": "جهت ساختاری خنثی است؛ فیلتر طلایی جهت‌دار نیست و سیگنالی ساخته نمی‌شود. منتظر شکست ساختار (BOS) باشید.",
+        }
     return aseman.AsemanGoldenFiltersUS30.evaluate(data, d)
 
 
@@ -705,7 +717,50 @@ def dow_context(with_mtf: bool = Query(False)):
 
 @app.get("/api/dow/orderflow")
 def dow_orderflow(interval: str = Query("1h")):
-    return _unavailable_module("orderflow", "OHLCV از DIA یا شاخص عمومی orderflow واقعی/Level 2 را نشان نمی‌دهد؛ CVD و بلوک‌ترید ساختگی ارائه نمی‌شوند.")
+    """اردرفلوی بازسازی‌شده از OHLCV — صادقانه با برچسب ESTIMATED_PROXY.
+
+    این خروجی هرگز وارد گارد اجرایی یا امتیاز سیگنال نمی‌شود؛ فقط نمایش
+    پژوهشی است. برای اردرفلوی واقعی به فید Level 2 / tick بروکر نیاز است.
+    """
+    if interval not in md.VALID_INTERVALS:
+        return JSONResponse(status_code=422, content={"ok": False, "error": "INVALID_INTERVAL", "allowed": list(md.VALID_INTERVALS)})
+    try:
+        data = dowres.orderflow(interval)
+    except Exception as e:
+        return {"ok": False, "error": "ORDERFLOW_UNAVAILABLE", "message": str(e)[:200]}
+    if not isinstance(data, dict) or data.get("ok") is not True:
+        return {"ok": False, "error": "ORDERFLOW_UNAVAILABLE",
+                "message": "دادهٔ کندلی برای بازسازی اردر فلو در دسترس نیست."}
+    dlt = data.get("delta") or {}
+    buy_vol = float(dlt.get("buy_volume") or 0)
+    sell_vol = float(dlt.get("sell_volume") or 0)
+    total = buy_vol + sell_vol
+    buy_pct = round(buy_vol / total * 100, 1) if total > 0 else 50.0
+    sell_pct = round(100.0 - buy_pct, 1)
+    data["volume_comparison"] = {
+        "buy_pct": buy_pct,
+        "sell_pct": sell_pct,
+        "aggressive_buy_lots": int(buy_vol),
+        "aggressive_sell_lots": int(sell_vol),
+        "net_delta_lots": int(round(float(dlt.get("cvd_last") or 0))),
+        "delta_bias": "تخمینی از حجم کندل‌ها — لات واقعی نیست",
+    }
+    data["actionable_guidance"] = {
+        "what_to_do": ("این اعداد بازسازی‌شده از کندل‌های OHLCV هستند و اردرفلوی واقعی (Level 2 / Tape) نیستند. "
+                       "فقط برای پژوهش بصری استفاده کنید؛ هیچ تصمیم اجرایی از آن نگیرید."),
+        "active_news_context": "فیوز خبری در /api/aseman/macro جداگانه بررسی می‌شود.",
+        "key_checklist": [
+            "برای CVD واقعی، فید tick بروکر (ترندو) باید به سرور متصل شود.",
+            "تا آن زمان همهٔ فیلدها برچسب «تخمینی» دارند.",
+            "این داده هرگز وارد گارد اجرایی یا سیگنال تلگرام نمی‌شود.",
+        ],
+    }
+    data["data_tier"] = "ESTIMATED_PROXY"
+    data["estimated"] = True
+    data["executable"] = False
+    data["note"] = ("CVD/delta و بلوک‌ترید از کندل‌های OHLCV بازسازی شده‌اند (تخمینی)، نه از دادهٔ Level 2 واقعی؛ "
+                    "برای سیگنال اجرایی استفاده نمی‌شوند.")
+    return data
 
 @app.get("/api/dow/volatility")
 def dow_volatility():
@@ -846,67 +901,9 @@ def get_dispatched_journal_stats() -> Dict[str, Any]:
     }
 
 def is_us30_market_in_active_session() -> tuple[bool, str, Dict[str, Any]]:
-    """
-    Checks if the US30 market is within the allowed institutional trading window:
-    1. Weekdays only: Monday to Friday (Saturday & Sunday 100% closed).
-    2. Session Window: From London Open (07:00 UTC / 10:30 Iran) to New York Close (21:00 UTC / 00:30 Iran).
-    """
-    now_utc = datetime.now(timezone.utc)
-    weekday = now_utc.weekday()  # 0=Monday, 4=Friday, 5=Saturday, 6=Sunday
-    hour_utc = now_utc.hour
-    minute_utc = now_utc.minute
-    time_val_utc = hour_utc + (minute_utc / 60.0)
-
-    # 1. Weekend Check (Saturday & Sunday)
-    if weekday == 5:  # Saturday
-        return False, "بازار داوجونز در روز شنبه تعطیل است (تعطیلات آخر هفته وال‌استریت)", {
-            "is_open": False,
-            "phase": "WEEKEND_SATURDAY",
-            "label": "تعطیلات آخر هفته وال‌استریت (شنبه)",
-            "countdown": "بازگشایی سشن لندن: دوشنبه ساعت ۱۰:۳۰ صبح به وقت ایران"
-        }
-    elif weekday == 6:  # Sunday
-        return False, "بازار داوجونز در روز یکشنبه تعطیل است (تعطیلات آخر هفته وال‌استریت)", {
-            "is_open": False,
-            "phase": "WEEKEND_SUNDAY",
-            "label": "تعطیلات آخر هفته وال‌استریت (یکشنبه)",
-            "countdown": "بازگشایی سشن لندن: فردا دوشنبه ساعت ۱۰:۳۰ صبح به وقت ایران"
-        }
-
-    # 2. Weekday Hours Check (Monday to Friday: 07:00 UTC to 21:00 UTC)
-    # London Open: 07:00 UTC (10:30 Iran Time)
-    # New York Close: 21:00 UTC (00:30 next morning Iran Time)
-    if time_val_utc < 7.0:
-        return False, "خارج از ساعات فعال (قبل از بازگشایی بازار لندن)", {
-            "is_open": False,
-            "phase": "PRE_LONDON_QUIET",
-            "label": "پیش‌گشایش (قبل از بازگشایی لندن)",
-            "countdown": "بازگشایی سشن لندن: ساعت ۱۰:۳۰ صبح به وقت ایران"
-        }
-    elif time_val_utc >= 21.0:
-        if weekday == 4:  # Friday after 21:00 UTC
-            return False, "پایان معاملات هفته در بازار نیویورک (بازار بسته شد)", {
-                "is_open": False,
-                "phase": "FRIDAY_CLOSED",
-                "label": "پایان معاملات هفته (بسته)",
-                "countdown": "بازگشایی مجدد: دوشنبه ساعت ۱۰:۳۰ صبح"
-            }
-        else:
-            return False, "پایان سشن معاملاتی نیویورک (ساعات غیرفعال شبانه)", {
-                "is_open": False,
-                "phase": "POST_NY_QUIET",
-                "label": "پایان سشن نیویورک (آرامش شبانه)",
-                "countdown": "بازگشایی سشن لندن: ساعت ۱۰:۳۰ صبح فردا"
-            }
-
-    # Active Window (Monday to Friday, 07:00 - 21:00 UTC)
-    session_name = "سشن نیویورک" if time_val_utc >= 13.5 else ("هم‌پوشانی طلایی لندن و نیویورک" if time_val_utc >= 12.0 else "سشن لندن")
-    return True, f"بازار داوجونز فعال است ({session_name})", {
-        "is_open": True,
-        "phase": "MARKET_ACTIVE",
-        "label": f"بازار فعال ({session_name})",
-        "countdown": "سیگنال‌دهی تلگرام مجاز و فعال (از گشایش لندن ۱۰:۳۰ تا پایان نیویورک ۰۰:۳۰)"
-    }
+    """به منبع واحد حقیقت market_hours ارجاع می‌دهد (با لحاظ DST، تعطیلات رسمی NYSE و نیم‌روزها)."""
+    from market_hours import is_us30_market_in_active_session as _mh_session_check
+    return _mh_session_check()
 
 def get_us30_telegram_config() -> Dict[str, Any]:
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
@@ -1093,6 +1090,49 @@ def format_us30_master_signal_telegram(ms_data: Dict[str, Any]) -> str:
 
 DISPATCHED_SIGNALS_FILE = Path(__file__).resolve().parent / "dispatched_signals.jsonl"
 _journal_file_lock = threading.Lock()
+
+def dispatch_to_telegram_raw(tok: str, chat: str, msg: str) -> Dict[str, Any]:
+    """ارسال واقعی پیام به Telegram Bot API.
+
+    هیچ موفقیت ساختگی ندارد: فقط وقتی ok=True برمی گردد که تلگرام
+    ۲۰۰ برگرداند و body آن ok=true باشد. توکن هرگز در پیام خطا درج نمی شود.
+    """
+    try:
+        tok = (tok or "").strip()
+        chat = (chat or "").strip()
+        if not tok or not chat:
+            return {"ok": False, "description": "توکن ربات یا شناسه چت خالی است؛ ارسالی انجام نشد."}
+        if not msg or not str(msg).strip():
+            return {"ok": False, "description": "متن پیام خالی است؛ ارسالی انجام نشد."}
+        url = "https://api.telegram.org/bot%s/sendMessage" % tok
+        payload = json.dumps({
+            "chat_id": chat,
+            "text": str(msg),
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True,
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            url, data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST")
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            body = json.loads(resp.read().decode("utf-8", errors="replace"))
+        if isinstance(body, dict) and body.get("ok") is True:
+            return {"ok": True, "description": "پیام با موفقیت ارسال شد.",
+                    "message_id": (body.get("result") or {}).get("message_id")}
+        desc = "تلگرام ارسال را رد کرد."
+        if isinstance(body, dict):
+            desc = "تلگرام: %s" % str(body.get("description") or desc)
+        return {"ok": False, "description": desc[:300]}
+    except urllib.error.HTTPError as e:
+        try:
+            detail = json.loads(e.read().decode("utf-8", errors="replace"))
+            desc = str(detail.get("description") or "")[:300]
+        except Exception:
+            desc = ""
+        return {"ok": False, "description": "HTTP %s از تلگرام. %s" % (e.code, desc).strip()}
+    except Exception as e:
+        return {"ok": False, "description": "ارسال به تلگرام ناموفق: %s" % str(e)[:200]}
 
 def append_dispatched_signal(rec: Dict[str, Any]):
     try:
@@ -1414,7 +1454,7 @@ def telegram_interactive_status():
 def advisor_ask_question(req: DowAdvisorQuestionRequest):
     try:
         from dow_advisor_engine import DowAIAdvisor
-        answer = DowAIAdvisor.answer_question(req.question, req.price)
+        answer = DowAIAdvisor.answer_question(req.question, interval="1h", price=req.price)
         return {
             "ok": True,
             "question": req.question,
@@ -1691,31 +1731,6 @@ def dow_moc_imbalance():
 @app.get("/api/dow/smt-and-sweep")
 def dow_smt_and_sweep():
     return _unavailable_module("smt_and_sweep", "نسخهٔ فعلی از بازده‌های ثابت/ساختگی SPX و NDX استفاده می‌کرد؛ تا دریافت کندل‌های هم‌زمان واقعی خروجی سیگنال‌ساز غیرفعال است.")
-
-
-# In-memory journal store with thread safety
-_JOURNAL_LOCK = threading.Lock()
-_JOURNAL_STORE: List[Dict[str, Any]] = []
-
-@app.get("/api/journal")
-@app.get("/api/journal/live")
-@app.get("/api/journal/stats")
-def get_journal_records():
-    """Returns actual recorded signal lifecycle records cleanly."""
-    with _JOURNAL_LOCK:
-        wins = sum(1 for r in _JOURNAL_STORE if r.get("status") in ["WIN", "TP1", "TP2", "TP3"])
-        losses = sum(1 for r in _JOURNAL_STORE if r.get("status") in ["LOSS", "SL"])
-        total = len(_JOURNAL_STORE)
-        wr = round((wins / total * 100), 1) if total > 0 else 0.0
-        return {
-            "ok": True,
-            "total_signals": total,
-            "win_rate": wr,
-            "wins": wins,
-            "losses": losses,
-            "records": _JOURNAL_STORE[-50:] # last 50 trades
-        }
-
 
 def get_dashboard_html() -> str:
     p = APP_DIR / "index.html"
