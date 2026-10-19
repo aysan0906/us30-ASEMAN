@@ -111,7 +111,7 @@ KILLZONES_TEHRAN_SUMMER = [
 ENGINE_CONSTANTS = {
     "threshold": {"US30": {"minimum": 32.0, "strong": 40.0, "evidence_n": 144, "win_rate": 56.9, "avg_r": 0.399, "t": 3.98}},
     "best_r": {"US30": 2.5, "XAUUSD": 2.0},
-    "bad_intervals": ["1h", "5m", "15m", "30m"],
+    "bad_intervals": ["1m", "5m", "15m", "30m", "1h", "4h"],
     "cost_pct_round_trip": {"US30": 0.012, "XAUUSD": 0.020},
     "horizon_bars": {"5m": 12, "15m": 8, "30m": 6, "1h": 8, "1d": 5},
     "validated_plan": {"stop_atr": 1.0, "rr_us30": 2.5, "plan_none_when_qualifies_false": True},

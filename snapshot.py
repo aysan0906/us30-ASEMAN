@@ -18,69 +18,13 @@ import threading
 import time
 from typing import Any, Dict, Optional
 
-# محل ذخیره روی دیسک. روی Render موقتی است (با ری استارت پاک می شود)
-# ولی چون اکشنز هر ۱۵ دقیقه دوباره پوش می کند، خودش را ترمیم می کند.
+# Cache file on Render's ephemeral disk. No default bundled/public snapshot is trusted.
 _PATH = os.environ.get("SNAPSHOT_PATH", "/tmp/dow_snapshot.json")
-
-# نسخه ای که همراه دیپلوی می آید.
-#
-# ⚠ کشف ۱ اکتبر: _PATH زیر /tmp است و Render با هر ری استارت
-# آن را پاک می کند. تا امروز تنها چیزی که انبار را پر می کرد،
-# پوش مستقیم اکشنز به /api/snapshot بود — یعنی بعد از هر دیپلوی
-# تا اجرای بعدی اکشنز (۳ تا ۴ ساعت بعد) انبار خالی می ماند و
-# هر درخواست یک محاسبه زنده چند دقیقه ای می شد.
-#
-# ولی snapshot_cache.json در خود ریپو کامیت می شود و همراه هر
-# دیپلوی کنار کد روی دیسک می نشیند. پس بوت سرد هم بدون حتی یک
-# درخواست شبکه داده دارد.
-_BUNDLED = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                        "snapshot_cache.json")
-
-# ── انبار پشتیبان روی ریپو (اصلاح ۲۰۲۶-۰۹-۳۰) ─────────────────────
-#
-# مشکلی که کشف شد: /tmp روی Render رایگان موقتی است. سرویس بعد از
-# ۱۵ دقیقه بی کاری می خوابد و با بیدار شدن، انبار خالی است. فرض
-# قبلی این بود که «اکشنز هر ۱۵ دقیقه ترمیمش می کند» ولی بررسی
-# تاریخچه اجراها نشان داد گیت هاب کران را throttle می کند و واقعا
-# هر ۳ تا ۴ ساعت اجرا می شود.
-#
-# نتیجه: /api/snapshot همیشه count: 0 بود و هر درخواست ایجنت یک
-# محاسبه زنده ۱۴۰ تا ۳۰۰ ثانیه ای می شد که روی ۰٫۱ CPU کل سرویس
-# را قفل می کرد.
-#
-# راه حل: همان الگوی دفترچه. اکشنز نتیجه را در ریپو کامیت می کند و
-# سایت وقتی حافظه و دیسکش خالی است، یک بار از raw.githubusercontent
-# می خواند. اندازه گیری شد: ۰٫۱۵ ثانیه برای ۳۴ کیلوبایت فشرده.
-# این با هر ری استارت خودش را ترمیم می کند.
-#
-# اگر ریپو پرایوت شود این آدرس ۴۰۴ می دهد و بی صدا به محاسبه زنده
-# برمی گردیم — یعنی رفتار بدتر از قبل نمی شود.
-# آدرس فایل پشتیبان. اگر دستی تنظیم نشود، خودش از متغیرهایی که
-# Render به طور خودکار می سازد ساخته می شود — یعنی کاربر لازم نیست
-# هیچ چیزی در پنل Render تنظیم کند.
-#
-#     RENDER_GIT_REPO_SLUG = نام کاربری/نام ریپو
-#     RENDER_GIT_BRANCH    = main
-#
-# خارج از Render (مثلا اجرای محلی) این متغیرها وجود ندارند و
-# _REMOTE خالی می ماند، یعنی رفتار دقیقا مثل قبل است.
-# اگر Render متغیر RENDER_GIT_REPO_SLUG را ندهد، به این ریپو
-# برمی گردیم. ریپو عمومی است پس توکن لازم نیست، و کاربر مجبور
-# نیست در پنل Render (که بخش Environment را در دسترس ندارد)
-# چیزی تنظیم کند. با SNAPSHOT_REMOTE قابل بازنویسی است.
-_FALLBACK_SLUG = "aysan0906/us30-ASEMAN"
+_BUNDLED = os.path.join(os.path.dirname(os.path.abspath(__file__)), "snapshot_cache.json")
 
 
-def _default_remote() -> str:
-    slug = (os.environ.get("RENDER_GIT_REPO_SLUG") or "").strip().strip("/")
-    branch = (os.environ.get("RENDER_GIT_BRANCH") or "main").strip() or "main"
-    if not slug or "/" not in slug:
-        slug, branch = _FALLBACK_SLUG, "main"
-    return ("https://raw.githubusercontent.com/%s/%s/snapshot_cache.json"
-            % (slug, branch))
-
-
-_REMOTE = (os.environ.get("SNAPSHOT_REMOTE") or "").strip() or _default_remote()
+# Remote cache is opt-in only; no built-in public repository URL is trusted.
+_REMOTE = (os.environ.get("SNAPSHOT_REMOTE") or "").strip()
 _REMOTE_TTL = 300.0          # حداکثر هر ۵ دقیقه یک بار از گیت هاب بخوان
 _remote_at = 0.0
 
@@ -88,8 +32,7 @@ _remote_at = 0.0
 # اکشنز نسخه جدیدی کامیت کرده باشد. (۱۵ دقیقه)
 _REFRESH_AFTER = float(os.environ.get("SNAPSHOT_REFRESH_AFTER", "900"))
 
-# کلید مشترک هوشمند. مقدار پیش‌فرض امن دارد تا حتی بدون نیاز به تنظیم متغیر در رندر، کار کند.
-_DEFAULT_KEY = ""
+# No hardcoded/default key: writing snapshots is disabled unless configured explicitly.
 _KEY = os.environ.get("SNAPSHOT_KEY", "").strip()
 
 # حداکثر عمر قابل قبول برای یک نتیجه ذخیره شده (ثانیه).
@@ -235,22 +178,7 @@ def _refresh_async() -> None:
 
 
 def _all() -> Dict[str, Any]:
-    """همه ورودی ها. ترتیب: حافظه → دیسک → ریپو.
-
-    ⚠ اصلاح ۲۰۲۶-۱۰-۰۱ — باگ «شاخه ریپو هیچ وقت اجرا نمی شد».
-
-    نسخه قبلی اگر دیسک چیزی داشت همان جا return می کرد، پس
-    _read_remote عملا کد مرده بود. اما snapshot_cache.json همراه
-    دیپلوی روی دیسک می آید و کامیت های انبار برچسب [skip render]
-    دارند، یعنی نسخه دیسک فقط موقع دیپلوی واقعی عوض می شود.
-    نتیجه: داده روی لحظه آخرین دیپلوی یخ می زد، از MAX_AGE رد
-    می شد، get() مقدار None می داد و هر درخواست یک محاسبه زنده
-    چند دقیقه ای راه می انداخت که با تک ورکر کل سایت را قفل می کرد.
-
-    حالا: اگر تازه ترین ورودی از _REFRESH_AFTER کهنه تر باشد سراغ
-    ریپو می رویم — در پس زمینه اگر داده ای (هرچند کهنه) داریم، و
-    فقط در حالت دست خالی منتظر شبکه می مانیم.
-    """
+    """Merge in-memory and local cache; remote refresh is opt-in and never uses a built-in public repo."""
     global _MEM, _remote_at
     with _LOCK:
         if not _MEM:

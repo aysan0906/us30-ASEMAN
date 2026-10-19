@@ -44,8 +44,16 @@ class US30SupremeArbiter:
         self.last_scan_time = time.time()
         self.stats["scans_performed"] += 1
 
-        price = float(current_price or 51240.0)
-        spread = float(trendo_meta.get("spread", 1.2))
+        try:
+            price = float(current_price)
+        except (TypeError, ValueError):
+            price = 0.0
+        if price <= 10000 or not trendo_meta.get("ok"):
+            return self._build_verdict(False, "WAIT", "قیمت یا فید زندهٔ بروکر معتبر نیست؛ هیچ ستاپی تأیید نمی‌شود.", 0, price if price > 0 else None)
+        spread_raw = trendo_meta.get("spread")
+        if spread_raw is None:
+            return self._build_verdict(False, "WAIT", "اسپرد زندهٔ بروکر در دسترس نیست؛ معامله متوقف شد.", 0, price)
+        spread = float(spread_raw)
         
         # 1. GATE 1: SPREAD & BROKER SAFETY
         if spread > 1.8:

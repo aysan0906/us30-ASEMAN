@@ -27,7 +27,9 @@ def _get_tehran_and_ny_time():
     ny_time = now_utc - timedelta(hours=4) # NY EDT (UTC-4)
     return now_utc, tehran_time, ny_time
 
-def get_killzones_and_orb(current_price: float = 51570.0) -> Dict[str, Any]:
+def get_killzones_and_orb(current_price: Optional[float] = None) -> Dict[str, Any]:
+    if current_price is None or not isinstance(current_price, (int, float)) or current_price <= 10000:
+        return {"ok": False, "error": "US30_PRICE_UNAVAILABLE", "message": "قیمت معتبر برای ORB در دسترس نیست."}
     now_utc, tehran, ny = _get_tehran_and_ny_time()
     t_hour = tehran.hour + tehran.minute / 60.0
 
@@ -139,7 +141,9 @@ def get_killzones_and_orb(current_price: float = 51570.0) -> Dict[str, Any]:
     }
 
 
-def get_gex_and_option_walls(current_price: float = 51570.0) -> Dict[str, Any]:
+def get_gex_and_option_walls(current_price: Optional[float] = None) -> Dict[str, Any]:
+    # No live option-chain provider is connected; never publish fixed synthetic walls.
+    return {"ok": False, "error": "OPTIONS_CHAIN_UNAVAILABLE", "message": "زنجیرهٔ آپشن زنده متصل نیست؛ GEX و دیوارهای آپشن گزارش نمی‌شوند."}
     # GEX & Options Profile derived for US30 via DIA option analytics
     # Scale: current_price ~ 51,570 -> DIA ~ 515.7
     scale = current_price / 515.7 if current_price else 100.0
@@ -188,7 +192,8 @@ def get_gex_and_option_walls(current_price: float = 51570.0) -> Dict[str, Any]:
     }
 
 
-def get_nyse_internals(current_price: float = 51570.0, price_change: float = 210.0) -> Dict[str, Any]:
+def get_nyse_internals(current_price: Optional[float] = None, price_change: Optional[float] = None) -> Dict[str, Any]:
+    return {"ok": False, "error": "NYSE_INTERNALS_UNAVAILABLE", "message": "فید واقعی TICK/TRIN و advance/decline متصل نیست."}
     # Calculate realistic NYSE Internals
     # $TICK ranges typically between -1000 and +1000
     # $TRIN typically between 0.60 and 1.60
@@ -272,7 +277,8 @@ def get_nyse_internals(current_price: float = 51570.0, price_change: float = 210
     }
 
 
-def get_liquidity_and_judas(current_price: float = 51570.0) -> Dict[str, Any]:
+def get_liquidity_and_judas(current_price: Optional[float] = None) -> Dict[str, Any]:
+    return {"ok": False, "error": "SESSION_OHLCV_UNAVAILABLE", "message": "سطوح PDH/PDL و Judas باید از کندل‌های واقعی سشن محاسبه شوند."}
     # Previous Day and Week High/Low levels
     pdh = round(current_price + 185.0, 1)
     pdl = round(current_price - 245.0, 1)
@@ -320,151 +326,15 @@ def get_liquidity_and_judas(current_price: float = 51570.0) -> Dict[str, Any]:
     }
 
 
-def get_divisor_impact(current_price: float = 51570.0) -> Dict[str, Any]:
-    # 12 real heavyweights
-    DOW_COMPONENTS = [
-        ("UNH", "UnitedHealth Group", 8.9),
-        ("GS", "Goldman Sachs", 7.8),
-        ("MSFT", "Microsoft Corp", 6.5),
-        ("HD", "Home Depot", 6.2),
-        ("CAT", "Caterpillar Inc", 6.0),
-        ("CRM", "Salesforce Inc", 5.2),
-        ("V", "Visa Inc", 5.1),
-        ("BA", "Boeing Co", 2.8),
-        ("JPM", "JPMorgan Chase", 4.8),
-        ("AAPL", "Apple Inc", 4.6),
-        ("AMGN", "Amgen Inc", 4.5),
-        ("IBM", "IBM Corp", 3.8)
-    ]
+def get_divisor_impact(current_price: Optional[float] = None) -> Dict[str, Any]:
+    return {"ok": False, "error": "DOW_COMPONENT_QUOTES_UNAVAILABLE", "message": "اثر اجزای شاخص تا دریافت قیمت فعلی و قبلی معتبر برای تمام اجزا محاسبه نمی‌شود."}
 
-    now = time.time()
-    cached = _cache.get("divisor_leaders")
-    if cached and (now - _cache_time.get("divisor_leaders", 0)) < 15.0:
-        return cached
+def get_moc_imbalance(current_price: Optional[float] = None) -> Dict[str, Any]:
+    return {"ok": False, "error": "MOC_ORDERFLOW_UNAVAILABLE", "message": "دادهٔ واقعی عدم‌تعادل سفارشات MOC متصل نیست؛ هیچ رقم تخمینی گزارش نمی‌شود."}
 
-    from concurrent.futures import ThreadPoolExecutor
-    def fetch_comp(item):
-        sym, name, weight = item
-        try:
-            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?interval=1d&range=2d"
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req, timeout=2.5) as resp:
-                data = json.loads(resp.read().decode())
-                meta = data["chart"]["result"][0]["meta"]
-                p = float(meta.get("regularMarketPrice") or 0.0)
-                prev = float(meta.get("chartPreviousClose") or p)
-                chg_abs = p - prev
-                chg_pct = (chg_abs / prev * 100.0) if prev else 0.0
-                pts_impact = chg_abs / DIVISOR_2026
-                return {
-                    "symbol": sym, "name": name, "price": round(p, 2),
-                    "change_pct": round(chg_pct, 2), "change_abs": round(chg_abs, 2),
-                    "weight_pct": weight, "points_impact": round(pts_impact, 1),
-                    "signal": "🟢 صعودی" if pts_impact > 0 else "🔴 نزولی"
-                }
-        except Exception:
-            return {
-                "symbol": sym, "name": name, "price": 320.0,
-                "change_pct": 0.45, "change_abs": 1.45,
-                "weight_pct": weight, "points_impact": round(1.45 / DIVISOR_2026, 1),
-                "signal": "🟢 صعودی"
-            }
-
-    with ThreadPoolExecutor(max_workers=8) as ex:
-        leaders = list(ex.map(fetch_comp, DOW_COMPONENTS))
-
-    leaders.sort(key=lambda x: abs(x["points_impact"]), reverse=True)
-    total_pts = sum(l["points_impact"] for l in leaders)
-    top_bull = max(leaders, key=lambda x: x["points_impact"])
-    top_bear = min(leaders, key=lambda x: x["points_impact"])
-
-    adv_count = sum(1 for l in leaders if l["points_impact"] > 0)
-    health = "صعود گسترده و هماهنگ وال‌استریت" if adv_count >= 8 else ("فشار فروش عمومی بر غول‌های داو" if adv_count <= 4 else "واگرایی و چنددستگی در رهبران داو")
-
-    res = {
-        "ok": True,
-        "divisor": DIVISOR_2026,
-        "multiplier": round(POINT_MULTIPLIER, 2),
-        "total_net_points": round(total_pts, 1),
-        "top_bullish": f"{top_bull['name']} ({top_bull['symbol']}): {top_bull['points_impact']:+.1f} pts",
-        "top_bearish": f"{top_bear['name']} ({top_bear['symbol']}): {top_bear['points_impact']:+.1f} pts",
-        "health_verdict": health,
-        # Institutional Upgrade 6: Divisor Formula Point Impact Alert
-        "live_formula_alert": f"📐 فرمول مقسوم‌علیه داو (Divisor = {DIVISOR_2026:.4f}): هر ۱ دلار نوسان قیمت در هر سهم ۵ غول وال‌استریت، شاخص را دقیقاً ۶.۵۹ پوینت جابه‌جا می‌کند. برای نمونه افت ۲ دلاری UNH منجر به ریزش اجباری ۱۳.۲ پوینتی کل شاخص داوجونز می‌شود!",
-        "leaders": leaders,
-        "updated_at": time.strftime("%H:%M:%S UTC")
-    }
-
-    _cache["divisor_leaders"] = res
-    _cache_time["divisor_leaders"] = now
-    return res
-
-
-def get_moc_imbalance(current_price: float = 51570.0) -> Dict[str, Any]:
-    now_utc, tehran, _ = _get_tehran_and_ny_time()
-    t_hour = tehran.hour + tehran.minute / 60.0 + tehran.second / 3600.0
-
-    # Target MOC reveal time: 23:20:00 Tehran (15:50:00 NY)
-    # Market close: 23:30:00 Tehran (16:00:00 NY)
-    target_today = tehran.replace(hour=23, minute=20, second=0, microsecond=0)
-    close_today = tehran.replace(hour=23, minute=30, second=0, microsecond=0)
-
-    if tehran > close_today:
-        target_today += timedelta(days=1)
-        close_today += timedelta(days=1)
-
-    diff_sec = int((target_today - tehran).total_seconds())
-    if diff_sec < 0:
-        diff_sec = 0
-
-    hrs = diff_sec // 3600
-    mins = (diff_sec % 3600) // 60
-    secs = diff_sec % 60
-    countdown_str = f"{hrs:02d}:{mins:02d}:{secs:02d}"
-
-    if 23.333 <= t_hour or t_hour < 11.5:
-        phase = "سشن نقد وال‌استریت بسته است (Post-Close Review)"
-        phase_color = "#64748b"
-        imbalance_val = "+420M$"
-        imbalance_side = "BUY"
-        scalp_bias = "WAIT"
-        scalp_advice = "تسویه حراج پایانی انجام شد؛ آماده برای سشن فردای وال‌استریت."
-    elif 23.333 > t_hour >= 23.333 - (10/60.0):
-        phase = "🔥 حراج پایانی MOC فعال است (Closing Auction LIVE)"
-        phase_color = "#ff3366"
-        imbalance_val = "+1.42B$"
-        imbalance_side = "BUY"
-        scalp_bias = "BUY SCALP"
-        scalp_advice = "عدم تعادل خرید بیش از ۱ میلیارد دلار؛ پامپ سریع ۱۰ دقیقه پایانی را اسکالپ کنید."
-    else:
-        phase = "پیش از حراج پایانی (Pre-MOC Positioning)"
-        phase_color = "#ffd166"
-        imbalance_val = "+890M$ (تخمینی)"
-        imbalance_side = "BUY"
-        scalp_bias = "PREPARE"
-        scalp_advice = "صندوق‌های بازنشستگی در حال ثبت سفارشات؛ رأس ۲۳:۲۰ عدم تعادل قطعی اعلام می‌شود."
-
-    return {
-        "ok": True,
-        "countdown": countdown_str,
-        "countdown_seconds": diff_sec,
-        "target_tehran_time": "۲۰ دقیقه پایانی بازار نیویورک (۲۳:۴۰ تا ۲۴:۰۰ تهران)",
-        "phase": phase,
-        "phase_color": phase_color,
-        "imbalance_amount": imbalance_val,
-        "imbalance_side": imbalance_side,
-        "scalp_bias": scalp_bias,
-        "scalp_playbook": {
-            "setup_name": "اسکالپ ۲۰ دقیقه پایانی MOC (Wall Street Close Scalp)",
-            "expected_move": "۴۰ الی ۷۵ پوینت در ۱۰ الی ۲۰ دقیقه",
-            "stop_loss_pts": 25,
-            "target_pts": 60,
-            "advice": scalp_advice
-        }
-    }
-
-
-def get_all_elite_modules(current_price: float = 51570.0, price_change: float = 210.0) -> Dict[str, Any]:
+def get_all_elite_modules(current_price: Optional[float] = None, price_change: Optional[float] = None) -> Dict[str, Any]:
+    if current_price is None or not isinstance(current_price, (int, float)) or current_price <= 10000:
+        return {"ok": False, "error": "US30_PRICE_UNAVAILABLE", "modules": {}}
     return {
         "ok": True,
         "current_price": current_price,
@@ -509,8 +379,8 @@ def get_macro_economic_shield() -> Dict[str, Any]:
             "countdown_fmt": info.get("countdown_fmt", ""),
         }
     except Exception:
-        return {"status": "PASS", "minutes_to_next": 9999.0, "shield_color": "GREEN",
-                "shield_state": "", "next_event": "", "countdown_fmt": ""}
+        return {"status": "LOCKED", "minutes_to_next": None, "shield_color": "RED",
+                "shield_state": "دادهٔ تقویم خبر در دسترس نیست؛ حالت امن", "next_event": None, "countdown_fmt": "نامشخص"}
 
 
 def get_vix_and_smt_data(current_price: Optional[float] = None):
@@ -518,18 +388,16 @@ def get_vix_and_smt_data(current_price: Optional[float] = None):
     if _vix_cache["data"] and (now - _vix_cache["time"]) < 120.0:
         return _vix_cache["data"]
 
-    vix_p, vix_chg = 15.1, -1.8
-    spy_p, spy_chg = 779.5, 0.55
-    qqq_p, qqq_chg = 760.8, 0.52
+    vix_p = vix_chg = spy_p = spy_chg = qqq_chg = None
 
     try:
         url_vix = "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?interval=5m&range=1d"
         req = urllib.request.Request(url_vix, headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req, timeout=2.5) as resp:
             meta = json.loads(resp.read().decode())["chart"]["result"][0]["meta"]
-            vix_p = float(meta.get("regularMarketPrice") or 15.0)
+            vix_p = float(meta.get("regularMarketPrice") or 0.0)
             vix_prev = float(meta.get("chartPreviousClose") or vix_p)
-            vix_chg = round((vix_p - vix_prev) / vix_prev * 100.0, 2)
+            vix_chg = round((vix_p - vix_prev) / vix_prev * 100.0, 2) if vix_p > 0 and vix_prev > 0 else None
     except Exception:
         pass
 
@@ -538,19 +406,15 @@ def get_vix_and_smt_data(current_price: Optional[float] = None):
         req = urllib.request.Request(url_spy, headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req, timeout=2.5) as resp:
             meta = json.loads(resp.read().decode())["chart"]["result"][0]["meta"]
-            spy_p = float(meta.get("regularMarketPrice") or 779.0)
+            spy_p = float(meta.get("regularMarketPrice") or 0.0)
             spy_prev = float(meta.get("chartPreviousClose") or spy_p)
-            spy_chg = round((spy_p - spy_prev) / spy_prev * 100.0, 2)
+            spy_chg = round((spy_p - spy_prev) / spy_prev * 100.0, 2) if spy_p > 0 and spy_prev > 0 else None
     except Exception:
         pass
 
-    data = {
-        "vix_price": vix_p,
-        "vix_chg_pct": vix_chg,
-        "spy_price": spy_p,
-        "spy_chg_pct": spy_chg,
-        "qqq_chg_pct": round(spy_chg * 0.95, 2)
-    }
+    if any(v is None for v in (vix_p, vix_chg, spy_p, spy_chg)):
+        return {"ok": False, "error": "VIX_SPY_DATA_UNAVAILABLE", "vix_price": None, "spy_price": None, "spy_chg_pct": None, "qqq_chg_pct": None}
+    data = {"ok": True, "vix_price": vix_p, "vix_chg_pct": vix_chg, "spy_price": spy_p, "spy_chg_pct": spy_chg, "qqq_chg_pct": None}
     _vix_cache["data"] = data
     _vix_cache["time"] = now
     return data
@@ -924,7 +788,9 @@ def get_adr_metrics():
     return res
 
 
-def get_execution_triggers(interval: str = "1h", p_curr: float = 51575.0) -> Dict[str, Any]:
+def get_execution_triggers(interval: str = "1h", p_curr: Optional[float] = None) -> Dict[str, Any]:
+    if p_curr is None or not isinstance(p_curr, (int, float)) or p_curr <= 10000:
+        return {"ok": False, "error": "US30_PRICE_UNAVAILABLE", "message": "قیمت معتبر برای تریگرها در دسترس نیست."}
     now_utc, tehran, ny = _get_tehran_and_ny_time()
     t_hour = tehran.hour + tehran.minute / 60.0
 

@@ -132,9 +132,13 @@ def _live_dow_cash() -> Dict[str, Any]:
                     "change": round(chg_abs, 1),
                     "change_pct": round(chg_pct, 2),
                     "mode": "tradingview_live",
-                    "source_fa": "زنده تریدینگ‌ویو (FOREXCOM / US30)",
-                    "symbol": "FOREXCOM:US30",
-                    "checked_at": time.strftime("%Y-%m-%d %H:%M:%S UTC")
+                    "source": "tradingview_cfd",
+                    "tradable": True,
+                    "source_fa": f"زنده تریدینگ‌ویو ({live_symbol})",
+                    "symbol": live_symbol,
+                    "checked_at": time.strftime("%Y-%m-%d %H:%M:%S UTC"),
+                    "timestamp": time.time(),
+                    "age_seconds": 0.0
                 }
     except Exception:
         pass
@@ -150,38 +154,41 @@ def _live_dow_cash() -> Dict[str, Any]:
 
 
 def _apply_live_price(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Attach the live quote as a separate field; never overwrite OHLCV analysis prices."""
     try:
-        p = payload.get("price") or {}
-        live = _live_dow_cash()
+        if not isinstance(payload, dict):
+            return payload
+        p = dict(payload.get("price") or {})
         p["analysis_proxy"] = {
-            "last": p.get("last"),
-            "open": p.get("open"),
-            "high": p.get("high"),
-            "low": p.get("low"),
-            "change": p.get("change"),
+            "last": p.get("last"), "open": p.get("open"), "high": p.get("high"),
+            "low": p.get("low"), "change": p.get("change"),
             "change_pct": p.get("change_pct"),
-            "source": "DIA × display_scale candles",
+            "source": "OHLCV analysis candles; source specified in meta",
         }
+        live = _live_dow_cash()
         p["live_source"] = live
-        if live.get("ok") and live.get("price") is not None:
-            last = round(float(live["price"]), 0)
-            prev = live.get("prev_close")
-            chg = live.get("change")
-            chg_pct = live.get("change_pct")
-            p["last"] = last
-            if prev is not None:
-                p["prev_close"] = round(float(prev), 2)
-            if chg is not None:
-                p["change"] = round(float(chg), 0)
-            if chg_pct is not None:
-                p["change_pct"] = round(float(chg_pct), 3)
-            p["display"] = _fmt_num(last, 0)
-            p["source_fa"] = live.get("source_fa")
-            p["delay_fa"] = live.get("delay_fa")
-            p["basis"] = live.get("basis")
-            p["live_symbol"] = live.get("symbol")
-            payload["price"] = p
-            payload.setdefault("meta", {})["display_price_source"] = "dow_cash: ^DJI or YM=F-basis"
+        if isinstance(live, dict) and live.get("ok") and live.get("price") is not None:
+            try:
+                live_price = float(live["price"])
+                if live_price > 10000:
+                    p["live_quote"] = {
+                        "price": round(live_price, 1),
+                        "change": live.get("change"),
+                        "change_pct": live.get("change_pct"),
+                        "symbol": live.get("symbol"),
+                        "source": live.get("source") or live.get("source_fa"),
+                        "timestamp": live.get("timestamp") or live.get("time"),
+                        "is_executable_quote": bool(live.get("tradable") is True and live.get("mode") == "tradingview_live"),
+                    }
+            except (TypeError, ValueError):
+                p["live_quote"] = {"price": None, "is_executable_quote": False}
+        else:
+            p["live_quote"] = {"price": None, "is_executable_quote": False}
+        payload["price"] = p
+        meta = payload.setdefault("meta", {})
+        if isinstance(meta, dict):
+            meta["analysis_price_source"] = meta.get("symbol", "unknown")
+            meta["live_quote_separate_from_analysis"] = True
         return payload
     except Exception:
         return payload
@@ -677,7 +684,9 @@ def ticker(interval: str = "1h") -> Dict[str, Any]:
     global _TICKER_CACHE, _TICKER_LAST_TIME
     now = time.time()
     if _TICKER_CACHE and (now - _TICKER_LAST_TIME < 5.0):
-        return _TICKER_CACHE
+        cached = dict(_TICKER_CACHE)
+        cached["age_seconds"] = round(now - _TICKER_LAST_TIME, 3)
+        return cached
 
     live = _live_dow_cash()
     if live.get("ok") and live.get("price") is not None:
@@ -688,8 +697,11 @@ def ticker(interval: str = "1h") -> Dict[str, Any]:
             "ok": True,
             "asset": "US30",
             "symbol": "FOREXCOM:US30",
-            "provider": "tradingview_cfd",
-            "source_note": "زنده تریدینگ‌ویو (FOREXCOM / US30)",
+            "provider": live.get("source") or live.get("mode") or "dow_cash",
+            "source_note": live.get("source_fa") or "قیمت نمایشی از منبع جایگزین",
+            "tradable": bool(live.get("tradable") is True and live.get("mode") == "tradingview_live"),
+            "is_proxy": not bool(live.get("tradable") is True and live.get("mode") == "tradingview_live"),
+            "age_seconds": float(live.get("age_seconds", 0.0) or 0.0),
             "price": p,
             "change": chg,
             "change_pct": chg_pct,
@@ -698,8 +710,9 @@ def ticker(interval: str = "1h") -> Dict[str, Any]:
             "live_source": live,
             "analysis_proxy": {"price": p, "change": chg, "change_pct": chg_pct, "source": "FOREXCOM:US30"},
         })
-        _TICKER_CACHE = out
-        _TICKER_LAST_TIME = now
+        if out.get("tradable"):
+            _TICKER_CACHE = out
+            _TICKER_LAST_TIME = now
         return out
 
     # If TradingView live quote temporarily fails, use fallback without blocking
@@ -717,12 +730,32 @@ def ticker(interval: str = "1h") -> Dict[str, Any]:
     except Exception:
         p, chg, chg_pct = 0.0, 0.0, 0.0
 
+    # Fail closed: never publish or cache a zero/invalid quote as a valid price.
+    if not p or p <= 10000:
+        return _clean({
+            "ok": False,
+            "asset": "US30",
+            "symbol": "FOREXCOM:US30",
+            "provider": "unavailable",
+            "source_note": "قیمت زنده و داده تاریخی داوجونز در دسترس نیست",
+            "price": None,
+            "change": None,
+            "change_pct": None,
+            "time": datetime.now(timezone.utc).isoformat(),
+            "market": market_state(),
+            "live_source": live,
+            "error": "LIVE_AND_HISTORY_PRICE_UNAVAILABLE",
+        })
+
     out = _clean({
         "ok": True,
         "asset": "US30",
         "symbol": "FOREXCOM:US30",
-        "provider": "fallback",
-        "source_note": "نرخ پشتیبان داوجونز",
+        "provider": fetched.provider,
+        "source_note": fetched.source_note,
+        "raw_price_is_index": bool(fetched.raw_price_is_index),
+        "tradable": False,
+        "is_proxy": not bool(fetched.raw_price_is_index),
         "price": p,
         "change": chg,
         "change_pct": chg_pct,

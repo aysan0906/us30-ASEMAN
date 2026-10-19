@@ -6,3 +6,10 @@ __pycache__/
 .pytest_cache/
 *.log
 .DS_Store
+
+# Runtime state (never commit user journal or generated snapshots)
+journal.jsonl
+dispatched_signals.jsonl
+snapshot_cache.json
+snapshot_cache.json.tmp
+telegram_config.json

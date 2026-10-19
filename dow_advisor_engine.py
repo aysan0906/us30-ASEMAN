@@ -18,7 +18,7 @@ TEHRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 class DowAIAdvisor:
     """Institutional Quant & Smart Money Consultant for US30 / Dow Jones."""
 
-    _cached_price: float = 51250.0
+    _cached_price: Optional[float] = None
     _last_price_fetch: float = 0.0
 
     @classmethod
@@ -39,7 +39,7 @@ class DowAIAdvisor:
         except Exception:
             pass
 
-        return cls._cached_price if cls._cached_price > 0 else 51250.0
+        return cls._cached_price if cls._cached_price is not None and cls._cached_price > 10000 else None
 
     @classmethod
     def answer_question(cls, question: str, interval: Any = "1h", context: Optional[Dict[str, Any]] = None, price: Optional[float] = None) -> str:
@@ -49,8 +49,10 @@ class DowAIAdvisor:
             interval = "1h"
         interval_str = str(interval or "1h").lower()
         q = (question or "").strip().lower()
-        if price is None or price <= 0:
+        if price is None or price <= 10000:
             price = cls.get_live_price()
+        if price is None or price <= 10000:
+            return "قیمت معتبر داوجونز در دسترس نیست؛ تحلیل عددی و پیشنهاد معامله متوقف شد."
         now_tehran = datetime.now(TEHRAN_TZ)
         time_str = now_tehran.strftime("%H:%M:%S")
 

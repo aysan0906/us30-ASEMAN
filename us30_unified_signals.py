@@ -1,20 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-US30 UNIFIED SIGNALS ENGINE (Dow Jones Industrial Average - Wall Street Pro)
-----------------------------------------------------------------------------
-Provides two distinct, institutional-grade unified signals with:
-1. Setup Freeze Lock (Scalp 45m / Swing 4h) - No floating or drifting Entry/SL!
-2. Wall Street Anti-Front-Running Target Algorithm (Snaps targets 2.5-3.5 pts before
-   heavy resting limit walls and psychological century round numbers .00 / .50).
-3. 100% Tailored for $10 Micro Account:
-   - Micro SL strictly 12-14 points ($1.20 - $1.40 max risk at 0.01 lot).
-   - Non-zero monotonic TP1, TP2, and TP3 targets.
+US30 Unified Signal Engine
+--------------------------
+Uses only verified US30 OHLCV analysis and a coherent engine-generated plan.
+Unverified orderflow adapters, proxy candles and unvalidated timeframes fail closed.
 """
 
 import time
 import math
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional, List
+import us30_reference_config as refcfg
+
+_BAD_SIGNAL_INTERVALS = set(refcfg.ENGINE_CONSTANTS.get("bad_intervals", []))
 
 TEHRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 
@@ -48,57 +46,6 @@ _LOCKED_SWING_STATE: Dict[str, Any] = {
     "time_str": "",
     "date_str": ""
 }
-
-
-def _apply_us30_anti_front_run_tp(
-    tp_raw: float,
-    entry: float,
-    is_long: bool,
-    orderbook_walls: Optional[List[float]] = None
-) -> float:
-    """
-    US30 Wall Street Institutional Anti-Front-Running Algorithm:
-    Protects Dow Jones orders from rejection misses by positioning Take Profits
-    2.5 to 3.5 points BEFORE major round numbers (every 50 / 100 pts) and Bookmap Ask/Bid walls.
-    """
-    buffer_pts = 3.0  # 3.0 points institutional front-running margin
-    tp_adj = float(tp_raw)
-    walls = orderbook_walls or []
-    round_step = 50.0  # US30 major liquidity rests at .00 and .50
-
-    if is_long:
-        # 1. Front-run resting Bookmap ask walls
-        for w in sorted([x for x in walls if x > entry]):
-            if tp_adj >= w - 1.5:
-                front_run_w = w - buffer_pts
-                if front_run_w > entry + 5.0:
-                    tp_adj = min(tp_adj, front_run_w)
-                    break
-
-        # 2. Front-run psychological round numbers (every 50 points: .00, .50)
-        round_level = round(tp_adj / round_step) * round_step
-        if round_level > entry + 5.0:
-            if -4.0 <= (tp_adj - round_level) <= 5.0:
-                front_run_level = round_level - buffer_pts
-                if front_run_level > entry + 5.0:
-                    tp_adj = front_run_level
-    else:
-        # SHORT: Front-run resting Bookmap bid shelves (sit ABOVE them)
-        for s in sorted([x for x in walls if x < entry], reverse=True):
-            if tp_adj <= s + 1.5:
-                front_run_s = s + buffer_pts
-                if front_run_s < entry - 5.0:
-                    tp_adj = max(tp_adj, front_run_s)
-                    break
-
-        round_level = round(tp_adj / round_step) * round_step
-        if round_level < entry - 5.0:
-            if -5.0 <= (tp_adj - round_level) <= 4.0:
-                front_run_level = round_level + buffer_pts
-                if front_run_level < entry - 5.0:
-                    tp_adj = front_run_level
-
-    return round(tp_adj, 1)
 
 
 def get_us30_live_price(prefer_trendo: bool = True) -> float:
@@ -163,60 +110,62 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
             "message": "قیمت معتبر بازار در دسترس نیست؛ تولید سیگنال متوقف شد."
         }
 
-    # 1. Fetch modules safely
-    bm = {}
-    try:
-        import bookmap_engine as be
-        bm = be.get_us30_bookmap_data()
-    except Exception:
-        pass
-
-    nt = {}
-    qt = {}
-    sc = {}
-    atas = {}
-    try:
-        import ninja_atas_quant_engine as naq
-        nt = naq.get_ninjatrader_live(current_price, "15m")
-        qt = naq.get_quantower_live(current_price)
-        sc = naq.get_sierrachart_live(current_price, "15m")
-        atas = naq.get_atas_live(current_price)
-    except Exception:
-        pass
-
-    cot = {}
-    try:
-        import cftc_cot_engine as cce
-        cot = cce.get_us30_cot_report()
-    except Exception:
-        pass
-
-    cross = []
-    try:
-        import cross_asset as ca
-        cross = ca.get_macro_assets_quotes()
-    except Exception:
-        pass
+    # Only OHLCV-derived analysis is trusted here. The project's Bookmap/ATAS/
+    # NinjaTrader/Quantower adapters currently synthesize values without live connectors.
+    bm: Dict[str, Any] = {}
+    nt: Dict[str, Any] = {}
+    qt: Dict[str, Any] = {}
+    sc: Dict[str, Any] = {}
+    atas: Dict[str, Any] = {}
+    cot: Dict[str, Any] = {}
+    cross: List[Dict[str, Any]] = []
 
     # =========================================================================
     # PART 1: UNIFIED US30 SCALP SIGNAL (15m Timeframe / 1m Sniper with Lock & Anti-Front-Run)
     # =========================================================================
     cvd_data = nt.get("cvd", {})
-    cvd_val = cvd_data.get("value", 120) if isinstance(cvd_data, dict) else 120
-    sc_div = sc.get("delta_divergence", {}).get("type_fa", "صعودی")
-    atas_tps = atas.get("tape_speed", {}).get("trades_per_sec", 45)
+    cvd_val = cvd_data.get("value") if isinstance(cvd_data, dict) else None
+    sc_div = sc.get("delta_divergence", {}).get("type_fa")
+    atas_tps = atas.get("tape_speed", {}).get("trades_per_sec")
 
     # REAL DYNAMIC MARKET STRUCTURE (SMC, CHoCH, VWAP, EMA & TRENDO PRICE ACTION)
     smc_bias = 0
     htf_bias = 0
+    scalp_engine_dir = 0
+    scalp_engine_score = 0.0
+    scalp_engine_plan: Dict[str, Any] = {}
+    scalp_engine_source_valid = False
+    swing_engine_dir = 0
+    swing_engine_score = 0.0
+    swing_engine_plan: Dict[str, Any] = {}
+    swing_engine_source_valid = False
     try:
         import us30_engine as ue
-        analysis_data = ue.build_analysis("15m")
-        st_data = analysis_data.get("structure", {})
-        smc_bias = int(st_data.get("bias", -1))
-        htf_bias = int(st_data.get("htf_bias", -1))
+        analysis_data = ue.build_analysis(interval="15m", bars=180, force=False)
+        st_data = analysis_data.get("structure", {}) if isinstance(analysis_data, dict) else {}
+        sig_data = analysis_data.get("signal", {}) if isinstance(analysis_data, dict) else {}
+        smc_bias = int(st_data.get("bias", 0) or 0)
+        htf_bias = int(st_data.get("htf_bias", 0) or 0)
+        scalp_engine_dir = int(sig_data.get("direction", 0) or 0)
+        scalp_engine_score = float(sig_data.get("score", 0) or 0)
+        scalp_engine_plan = sig_data.get("plan") if isinstance(sig_data.get("plan"), dict) else {}
+        meta = analysis_data.get("meta", {}) if isinstance(analysis_data, dict) else {}
+        symbol = str(meta.get("symbol", "")).upper()
+        scalp_engine_source_valid = "US30" in symbol and "DIA" not in symbol
     except Exception:
         pass
+    try:
+        swing_analysis = ue.build_analysis(interval="4h", bars=180, force=False)
+        swing_sig = swing_analysis.get("signal", {}) if isinstance(swing_analysis, dict) else {}
+        swing_engine_dir = int(swing_sig.get("direction", 0) or 0)
+        swing_engine_score = float(swing_sig.get("score", 0) or 0)
+        swing_engine_plan = swing_sig.get("plan") if isinstance(swing_sig.get("plan"), dict) else {}
+        meta4 = swing_analysis.get("meta", {}) if isinstance(swing_analysis, dict) else {}
+        symbol4 = str(meta4.get("symbol", "")).upper()
+        swing_engine_source_valid = "US30" in symbol4 and "DIA" not in symbol4
+    except Exception:
+        swing_engine_dir = 0
+        swing_engine_score = 0.0
 
     # Compare current price against session VWAP and short-term trend
     t_bid = current_price
@@ -230,25 +179,28 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
     except Exception:
         pass
 
-    # Dynamic Scoring Matrix based on actual price structure
+    # Conservative scoring: only actual OHLCV/SMC analysis with a coherent plan may set direction.
+    def _valid_plan(plan: Dict[str, Any], direction: int) -> bool:
+        try:
+            en, st = float(plan["entry"]), float(plan["stop"])
+            t1, t2, t3 = float(plan["tp1"]), float(plan["tp2"]), float(plan["tp3"])
+            if min(en, st, t1, t2, t3) <= 0:
+                return False
+            if direction > 0:
+                return st < en < t1 < t2 < t3
+            if direction < 0:
+                return st > en > t1 > t2 > t3
+        except (KeyError, TypeError, ValueError):
+            return False
+        return False
+
     score_long = 0
     score_short = 0
-
-    if smc_bias > 0: score_long += 35
-    elif smc_bias < 0: score_short += 35
-
-    if htf_bias > 0: score_long += 25
-    elif htf_bias < 0: score_short += 25
-
-    # Check orderflow delta & divergence
-    if cvd_val > 50: score_long += 15
-    elif cvd_val < -50: score_short += 15
-
-    if "نزولی" in sc_div or "فروش" in sc_div or "تخلیه" in sc_div: score_short += 20
-    elif "صعودی" in sc_div or "جذب" in sc_div: score_long += 10
-
-    if bm.get("imbalance_pct", 0) < -3.0: score_short += 15
-    elif bm.get("imbalance_pct", 0) > 3.0: score_long += 15
+    if scalp_engine_source_valid and "15m" not in _BAD_SIGNAL_INTERVALS and scalp_engine_score >= 65 and _valid_plan(scalp_engine_plan, scalp_engine_dir):
+        if scalp_engine_dir > 0:
+            score_long = int(min(100, scalp_engine_score))
+        elif scalp_engine_dir < 0:
+            score_short = int(min(100, scalp_engine_score))
 
     # Determine real direction
     # Strict Direction Determination: Equality or low conviction MUST yield NEUTRAL / WAIT!
@@ -289,10 +241,16 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
     now_epoch = time.time()
 
     # Check if existing scalp setup is still locked and active (45 min lock)
+    # A neutral signal must never inherit or preserve a previously locked trade.
+    # Also guard against None/corrupt state left by older versions.
     is_valid_scalp_lock = (
-        _LOCKED_SCALP_STATE.get("active", False)
+        not scalp_is_neutral
+        and isinstance(_LOCKED_SCALP_STATE, dict)
+        and _LOCKED_SCALP_STATE.get("active", False)
         and now_epoch < _LOCKED_SCALP_STATE.get("expires_at", 0)
-        and _LOCKED_SCALP_STATE.get("entry", 0) > 10000
+        and (_LOCKED_SCALP_STATE.get("entry") or 0) > 10000
+        and _LOCKED_SCALP_STATE.get("direction") in ("LONG", "SHORT")
+        and _LOCKED_SCALP_STATE.get("direction") == ("LONG" if scalp_is_long else "SHORT")
     )
 
     if is_valid_scalp_lock:
@@ -369,23 +327,14 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
             _LOCKED_SCALP_STATE = None
             lock_status_note = "⚪ وضعیت بازار خنثی / بدون ستاپ معتبر (سیستم در حالت صبر)"
         elif scalp_is_long:
-            pullback_dist = 5.0
-            scalp_entry = round(t_bid - pullback_dist, 1)
-            entry_low = round(scalp_entry - 2.5, 1)
+            scalp_entry = round(float(scalp_engine_plan["entry"]), 1)
+            entry_low = scalp_entry
             entry_high = scalp_entry
-            scalp_sl = round(scalp_entry - micro_sl_pts, 1)
-
-            raw_tp1 = scalp_entry + 28.0
-            raw_tp2 = scalp_entry + 55.0
-            raw_tp3 = scalp_entry + 90.0
-
-            scalp_tp1 = _apply_us30_anti_front_run_tp(raw_tp1, scalp_entry, True, bm_asks)
-            scalp_tp2 = _apply_us30_anti_front_run_tp(raw_tp2, scalp_entry, True, bm_asks)
-            scalp_tp3 = _apply_us30_anti_front_run_tp(raw_tp3, scalp_entry, True, bm_asks)
-
-            if scalp_tp1 <= scalp_entry: scalp_tp1 = round(scalp_entry + 18.0, 1)
-            if scalp_tp2 <= scalp_tp1: scalp_tp2 = round(scalp_tp1 + 25.0, 1)
-            if scalp_tp3 <= scalp_tp2: scalp_tp3 = round(scalp_tp2 + 30.0, 1)
+            scalp_sl = round(float(scalp_engine_plan["stop"]), 1)
+            scalp_tp1 = round(float(scalp_engine_plan["tp1"]), 1)
+            scalp_tp2 = round(float(scalp_engine_plan["tp2"]), 1)
+            scalp_tp3 = round(float(scalp_engine_plan["tp3"]), 1)
+            micro_sl_pts = round(abs(scalp_entry - scalp_sl), 1)
 
             scalp_tp1_pts = int(round(scalp_tp1 - scalp_entry))
             scalp_tp2_pts = int(round(scalp_tp2 - scalp_entry))
@@ -409,23 +358,14 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
             }
             lock_status_note = "⚡ ستاپ خرید تازه صادر و قفل شد (مجهز به فیلتر ضد فرانت‌رانینگ)"
         else:
-            pullback_dist = 5.0
-            scalp_entry = round(t_ask + pullback_dist, 1)
+            scalp_entry = round(float(scalp_engine_plan["entry"]), 1)
             entry_low = scalp_entry
-            entry_high = round(scalp_entry + 2.5, 1)
-            scalp_sl = round(scalp_entry + micro_sl_pts, 1)
-
-            raw_tp1 = scalp_entry - 28.0
-            raw_tp2 = scalp_entry - 55.0
-            raw_tp3 = scalp_entry - 90.0
-
-            scalp_tp1 = _apply_us30_anti_front_run_tp(raw_tp1, scalp_entry, False, bm_bids)
-            scalp_tp2 = _apply_us30_anti_front_run_tp(raw_tp2, scalp_entry, False, bm_bids)
-            scalp_tp3 = _apply_us30_anti_front_run_tp(raw_tp3, scalp_entry, False, bm_bids)
-
-            if scalp_tp1 >= scalp_entry: scalp_tp1 = round(scalp_entry - 18.0, 1)
-            if scalp_tp2 >= scalp_tp1: scalp_tp2 = round(scalp_tp1 - 25.0, 1)
-            if scalp_tp3 >= scalp_tp2: scalp_tp3 = round(scalp_tp2 - 25.0, 1)
+            entry_high = scalp_entry
+            scalp_sl = round(float(scalp_engine_plan["stop"]), 1)
+            scalp_tp1 = round(float(scalp_engine_plan["tp1"]), 1)
+            scalp_tp2 = round(float(scalp_engine_plan["tp2"]), 1)
+            scalp_tp3 = round(float(scalp_engine_plan["tp3"]), 1)
+            micro_sl_pts = round(abs(scalp_entry - scalp_sl), 1)
 
             scalp_tp1_pts = int(round(scalp_entry - scalp_tp1))
             scalp_tp2_pts = int(round(scalp_entry - scalp_tp2))
@@ -455,63 +395,52 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
         "timeframe": "1m (تک‌تیرانداز پیش‌دستانه)",
         "direction": scalp_dir_str,
         "direction_code": scalp_dir_code,
+        "tradable": bool(not scalp_is_neutral and scalp_engine_source_valid and _valid_plan(scalp_engine_plan, scalp_engine_dir)),
         "direction_emoji": scalp_dir_emoji,
         "entry": scalp_entry,
-        "entry_fmt": f"${scalp_entry:,.1f}",
+        "entry_fmt": f"${scalp_entry:,.1f}" if scalp_entry is not None else "—",
         "stop_loss": scalp_sl,
-        "stop_loss_pts": int(micro_sl_pts),
+        "stop_loss_pts": round(abs(scalp_entry - scalp_sl), 1) if scalp_entry is not None and scalp_sl is not None else None,
         "current_price_issued": current_price,
-        "stop_loss_fmt": f"${scalp_sl:,.1f} (-{int(micro_sl_pts)} پوینت / -$1.30 در 0.01 لات)",
+        "stop_loss_fmt": (f"${scalp_sl:,.1f} (-{abs(scalp_entry - scalp_sl):,.1f} پوینت؛ ارزش دلاری وابسته به مشخصات قرارداد بروکر)" if scalp_sl is not None and scalp_entry is not None else "—"),
         "tp1": scalp_tp1,
         "tp1_pts": scalp_tp1_pts,
-        "tp1_fmt": f"${scalp_tp1:,.1f} (+{scalp_tp1_pts} پوینت / +${scalp_tp1_pts*0.1:.2f})",
+        "tp1_fmt": (f"${scalp_tp1:,.1f} (+{scalp_tp1_pts} پوینت / +${scalp_tp1_pts*0.1:.2f})" if scalp_tp1 is not None else "—"),
         "tp2": scalp_tp2,
         "tp2_pts": scalp_tp2_pts,
-        "tp2_fmt": f"${scalp_tp2:,.1f} (+{scalp_tp2_pts} پوینت / +${scalp_tp2_pts*0.1:.2f})",
+        "tp2_fmt": (f"${scalp_tp2:,.1f} (+{scalp_tp2_pts} پوینت / +${scalp_tp2_pts*0.1:.2f})" if scalp_tp2 is not None else "—"),
         "tp3": scalp_tp3,
         "tp3_pts": scalp_tp3_pts,
-        "tp3_fmt": f"${scalp_tp3:,.1f} (+{scalp_tp3_pts} پوینت / +${scalp_tp3_pts*0.1:.2f})",
+        "tp3_fmt": (f"${scalp_tp3:,.1f} (+{scalp_tp3_pts} پوینت / +${scalp_tp3_pts*0.1:.2f})" if scalp_tp3 is not None else "—"),
         "leverage_recommended": "1:500 یا 1:1000 ترندو",
-        "lot_recommended": "0.01 لات استاندارد (مارجین امن حساب ۱۰ دلاری)",
+        "lot_recommended": "حجم را با ارزش پوینت و مارجین بروکر محاسبه کنید؛ حجم ثابت توصیه نمی‌شود",
         "entry_instruction_fa": "وضعیت بازار خنثی یا پرریسک است. در حال حاضر ورود مجاز نیست." if scalp_is_neutral else (f"کاشت لیمیت خرید (Buy Limit) در پولبک به تراز {scalp_entry:,.1f} (پشت شلف نقدینگی و VWAP)" if scalp_is_long else f"کاشت لیمیت فروش (Sell Limit) در پولبک به تراز {scalp_entry:,.1f} (زیر دیواره عرضه و VWAP)"),
         "date_tehran": tehran_date_str,
         "time_tehran": tehran_time_str,
         "holding_duration": "۲ الی ۱۰ دقیقه (خروج سریع)",
         "holding_duration_en": "2m - 10m",
-        "core_modules": "Bookmap L2/L3 Walls + 1m Footprint Delta + Anti-Front-Run",
-        "rationale_fa": "ورود پیش‌دستانه با استاپ فوق‌باریک ۱۳ پوینتی (مناسب حساب $10)؛ کلیه تارگت‌ها ۳ پوینت پیش از دیواره‌های رُند ۵۰ پوینتی ست شده‌اند تا پیش از بازگشت قیمت نقد شوند."
+        "core_modules": "تحلیل تکنیکال OHLCV/SMC؛ فیدهای Bookmap و Footprint زنده متصل نیستند",
+        "rationale_fa": "سطوح از پلن موتور تحلیل OHLCV گرفته می‌شوند. ارزش دلاری ریسک/سود و حجم پوزیشن بدون مشخصات قرارداد بروکر محاسبه یا تضمین نمی‌شود."
     }
 
     # =========================================================================
     # PART 2: UNIFIED US30 SWING SIGNAL (4h Timeframe - 4-Hour Lock & Macro Anti-Front-Run)
     # =========================================================================
-    qt_mp = qt.get("market_profile", {})
-    qt_vah = qt_mp.get("vah", current_price + 220)
-    qt_val = qt_mp.get("val", current_price - 180)
-
-    cot_bias = cot.get("institutional_status", cot.get("badge", "BULLISH"))
-    dxy_chg = 0.0
-    if isinstance(cross, list):
-        for item in cross:
-            if "DX" in item.get("symbol", ""):
-                dxy_chg = float(item.get("change_pct", 0.0) or 0.0)
-
-    swing_bull_score = 0
-    if "BULL" in str(cot_bias).upper() or "صعود" in str(cot_bias):
-        swing_bull_score += 4
-    if dxy_chg <= 0.2:  # Weak dollar index is bullish for US30
-        swing_bull_score += 3
-    if current_price >= qt_val:
-        swing_bull_score += 3
-
-    swing_is_long = swing_bull_score >= 6
-    swing_dir_str = "خرید (LONG)" if swing_is_long else "فروش (SHORT)"
-    swing_dir_emoji = "🟢" if swing_is_long else "🔴"
+    # Swing direction is taken only from the real 4h SMC analysis.
+    swing_is_neutral = (not swing_engine_source_valid) or "4h" in _BAD_SIGNAL_INTERVALS or swing_engine_dir == 0 or swing_engine_score < 65 or not _valid_plan(swing_engine_plan, swing_engine_dir)
+    swing_is_long = swing_engine_dir > 0 and not swing_is_neutral
+    swing_is_short = swing_engine_dir < 0 and not swing_is_neutral
+    swing_dir_str = "صبر / عدم معامله (NEUTRAL)" if swing_is_neutral else ("خرید (LONG)" if swing_is_long else "فروش (SHORT)")
+    swing_dir_emoji = "⚪" if swing_is_neutral else ("🟢" if swing_is_long else "🔴")
 
     is_valid_swing_lock = (
-        _LOCKED_SWING_STATE.get("active", False)
+        not swing_is_neutral
+        and isinstance(_LOCKED_SWING_STATE, dict)
+        and _LOCKED_SWING_STATE.get("active", False)
         and now_epoch < _LOCKED_SWING_STATE.get("expires_at", 0)
-        and _LOCKED_SWING_STATE.get("entry", 0) > 10000
+        and (_LOCKED_SWING_STATE.get("entry") or 0) > 10000
+        and _LOCKED_SWING_STATE.get("direction") in ("LONG", "SHORT")
+        and _LOCKED_SWING_STATE.get("direction") == ("LONG" if swing_is_long else "SHORT")
     )
 
     if is_valid_swing_lock:
@@ -539,47 +468,16 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
         swing_tp2_pts = _LOCKED_SWING_STATE.get("tp2_pts", 1450)
         swing_tp3 = _LOCKED_SWING_STATE.get("tp3", swing_entry + (2400 if swing_is_long else -2400))
         swing_tp3_pts = _LOCKED_SWING_STATE.get("tp3_pts", 2400)
-    else:
-        t_bid = current_price
-        try:
-            import trendo_engine
-            t_data = trendo_engine.get_trendo_us30_live()
-            if t_data.get("ok"):
-                t_bid = float(t_data.get("bid", current_price))
-        except Exception:
-            pass
-
-        swing_sl_pts = 280
-        if swing_is_long:
-            swing_entry = t_bid
-            swing_sl = round(t_bid - swing_sl_pts, 1)
-
-            raw_sw_tp1 = t_bid + 550.0
-            raw_sw_tp2 = t_bid + 1450.0
-            raw_sw_tp3 = t_bid + 2400.0
-
-            swing_tp1 = _apply_us30_anti_front_run_tp(raw_sw_tp1, swing_entry, True)
-            swing_tp2 = _apply_us30_anti_front_run_tp(raw_sw_tp2, swing_entry, True)
-            swing_tp3 = _apply_us30_anti_front_run_tp(raw_sw_tp3, swing_entry, True)
-
-            swing_tp1_pts = int(round(swing_tp1 - swing_entry))
-            swing_tp2_pts = int(round(swing_tp2 - swing_entry))
-            swing_tp3_pts = int(round(swing_tp3 - swing_entry))
-        else:
-            swing_entry = t_bid
-            swing_sl = round(t_bid + swing_sl_pts, 1)
-
-            raw_sw_tp1 = t_bid - 550.0
-            raw_sw_tp2 = t_bid - 1450.0
-            raw_sw_tp3 = t_bid - 2400.0
-
-            swing_tp1 = _apply_us30_anti_front_run_tp(raw_sw_tp1, swing_entry, False)
-            swing_tp2 = _apply_us30_anti_front_run_tp(raw_sw_tp2, swing_entry, False)
-            swing_tp3 = _apply_us30_anti_front_run_tp(raw_sw_tp3, swing_entry, False)
-
-            swing_tp1_pts = int(round(swing_entry - swing_tp1))
-            swing_tp2_pts = int(round(swing_entry - swing_tp2))
-            swing_tp3_pts = int(round(swing_entry - swing_tp3))
+    elif not swing_is_neutral:
+        swing_entry = round(float(swing_engine_plan["entry"]), 1)
+        swing_sl = round(float(swing_engine_plan["stop"]), 1)
+        swing_tp1 = round(float(swing_engine_plan["tp1"]), 1)
+        swing_tp2 = round(float(swing_engine_plan["tp2"]), 1)
+        swing_tp3 = round(float(swing_engine_plan["tp3"]), 1)
+        swing_sl_pts = round(abs(swing_entry - swing_sl), 1)
+        swing_tp1_pts = round(abs(swing_tp1 - swing_entry), 1)
+        swing_tp2_pts = round(abs(swing_tp2 - swing_entry), 1)
+        swing_tp3_pts = round(abs(swing_tp3 - swing_entry), 1)
 
         _LOCKED_SWING_STATE = {
             "active": True,
@@ -598,28 +496,33 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
             "time_str": tehran_time_str,
             "date_str": tehran_date_str
         }
+    else:
+        _LOCKED_SWING_STATE = {"active": False}
+        swing_entry = swing_sl = swing_tp1 = swing_tp2 = swing_tp3 = None
+        swing_sl_pts = swing_tp1_pts = swing_tp2_pts = swing_tp3_pts = None
 
     swing_signal = {
         "signal_type": "SWING",
         "signal_type_fa": "سوئینگ تریدینگ داوجونز (موج‌سواری چندروزه)",
         "timeframe": "4h",
         "direction": swing_dir_str,
-        "direction_code": "LONG" if swing_is_long else "SHORT",
+        "direction_code": "NEUTRAL" if swing_is_neutral else ("LONG" if swing_is_long else "SHORT"),
+        "tradable": bool(not swing_is_neutral and swing_engine_source_valid and _valid_plan(swing_engine_plan, swing_engine_dir)),
         "direction_emoji": swing_dir_emoji,
         "entry": swing_entry,
-        "entry_fmt": f"${swing_entry:,.1f}",
+        "entry_fmt": f"${swing_entry:,.1f}" if swing_entry is not None else "—",
         "stop_loss": swing_sl,
         "stop_loss_pts": swing_sl_pts,
-        "stop_loss_fmt": f"${swing_sl:,.1f} (-{swing_sl_pts} پوینت)",
+        "stop_loss_fmt": f"${swing_sl:,.1f} (-{swing_sl_pts} پوینت)" if swing_sl is not None else "—",
         "tp1": swing_tp1,
         "tp1_pts": swing_tp1_pts,
-        "tp1_fmt": f"${swing_tp1:,.1f} (+{swing_tp1_pts} پوینت)",
+        "tp1_fmt": f"${swing_tp1:,.1f} (+{swing_tp1_pts} پوینت)" if swing_tp1 is not None else "—",
         "tp2": swing_tp2,
         "tp2_pts": swing_tp2_pts,
-        "tp2_fmt": f"${swing_tp2:,.1f} (+{swing_tp2_pts} پوینت)",
+        "tp2_fmt": f"${swing_tp2:,.1f} (+{swing_tp2_pts} پوینت)" if swing_tp2 is not None else "—",
         "tp3": swing_tp3,
         "tp3_pts": swing_tp3_pts,
-        "tp3_fmt": f"${swing_tp3:,.1f} (+{swing_tp3_pts} پوینت)",
+        "tp3_fmt": f"${swing_tp3:,.1f} (+{swing_tp3_pts} پوینت)" if swing_tp3 is not None else "—",
         "date_tehran": tehran_date_str,
         "time_tehran": tehran_time_str,
         "holding_duration": "۲ الی ۵ روز",
@@ -631,10 +534,13 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
     # =========================================================================
     # PART 3: RELATIONSHIP & ALIGNMENT STATUS
     # =========================================================================
-    is_aligned = scalp_is_long == swing_is_long
-    if is_aligned:
+    is_aligned = (not scalp_is_neutral) and (not swing_is_neutral) and (scalp_is_long == swing_is_long)
+    if scalp_is_neutral or swing_is_neutral:
+        alignment_status = "بدون هم‌سویی قابل ارزیابی (NEUTRAL)"
+        alignment_note = "سیگنال اسکالپ خنثی است؛ تا دریافت داده و جهت معتبر، معامله‌ای صادر نشود."
+    elif is_aligned:
         alignment_status = "همسویی کامل (Full Alignment 💎)"
-        alignment_note = "هر دو دیدگاه اسکالپ و سوئینگ داوجونز هم‌جهت هستند؛ ستاپ در بالاترین سطح اعتبار و وین‌ریت سازمانی قرار دارد."
+        alignment_note = "هر دو دیدگاه اسکالپ و سوئینگ داوجونز هم‌جهت هستند؛ این فقط هم‌جهتی سیگنال‌هاست و تضمین وین‌ریت نیست."
     else:
         alignment_status = "اسکالپ اصلاحی درون روند کلان (Counter-Trend Retracement ⚠️)"
         alignment_note = "دیدگاه اسکالپ ۱۵ دقیقه‌ای خلاف جهت سوئینگ چندروزه است؛ این معامله یک پولبک موقت است و خروج سریع در TP1 الزامی است."
@@ -642,6 +548,7 @@ def get_us30_unified_signals(current_price: Optional[float] = None) -> Dict[str,
     return {
         "ok": True,
         "symbol": "US30",
+        "tradable": bool(scalp_signal.get("tradable") or swing_signal.get("tradable")),
         "current_price": current_price,
         "scalp": scalp_signal,
         "swing": swing_signal,
@@ -665,17 +572,20 @@ def format_us30_clean_telegram_signal(sig: Dict[str, Any], is_swing: bool = Fals
     date_tehran = sig.get("date_tehran", "")
     time_tehran = sig.get("time_tehran", "")
     duration = sig.get("holding_duration", "۲ تا ۵ روز" if is_swing else "۳ الی ۱۰ دقیقه")
-    cur_p = sig.get("current_price_issued", sig.get("entry", 51250.0))
+    cur_p = sig.get("current_price_issued", sig.get("entry"))
+    if (not isinstance(cur_p, (int, float)) or cur_p <= 10000
+            or sig.get("direction_code") not in {"LONG", "SHORT"}
+            or sig.get("tradable") is not True):
+        return "⚪ <b>سیگنال داوجونز [#US30]</b>\nقیمت یا جهت معتبر در دسترس نیست؛ هیچ معامله‌ای پیشنهاد نمی‌شود."
 
     if not is_swing:
-        risk_lot_note = """📦 <b>حجم و اهرم پیشنهادی:</b> <code>0.01 لات | اهرم 1:500 یا 1:1000 ترندو</code>
-💵 <b>محاسبه حساب $10:</b> <code>ریسک -$1.30 | تارگت اول +$2.40</code>"""
+        risk_lot_note = """📦 <b>حجم پوزیشن:</b> <code>با توجه به ارزش پوینت، مارجین و مشخصات قرارداد بروکر محاسبه شود؛ حجم ثابت توصیه نمی‌شود.</code>"""
     else:
-        risk_lot_note = """📦 <b>حجم پیشنهادی:</b> <code>0.01 لات به ازای هر $50 بالانس</code>"""
+        risk_lot_note = """📦 <b>حجم پوزیشن:</b> <code>با مشخصات قرارداد، ارزش پوینت و مارجین بروکر محاسبه شود؛ حجم ثابت توصیه نمی‌شود.</code>"""
 
     msg = f"""💎 <b>سیگنال داوجونز [#US30]</b>
 ━━━━━━━━━━━━━━━━━━━━
-🏢 <b>بروکر مرجع:</b> <code>ترندو آنلاین (Trendo Live Feed)</code>
+🏢 <b>منبع:</b> <code>تحلیل OHLCV نماد اجرایی؛ جزئیات منبع در API ثبت شده است</code>
 🧭 <b>جهت معامله:</b> {dir_emoji} <b>{direction}</b>
 ⏱️ <b>تایم‌فریم:</b> <code>{tf}</code>
 💰 <b>قیمت لحظه صدور:</b> <code>${cur_p:,.1f}</code>
@@ -684,10 +594,10 @@ def format_us30_clean_telegram_signal(sig: Dict[str, Any], is_swing: bool = Fals
 🎯 <b>حد سود اول (TP1):</b> <code>{tp1_fmt}</code>
 🎯 <b>حد سود دوم (TP2):</b> <code>{tp2_fmt}</code>
 🎯 <b>حد سود سوم (TP3):</b> <code>{tp3_fmt}</code>
-🛡️ <b>مکانیزم ضد فرانت‌رانینگ:</b> <code>فعال (خروج ۳ پوینت پیش از دیواره‌های رُند .00 / .50)</code>
+🛡️ <b>توجه:</b> <code>این خروجی تضمین اجرا یا کیفیت fill نیست؛ spread و slippage بروکر را بررسی کنید.</code>
 {risk_lot_note}
 ⏰ <b>تاریخ و ساعت صدور:</b> <code>{date_tehran} ساعت {time_tehran} (ایران 🇮🇷)</code>
-⏳ <b>انقضا / اعتبار ستاپ:</b> <code>تا زمان برخورد به حد سود یا حد ضرر</code>
+⏳ <b>اعتبار سیگنال:</b> <code>تا پیش از ورود، قیمت و وضعیت بازار را دوباره بررسی کنید؛ این پیام تضمین اجرای سفارش نیست.</code>
 ━━━━━━━━━━━━━━━━━━━━"""
     return msg.strip()
 

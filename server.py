@@ -1,5 +1,4 @@
 from __future__ import annotations
-import uuid
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -13,11 +12,15 @@ Pattern follows ASEMAN crypto source:
 """
 
 
-import sys, subprocess
+import os
+import sys
+from contextlib import asynccontextmanager
+import subprocess
+
 import fastapi
 import uvicorn
 
-import os
+import dow_cash as dcash
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
@@ -26,8 +29,9 @@ import json, time, threading, urllib.request, urllib.parse, socket
 socket.setdefaulttimeout(4.0)
 from datetime import datetime, timedelta, timezone
 
-from us30_supreme_arbiter import us30_supreme_arbiter
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
+
+from us30_supreme_arbiter import us30_supreme_arbiter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -42,20 +46,107 @@ import snapshot as snap
 APP_DIR = Path(__file__).resolve().parent
 
 
+def _valid_us30_quote(interval: str = "1h") -> Dict[str, Any]:
+    """Return a fresh executable quote only; display proxies are not trade quotes."""
+    try:
+        import trendo_engine
+        quote = trendo_engine.get_trendo_us30_live()
+        if isinstance(quote, dict) and quote.get("ok") and quote.get("tradable") is True and not quote.get("is_synthetic"):
+            bid = float(quote.get("bid"))
+            ask = float(quote.get("ask"))
+            age = float(quote.get("age_seconds", 0.0) or 0.0)
+            if bid > 10000 and ask >= bid and age <= 3.0:
+                return {"ok": True, "quote": quote, "price": bid, "tradable": True}
+    except Exception:
+        pass
+    try:
+        quote = engine.ticker(interval)
+        price = quote.get("price") if isinstance(quote, dict) else None
+        price = float(price) if price is not None else None
+        age = float(quote.get("age_seconds", 0.0) or 0.0) if isinstance(quote, dict) else 999.0
+        if quote.get("ok") and quote.get("tradable") is True and price is not None and price > 10000 and age <= 3.0:
+            return {"ok": True, "quote": quote, "price": price, "tradable": True}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+    return {
+        "ok": False,
+        "error": "EXECUTABLE_US30_QUOTE_UNAVAILABLE",
+        "message": "قیمت اجرایی تازه از Trendo/CFD در دسترس نیست؛ قیمت DIA یا شاخص نقدی جایگزین quote بروکر نمی‌شود.",
+    }
+
+
+def _unavailable_module(module: str, reason: str) -> Dict[str, Any]:
+    return {"ok": False, "module": module, "error": "LIVE_DATA_UNAVAILABLE", "message": reason}
+
+
+def _analysis_is_real_index(data: Dict[str, Any]) -> bool:
+    meta = data.get("meta") if isinstance(data, dict) else {}
+    if not isinstance(meta, dict):
+        return False
+    symbol = str(meta.get("symbol", "")).upper()
+    # Only an actual US30/US30USD feed is executable. ^DJI, YM=F and DIA are references/proxies.
+    return "US30" in symbol and "DIA" not in symbol
+
+
+def _block_proxy_trade(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Preserve research output but prevent proxy candles from becoming executable plans."""
+    if not _analysis_is_real_index(data):
+        meta = data.setdefault("meta", {})
+        if isinstance(meta, dict):
+            meta["tradable"] = False
+            meta["data_quality"] = "PROXY_NOT_EXECUTABLE"
+            meta["execution_note"] = "دادهٔ کندلی از نماد اجرایی واقعی US30 نیست؛ تحلیل فقط پژوهشی است."
+        sig = data.get("signal")
+        if isinstance(sig, dict):
+            sig["direction"] = 0
+            sig["label"] = "WAIT — PROXY DATA"
+            sig["grade"] = "—"
+            sig["plan"] = {}
+            sig["verdict_fa"] = "منبع کندل نماد اجرایی US30 نیست؛ هیچ معامله‌ای صادر نشود."
+        data["position_sizing"] = {"ok": False, "note": "سایزینگ اجرایی با دادهٔ proxy ممنوع است."}
+        data["source_valid"] = False
+        data["tradable"] = False
+    else:
+        meta = data.setdefault("meta", {})
+        if isinstance(meta, dict):
+            meta["source_valid"] = True
+            meta["data_quality"] = "US30_INDEX_OHLCV"
+            meta["tradable"] = False
+        data["source_valid"] = True
+        # A valid data source alone is not execution approval.
+        data["tradable"] = False
+    return data
+
+
 def verify_admin_auth(request: Request):
-    """Protects administrative endpoints against unauthorized access (P1-23)."""
-    admin_key = os.environ.get("ADMIN_SECRET_KEY")
+    """Fail-closed authentication for administrative endpoints."""
+    admin_key = os.environ.get("ADMIN_SECRET_KEY", "").strip()
     if not admin_key:
-        return True # Dev mode fallback
-    auth_header = request.headers.get("X-Admin-Key") or request.query_params.get("key")
-    if auth_header != admin_key:
+        raise HTTPException(
+            status_code=503,
+            detail="ADMIN_SECRET_KEY تنظیم نشده؛ عملیات مدیریتی غیرفعال است.",
+        )
+    auth_header = request.headers.get("X-Admin-Key", "")
+    if not auth_header or not __import__("hmac").compare_digest(auth_header, admin_key):
         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز: کلید مدیر اشتباه است.")
     return True
+
+@asynccontextmanager
+async def app_lifespan(app):
+    """Start background workers after ASGI startup, never as a module import side effect."""
+    if os.environ.get("DISABLE_BACKGROUND_WORKERS", "0").strip() != "1" and not getattr(app.state, "background_workers_started", False):
+        app.state.background_workers_started = True
+        threading.Thread(target=prewarm_signals_in_background, daemon=True, name="us30-prewarm").start()
+        threading.Thread(target=us30_sentinel_auto_loop, daemon=True, name="us30-sentinel").start()
+        threading.Thread(target=us30_telegram_interactive_poller, daemon=True, name="us30-telegram-poller").start()
+    yield
+
 
 app = FastAPI(
     title="US30 ASEMAN Smart Money Dashboard",
     description="Dedicated Dow Jones / US30 dashboard using ASEMAN architecture and the previous Dow Smart Money engine.",
-    version="1.0.0",
+    version="1.1.0",
+    lifespan=app_lifespan,
 )
 
 app.add_middleware(
@@ -146,7 +237,8 @@ def ticker(interval: str = Query("1h", description="5m, 15m, 30m, 1h, 1d")):
         if cached and (now_ts - cached["time"] < 0.5):
             return cached["data"]
         data = engine.ticker(interval)
-        _ticker_cache[interval] = {"time": now_ts, "data": data}
+        if isinstance(data, dict) and data.get("ok") and isinstance(data.get("price"), (int, float)) and data["price"] > 10000:
+            _ticker_cache[interval] = {"time": now_ts, "data": data}
         return data
     except Exception as e:
         cached = _ticker_cache.get(interval)
@@ -157,9 +249,11 @@ def ticker(interval: str = Query("1h", description="5m, 15m, 30m, 1h, 1d")):
 
 @app.get("/api/candles")
 def candles(
-    interval: str = Query("1h", description="5m, 15m, 30m, 1h, 1d"),
+    interval: str = Query("1h", description="1m, 5m, 15m, 30m, 1h, 4h, 1d"),
     bars: int = Query(180, ge=80, le=600),
 ):
+    if interval not in md.VALID_INTERVALS:
+        return JSONResponse(status_code=422, content={"ok": False, "error": "INVALID_INTERVAL", "allowed": list(md.VALID_INTERVALS)})
     try:
         return engine.candles(interval, bars)
     except Exception as e:
@@ -184,148 +278,90 @@ def analyze(
     guard_leverage: float = Query(50.0, gt=0, description="Broker guard leverage"),
     guard_lot: float = Query(0.01, gt=0, description="Broker guard lot size"),
 ):
-    global _analysis_cache
+    if interval not in md.VALID_INTERVALS:
+        return JSONResponse(status_code=422, content={"ok": False, "error": "INVALID_INTERVAL", "allowed": list(md.VALID_INTERVALS)})
     now = time.time()
     fresh_bool = bool(getattr(fresh, "default", fresh))
-    cache_key = f"{interval}:{bars}:{int(fresh_bool)}:{equity}:{risk_pct}:{guard_balance}:{guard_leverage}:{guard_lot}"
+    cache_key = f"{interval}:{bars}:{coalition!r}:{int(bool(include_aseman))}:{int(bool(include_dow))}:{equity}:{risk_pct}:{guard_balance}:{guard_leverage}:{guard_lot}"
     if not fresh and cache_key in _analysis_cache and (now - _analysis_cache[cache_key]["time"] < 60.0):
         return _analysis_cache[cache_key]["data"]
 
     try:
         data = engine.build_analysis(
             interval=interval,
-            bars=min(bars, 100),
+            bars=bars,
             force=fresh_bool,
-            with_coalition=False,
+            with_coalition=coalition,
             equity=equity,
             risk_pct=risk_pct,
         )
+        data = _block_proxy_trade(data)
         if include_aseman:
-            try:
-                data["aseman_suite"] = aseman.build_aseman_suite(data)
-            except Exception as pack_error:
-                data["aseman_suite"] = {"success": False, "error": str(pack_error)}
+            if not data.get("source_valid"):
+                data["aseman_suite"] = {"ok": False, "tradable": False, "error": "PROXY_DATA_BLOCKED"}
+            else:
+                try:
+                    data["aseman_suite"] = aseman.build_aseman_suite(data)
+                except Exception as pack_error:
+                    data["aseman_suite"] = {"success": False, "error": str(pack_error)}
         if include_dow:
+            if not data.get("source_valid"):
+                data["dow_suite"] = {"ok": False, "tradable": False, "error": "PROXY_DATA_BLOCKED"}
+            else:
+                try:
+                    data["dow_suite"] = dowres.suite(light=True, interval=interval)
+                except Exception as dow_error:
+                    data["dow_suite"] = {"ok": False, "error": str(dow_error)}
+        if not data.get("source_valid"):
+            data["execution_guard"] = {"ok": False, "trade_allowed": False, "status": "PROXY_DATA_BLOCKED"}
+        else:
             try:
-                data["dow_suite"] = dowres.suite(light=True, interval=interval)
-            except Exception as dow_error:
-                data["dow_suite"] = {"ok": False, "error": str(dow_error)}
-        try:
-            data["execution_guard"] = execguard.evaluate(data, interval=interval, balance=guard_balance, leverage=guard_leverage, lot=guard_lot)
-        except Exception as guard_error:
-            data["execution_guard"] = {"ok": False, "error": str(guard_error)}
+                data["execution_guard"] = execguard.evaluate(data, interval=interval, balance=guard_balance, leverage=guard_leverage, lot=guard_lot)
+            except Exception as guard_error:
+                data["execution_guard"] = {"ok": False, "trade_allowed": False, "error": str(guard_error)}
+            data["tradable"] = bool(data["execution_guard"].get("trade_allowed") is True)
         _analysis_cache[cache_key] = {"time": now, "data": data}
         return data
     except Exception as e:
-        if cache_key in _analysis_cache:
-            return _analysis_cache[cache_key]["data"]
-        t_data = engine.ticker(interval)
-        p_curr = float(t_data.get("price") or 0.0)
-        chg = float(t_data.get("change", 0.0) or 0.0)
-        bias = -1 if chg < 0 else 1
-        data = {
-            "ok": True,
-            "structure": {
-                "bias": bias,
-                "htf_bias": bias,
-                "events": [
-                    {"type": "BOS", "dir": "bear" if bias < 0 else "bull", "level": round(p_curr - 85.0 if bias < 0 else p_curr + 85.0, 1), "price": round(p_curr, 1)},
-                    {"type": "CHoCH", "dir": "bear" if bias < 0 else "bull", "level": round(p_curr - 160.0 if bias < 0 else p_curr + 160.0, 1), "price": round(p_curr - 30.0, 1)}
-                ]
-            },
-            "liquidity": {
-                "bsl": [{"price": round(p_curr + 120.0, 1)}, {"price": round(p_curr + 240.0, 1)}],
-                "ssl": [{"price": round(p_curr - 130.0, 1)}, {"price": round(p_curr - 260.0, 1)}]
-            },
-            "flow": {
-                "imbalance": -0.22 if bias < 0 else 0.25,
-                "cvd": -1450.0 if bias < 0 else 1850.0
-            }
-        }
-        return data
+        return JSONResponse(status_code=502, content={
+            "ok": False,
+            "tradable": False,
+            "error": "ANALYSIS_UNAVAILABLE",
+            "message": "تحلیل معتبر ساخته نشد؛ دادهٔ جایگزین/سیگنال ساختگی برگردانده نمی‌شود.",
+            "detail": str(e)[:300],
+        })
 
 
 def get_analysis_360_data(interval: str = "15m", price: Optional[float] = None) -> Dict[str, Any]:
-    if price is None:
-        try:
-            import trendo_engine
-            t = trendo_engine.get_trendo_us30_live(timeout=1.5)
-            if t.get("ok"):
-                price = float(t.get("bid") or 0.0)
-            else:
-                cash_info = dcash.freshest()
-                price = float(cash_info.get("best", {}).get("index") or 0.0)
-        except Exception:
-            try:
-                cash_info = dcash.freshest()
-                price = float(cash_info.get("best", {}).get("index") or 0.0)
-            except Exception:
-                price = 0.0
-    p = round(float(price or 0.0), 1)
-    tf = str(interval or "15m").lower().strip()
-
-    # Dynamic scaling based on selected timeframe
-    scale_map = {
-        "1m": {"step": 4.0, "bsl1": 12.0, "bsl2": 24.0, "bsl3": 45.0, "ssl1": -10.0, "ssl2": -22.0, "ssl3": -40.0, "desc": "میکرو اسکلپ ۱ دقیقه"},
-        "5m": {"step": 8.0, "bsl1": 20.0, "bsl2": 42.0, "bsl3": 80.0, "ssl1": -18.0, "ssl2": -38.0, "ssl3": -75.0, "desc": "مومنتوم ۵ دقیقه"},
-        "15m": {"step": 14.0, "bsl1": 28.0, "bsl2": 65.0, "bsl3": 140.0, "ssl1": -24.0, "ssl2": -60.0, "ssl3": -135.0, "desc": "دی‌ترید ۱۵ دقیقه"},
-        "1h": {"step": 30.0, "bsl1": 60.0, "bsl2": 130.0, "bsl3": 280.0, "ssl1": -55.0, "ssl2": -120.0, "ssl3": -260.0, "desc": "سوئینگ ۱ ساعته"},
-        "4h": {"step": 70.0, "bsl1": 150.0, "bsl2": 320.0, "bsl3": 650.0, "ssl1": -140.0, "ssl2": -300.0, "ssl3": -600.0, "desc": "ساختار ۴ ساعته نهادی"},
-        "1d": {"step": 150.0, "bsl1": 350.0, "bsl2": 750.0, "bsl3": 1500.0, "ssl1": -320.0, "ssl2": -700.0, "ssl3": -1400.0, "desc": "روند ماکرو روزانه"}
-    }
-    cfg = scale_map.get(tf, scale_map["15m"])
-
-    events = [
-        {"type": "BOS", "dir": "bull", "level": round(p - cfg["step"] * 1.2, 1), "price": round(p + cfg["step"] * 0.5, 1), "time": "کندل جاری", "desc": f"شکست تایید شده سقف داخلی در تایم‌فریم {tf} با حجم سازمانی", "score": 92},
-        {"type": "CHoCH", "dir": "bull", "level": round(p - cfg["step"] * 2.8, 1), "price": round(p - cfg["step"] * 1.0, 1), "time": "۳ کندل قبل", "desc": f"تغییر ساختار اولیه از اصلاحی به فاز صعودی ({cfg['desc']})", "score": 88},
-        {"type": "BOS", "dir": "bull", "level": round(p - cfg["step"] * 5.5, 1), "price": round(p - cfg["step"] * 3.2, 1), "time": "۸ کندل قبل", "desc": "تداوم روند صعودی و تثبیت در بالای سقف قبلی", "score": 95}
-    ]
-    bsl = [
-        {"name": f"استخر نقدینگی استاپ‌های فروش (BSL ۱ - {tf})", "price": round(p + cfg["bsl1"], 1), "dist_pts": cfg["bsl1"], "hit_prob": 88, "type": "سقف محلی (Local High)"},
-        {"name": "استخر نقدینگی سقف روزانه (BSL ۲)", "price": round(p + cfg["bsl2"], 1), "dist_pts": cfg["bsl2"], "hit_prob": 74, "type": "سقف روز قبل (PDH)"},
-        {"name": "استخر نقدینگی وال‌استریت (BSL ۳)", "price": round(p + cfg["bsl3"], 1), "dist_pts": cfg["bsl3"], "hit_prob": 62, "type": "سقف هفتگی (PWH)"}
-    ]
-    ssl = [
-        {"name": f"استخر نقدینگی استاپ‌های خرید (SSL ۱ - {tf})", "price": round(p + cfg["ssl1"], 1), "dist_pts": cfg["ssl1"], "hit_prob": 85, "type": "کف سوئینگ داخلی (Swing Low)"},
-        {"name": "استخر نقدینگی کف روزانه (SSL ۲)", "price": round(p + cfg["ssl2"], 1), "dist_pts": cfg["ssl2"], "hit_prob": 70, "type": "کف دیروز (PDL)"},
-        {"name": "استخر نقدینگی عمیق هفتگی (SSL ۳)", "price": round(p + cfg["ssl3"], 1), "dist_pts": cfg["ssl3"], "hit_prob": 55, "type": "کف هفتگی (PWL)"}
-    ]
-    mtf = {
-        "1m": {"bias": 1, "label": "🟢 صعودی", "structure": "BOS داخلی تایید شده", "role": "میکرو اسکلپ (تاییدی ورود)"},
-        "5m": {"bias": 1, "label": "🟢 صعودی", "structure": "پولبک به اوردر بلاک صعودی", "role": "تریگر ورود معاملات"},
-        "15m": {"bias": 1, "label": "🟢 صعودی", "structure": "شکست ساختار BOS صعودی", "role": "روند روزانه و دی‌ترید"},
-        "1h": {"bias": 1, "label": "🟢 صعودی", "structure": "حفظ ناحیه تعادل FVG", "role": "سوئینگ میان‌مدت"},
-        "4h": {"bias": 1, "label": "🟢 صعودی", "structure": "کانال صعودی نهادی", "role": "ساختار ماکرو HTF"},
-        "1d": {"bias": 1, "label": "🟢 صعودی", "structure": "انباشت سنگین وال‌استریت", "role": "جهت کلی بازار کلان"}
-    }
-    fvg_disc_low = round(p - cfg["step"] * 1.4, 1)
-    fvg_disc_high = round(p - cfg["step"] * 0.7, 1)
-    fvg_prem_low = round(p + cfg["step"] * 1.8, 1)
-    fvg_prem_high = round(p + cfg["step"] * 2.7, 1)
-
+    interval = interval if interval in md.VALID_INTERVALS else "15m"
+    try:
+        data = engine.build_analysis(interval=interval, bars=180, force=False)
+    except Exception as exc:
+        return {"ok": False, "tradable": False, "error": "ANALYSIS360_UNAVAILABLE", "message": str(exc)}
+    if not isinstance(data, dict) or not data.get("ok"):
+        return {"ok": False, "tradable": False, "error": "ANALYSIS360_UNAVAILABLE"}
+    data = _block_proxy_trade(data)
     return {
         "ok": True,
-        "price": p,
-        "interval": tf,
-        "structure": {"bias": 1, "htf_bias": 1, "bias_label": f"صعودی ({cfg['desc']})", "events": events},
-        "mtf_matrix": mtf,
-        "liquidity": {"bsl": bsl, "ssl": ssl, "sweep_bias": "BSL_MAGNET"},
-        "fvgs": {
-            "discount": {"range": f"{fvg_disc_low} - {fvg_disc_high}", "status": "محدوده نقدینگی دیسکانت (ارزان) — شکار خرید در پولبک"},
-            "premium": {"range": f"{fvg_prem_low} - {fvg_prem_high}", "status": "محدوده نقدینگی پرمیوم (گران) — شناسایی سود BSL"}
-        },
-        "confluence": {
-            "overall_score": None, "demo": True, "tradable": False, "status": "WAIT_DATA",
-            "alignment_pct": None,
-            "sweep_verdict": f"Sweep نقدینگی SSL در تایم‌فریم {tf} تکمیل شده؛ حرکت مگنتی به سوی BSL در جریان است.",
-            "stop_loss_safeguard": "حد ضرر امن و استاندارد ۱۲ تا ۱۴ پوینت پشت اوردر بلاک ۵ دقیقه (ریسک ۱.۲ تا ۱.۴ دلار برای حساب ۱۰ دلار ترندو)"
-        },
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+        "tradable": False,
+        "source_valid": bool(data.get("source_valid")),
+        "price": (data.get("price") or {}).get("last"),
+        "interval": interval,
+        "source": (data.get("meta") or {}).get("symbol"),
+        "source_note": (data.get("meta") or {}).get("execution_note") or (data.get("meta") or {}).get("source_note"),
+        "structure": data.get("structure", {}),
+        "liquidity": data.get("liquidity", {}),
+        "fvgs": data.get("fvgs", []),
+        "order_blocks": data.get("order_blocks", []),
+        "signal": data.get("signal", {}),
+        "timestamp": (data.get("meta") or {}).get("generated"),
     }
 
 
 @app.get("/api/analysis360")
 def get_analysis_360_endpoint(interval: str = Query("15m")):
+    if interval not in md.VALID_INTERVALS:
+        return JSONResponse(status_code=422, content={"ok": False, "error": "INVALID_INTERVAL", "allowed": list(md.VALID_INTERVALS)})
     return get_analysis_360_data(interval)
 
 
@@ -337,10 +373,18 @@ def plan(
     equity: float = Query(10000, gt=0),
     risk_pct: float = Query(1.0, gt=0, le=10),
 ):
+    if interval not in md.VALID_INTERVALS:
+        return JSONResponse(status_code=422, content={"ok": False, "error": "INVALID_INTERVAL", "allowed": list(md.VALID_INTERVALS)})
     try:
         data = engine.build_analysis(interval=interval, bars=bars, force=fresh, equity=equity, risk_pct=risk_pct)
+        data = _block_proxy_trade(data)
+        guard_result = execguard.evaluate(data, interval=interval, balance=equity, leverage=50.0, lot=0.01) if data.get("source_valid") else {"ok": False, "trade_allowed": False, "status": "PROXY_DATA_BLOCKED"}
+        data["execution_guard"] = guard_result
+        data["tradable"] = bool(guard_result.get("trade_allowed") is True)
         return {
             "ok": True,
+            "tradable": bool(data.get("tradable")),
+            "execution_guard": guard_result,
             "asset": "US30",
             "meta": data.get("meta"),
             "price": data.get("price"),
@@ -380,11 +424,14 @@ def get_us30_unified_signals_api():
         p_curr = None
         try:
             cash_info = dcash.freshest()
-            p_curr = float(cash_info.get("best", {}).get("index", 50865.0) or 50865.0)
+            candidate = (cash_info.get("best") or {}).get("index") if isinstance(cash_info, dict) else None
+            candidate = float(candidate) if candidate is not None else None
+            if candidate is not None and candidate > 10000:
+                p_curr = candidate
         except Exception:
-            pass
-        data = uus.get_us30_unified_signals(p_curr or None)
-        return {"ok": True, "data": data}
+            p_curr = None
+        data = uus.get_us30_unified_signals(p_curr)
+        return {"ok": bool(data.get("ok")), "data": data, "tradable": bool(data.get("tradable", False))}
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
@@ -412,7 +459,11 @@ def aseman_golden(
     bars: int = Query(180, ge=80, le=600),
     direction: str = Query("AUTO", description="AUTO, LONG, SHORT"),
 ):
+    if interval not in md.VALID_INTERVALS:
+        return JSONResponse(status_code=422, content={"ok": False, "error": "INVALID_INTERVAL", "allowed": list(md.VALID_INTERVALS)})
     data = engine.build_analysis(interval=interval, bars=bars, force=False)
+    if not _analysis_is_real_index(data):
+        return {"ok": False, "trade_allowed": False, "status": "PROXY_DATA_BLOCKED", "message": "کندل‌های نماد اجرایی US30 در دسترس نیستند."}
     d = direction.upper()
     if d == "AUTO":
         sig = data.get("signal", {})
@@ -434,7 +485,11 @@ def aseman_suite(
     equity: float = Query(10000, gt=0),
     risk_pct: float = Query(1.0, gt=0, le=10),
 ):
+    if interval not in md.VALID_INTERVALS:
+        return JSONResponse(status_code=422, content={"ok": False, "error": "INVALID_INTERVAL", "allowed": list(md.VALID_INTERVALS)})
     data = engine.build_analysis(interval=interval, bars=bars, force=fresh, equity=equity, risk_pct=risk_pct)
+    if not _analysis_is_real_index(data):
+        return {"ok": False, "tradable": False, "error": "PROXY_DATA_BLOCKED", "message": "تحلیل نهادی اجرایی با کندل‌های proxy تولید نمی‌شود."}
     return aseman.build_aseman_suite(data)
 
 
@@ -461,7 +516,6 @@ def dow_broker():
 @app.get("/api/dow/data-health")
 def dow_data_health():
     try:
-        import dow_cash as dcash
         return {"ok": True, "compare": dcash.compare(), "basis": dcash.compute_basis(), "freshest": dcash.freshest()}
     except Exception as e:
         return JSONResponse(status_code=502, content={"ok": False, "error": str(e)})
@@ -477,18 +531,33 @@ def snapshot_status():
 async def snapshot_push(request: Request):
     """Securely receive precomputed items from GitHub Actions.
 
-    Header/query key: X-Snapshot-Key or ?key=...
+    Header key: X-Snapshot-Key
     Body: {"items": {"agent:US30:1d": {...}}, "built_at": 123}
     """
     if not snap.enabled():
         return JSONResponse(status_code=503, content={"ok": False, "error": "SNAPSHOT_KEY تنظیم نشده"})
-    given = request.headers.get("X-Snapshot-Key") or request.query_params.get("key") or ""
+    content_length = request.headers.get("content-length")
+    if content_length:
+        try:
+            if int(content_length) > 1_000_000:
+                return JSONResponse(status_code=413, content={"ok": False, "error": "SNAPSHOT_PAYLOAD_TOO_LARGE"})
+        except ValueError:
+            return JSONResponse(status_code=400, content={"ok": False, "error": "INVALID_CONTENT_LENGTH"})
+    given = request.headers.get("X-Snapshot-Key", "")
     if not snap.check_key(given):
         return JSONResponse(status_code=403, content={"ok": False, "error": "کلید نامعتبر"})
-    body = await request.json()
+    try:
+        raw_body = await request.body()
+        if len(raw_body) > 1_000_000:
+            return JSONResponse(status_code=413, content={"ok": False, "error": "SNAPSHOT_PAYLOAD_TOO_LARGE"})
+        body = json.loads(raw_body.decode("utf-8"))
+    except Exception:
+        return JSONResponse(status_code=400, content={"ok": False, "error": "INVALID_JSON"})
     items = body.get("items") if isinstance(body, dict) else None
     if not isinstance(items, dict) or not items:
         return JSONResponse(status_code=400, content={"ok": False, "error": "items خالی است"})
+    if len(items) > 100:
+        return JSONResponse(status_code=413, content={"ok": False, "error": "TOO_MANY_SNAPSHOT_ITEMS", "max_items": 100})
     saved = []
     for k, v in items.items():
         if isinstance(k, str) and 1 <= len(k) <= 120:
@@ -509,6 +578,8 @@ def dow_guard(
     lot: float = Query(0.01, gt=0),
 ):
     global _guard_cache
+    if interval not in md.VALID_INTERVALS:
+        return JSONResponse(status_code=422, content={"ok": False, "trade_allowed": False, "error": "INVALID_INTERVAL", "allowed": list(md.VALID_INTERVALS)})
     now = time.time()
     # Cache key includes all query parameters
     cache_key = f"{interval}_{bars}_{balance}_{leverage}_{lot}"
@@ -519,11 +590,11 @@ def dow_guard(
 
     # Use REAL analysis rather than dummy 75 score / 135 atr
     analysis = engine.build_analysis(interval=interval, bars=bars, force=fresh)
-    if not analysis or not analysis.get("ok"):
+    if not analysis or not analysis.get("ok") or not _analysis_is_real_index(analysis):
         return {
             "ok": False,
             "trade_allowed": False,
-            "status": "FAIL_CLOSED_NO_DATA",
+            "status": "FAIL_CLOSED_NO_EXECUTABLE_INDEX_DATA",
             "reason": "عدم دسترسی به داده‌های زنده و تحلیل بازار جهت ارزیابی ریسک",
             "timestamp": now
         }
@@ -545,7 +616,7 @@ def generate_us30_intelligent_answer(question: str, interval: str = "1h") -> str
         from dow_advisor_engine import DowAIAdvisor
         return DowAIAdvisor.answer_question(question, interval)
     except Exception as e:
-        return f"پاسخ مشاور هوشمند داوجونز: ستاپ معامله در تایم‌فریم {interval} در جریان سفارشات صعودی قرار دارد."
+        return "قیمت و تحلیل معتبر داوجونز در دسترس نیست؛ هیچ جهت معاملاتی پیشنهاد نمی‌شود."
 
 @app.api_route("/api/chat", methods=["GET", "POST"])
 @app.api_route("/api/advisor/chat", methods=["GET", "POST"])
@@ -576,87 +647,18 @@ async def universal_chat_endpoint(request: Request, q: str = Query(""), interval
             "timeframe": interval
         }
     except Exception as e:
-        err_msg = f"پاسخ مشاور هوشمند داوجونز: شاخص در فاز تثبیت قرار دارد."
-        return {"ok": True, "answer": err_msg, "reply": err_msg, "response": err_msg}
+        err_msg = "تحلیل داوجونز در دسترس نیست؛ دادهٔ جایگزین یا جهت معاملاتی ساختگی ارائه نمی‌شود."
+        return {"ok": False, "confident": False, "answer": err_msg, "reply": err_msg, "response": err_msg}
 
 _coalition_cache: Dict[str, Any] = {}
 
 @app.get("/api/dow/coalition")
 def dow_coalition_endpoint():
-    now_ts = time.time()
-    if _coalition_cache and (now_ts - _coalition_cache.get("time", 0) < 45.0):
-        return _coalition_cache["data"]
-    try:
-        import smart_money
-        c = smart_money.bank_coalition(asset="US30")
-        raw_members = c.get("members", [])
-        formatted = []
-        for m in raw_members:
-            sym = m.get("symbol", "")
-            role = "بانک سرمایه‌گذاری وال‌استریت" if sym in ["GS", "JPM"] else "غول پرداخت و اعتبارات" if sym in ["V", "AXP"] else "بیمه و ریسک تجاری"
-            p = float(m.get("last_price", 0.0) or 0.0)
-            ret = float(m.get("ret_pct", 0.0) or 0.0)
-            poc = float(m.get("zone", {}).get("poc", p) or p)
-            formatted.append({
-                "symbol": sym,
-                "name": m.get("name", sym),
-                "role": role,
-                "price": round(p, 2),
-                "change_pct": round(ret, 2),
-                "poc": round(poc, 2),
-                "action": m.get("action_fa", "انباشت نهادی"),
-                "strength": round(float(m.get("strength", 0.0) or 0.0), 2)
-            })
-
-        agree_pct = round(float(c.get("agreement", 0.5) or 0.5) * 100.0, 1)
-        res = {
-            "ok": True,
-            "bias": c.get("verdict", "خنثی"),
-            "agreement_pct": agree_pct,
-            "score": round(float(c.get("score", 0.0) or 0.0), 3),
-            "members": formatted,
-            "coalition": c
-        }
-        _coalition_cache["time"] = now_ts
-        _coalition_cache["data"] = res
-        return res
-    except Exception as e:
-        # Fallback if network hiccup
-        static_members = [
-            {"symbol": "GS", "name": "گلدمن ساکس", "role": "بانک سرمایه‌گذاری وال‌استریت", "price": 542.10, "change_pct": 0.85, "poc": 538.5, "action": "انباشت نهادی", "strength": 0.72},
-            {"symbol": "JPM", "name": "جی‌پی مورگان", "role": "بانک سرمایه‌گذاری وال‌استریت", "price": 224.50, "change_pct": 0.45, "poc": 221.8, "action": "انباشت نهادی", "strength": 0.55},
-            {"symbol": "V", "name": "ویزا", "role": "غول پرداخت و اعتبارات", "price": 374.20, "change_pct": 1.20, "poc": 366.2, "action": "جریان سنگین خرید", "strength": 0.68},
-            {"symbol": "AXP", "name": "امریکن اکسپرس", "role": "غول پرداخت و اعتبارات", "price": 298.40, "change_pct": -0.30, "poc": 302.1, "action": "تعادل سفارشات", "strength": 0.12},
-            {"symbol": "TRV", "name": "تراولرز", "role": "بیمه و ریسک تجاری", "price": 268.90, "change_pct": 0.35, "poc": 265.4, "action": "انباشت نهادی", "strength": 0.44},
-            {"symbol": "XLF", "name": "سکتور مالی آمریکا", "role": "شاخص کلی بانک‌ها", "price": 53.80, "change_pct": 0.60, "poc": 53.1, "action": "ورود سرمایه", "strength": 0.60}
-        ]
-        res = {
-            "ok": True,
-            "bias": "انباشت متعادل غول‌های مالی",
-            "agreement_pct": 68.5,
-            "score": 0.35,
-            "members": static_members,
-            "coalition": {"ok": True, "members": static_members, "verdict": "انباشت متعادل"}
-        }
-        return res
-
+    return _unavailable_module("coalition", "اجماع بانک‌ها از قیمت‌ها/داده‌های واقعی اعضا باید محاسبه شود؛ اعضای ثابت و اعداد نمونه دیگر به‌عنوان زنده ارائه نمی‌شوند.")
 
 @app.get("/api/dow/institutional-layers")
 def dow_institutional_layers(interval: str = Query("1h")):
-    """Five-layer institutional terminal without forcing the very heavy old agent."""
-    return {
-        "ok": True,
-        "title": "دید تریدر نهادی — پنج لایه",
-        "layers": {
-            "layer1_intermarket_veto": dowres.context(with_mtf=True).get("intermarket"),
-            "layer2_liquidity_orderflow": dowres.orderflow(interval),
-            "layer3_macro_news_window": {"macro": dowres.macro(False), "econ": dowres.econ("critical"), "extras": dowres.extras()},
-            "layer4_sentiment_options": {"sentiment": dowres.sentiment(), "volatility": dowres.volatility()},
-            "layer5_time_seasonality": {"hours": dowres.hours(), "window": dowres.window()},
-        },
-        "feature_vector_note": "بردار ویژگی نهادی در agent/institutional موجود است؛ برای محاسبه کامل از /api/dow/agent استفاده کنید.",
-    }
-
+    return _unavailable_module("institutional_layers", "لایه‌های orderflow و اجماع نهادی تا اتصال فیدهای واقعی غیرفعال‌اند.")
 
 @app.get("/api/dow/hours")
 def dow_hours():
@@ -703,105 +705,7 @@ def dow_context(with_mtf: bool = Query(False)):
 
 @app.get("/api/dow/orderflow")
 def dow_orderflow(interval: str = Query("1h")):
-    t_data = engine.ticker(interval)
-    p_curr = float(t_data.get("price") or 0.0)
-    chg = float(t_data.get("change", 0.0) or 0.0)
-
-    # Dynamic FVG & Liquidity Zones based on real price and interval scale
-    scale_dict = {"5m": 25.0, "15m": 50.0, "30m": 75.0, "1h": 120.0, "4h": 240.0, "1d": 480.0}
-    step = scale_dict.get(interval, 120.0)
-
-    bull_fvgs = [
-        {
-            "top": round(p_curr - step * 0.45, 1),
-            "bottom": round(p_curr - step * 0.95, 1),
-            "size": round(step * 0.5, 1),
-            "ce": round(p_curr - step * 0.7, 1),
-            "status": "دست‌نخورده / تراز بهینه خرید (Discount Zone)",
-            "fill_pct": 0,
-            "entry_rule": f"ورود خرید لیمیت در سقف FVG ({round(p_curr - step * 0.45, 1):,}) یا تراز ۵۰٪ با حد ضرر زیر {round(p_curr - step * 0.95, 1):,}"
-        },
-        {
-            "top": round(p_curr - step * 1.6, 1),
-            "bottom": round(p_curr - step * 2.2, 1),
-            "size": round(step * 0.6, 1),
-            "ce": round(p_curr - step * 1.9, 1),
-            "status": "میتگیت‌شده ۵۰٪ (تایید تقاضای نهادی)",
-            "fill_pct": 50,
-            "entry_rule": f"ناحیه اوردربلاک تقاضای سشن قبل؛ واکنش صعودی در لمس {round(p_curr - step * 1.9, 1):,}"
-        }
-    ]
-
-    bear_fvgs = [
-        {
-            "top": round(p_curr + step * 1.1, 1),
-            "bottom": round(p_curr + step * 0.55, 1),
-            "size": round(step * 0.55, 1),
-            "ce": round(p_curr + step * 0.825, 1),
-            "status": "خلأ باز عرضه وال‌استریت (Premium Zone)",
-            "fill_pct": 0,
-            "entry_rule": f"ورود فروش لیمیت در کف FVG ({round(p_curr + step * 0.55, 1):,}) با حد ضرر بالای {round(p_curr + step * 1.1, 1):,}"
-        },
-        {
-            "top": round(p_curr + step * 2.4, 1),
-            "bottom": round(p_curr + step * 1.8, 1),
-            "size": round(step * 0.6, 1),
-            "ce": round(p_curr + step * 2.1, 1),
-            "status": "سقف مقاومت بتنی موسساتی",
-            "fill_pct": 25,
-            "entry_rule": f"ریجکت قطعی در صورت پولبک به تراز {round(p_curr + step * 2.1, 1):,}"
-        }
-    ]
-
-    imbalance_pct = round(-22.5 if chg < 0 else 24.8, 1)
-    cvd_trend = "جریان سنگین توزیع و فروش وال‌استریت" if chg < 0 else "جریان شتابان انباشت و خرید نهادی"
-
-    buy_pct = 62 if chg >= 0 else 38
-    sell_pct = 38 if chg >= 0 else 62
-    agg_buy = 2840 if chg >= 0 else 1420
-    agg_sell = 1740 if chg >= 0 else 2320
-    net_delta = agg_buy - agg_sell
-
-    guidance_action = "در محدوده فعلی، داو جونز در فاز بازآزمایی پولبک دیسکانت (Discount Retest) قرار دارد. اولویت فنی با ورود پوزیشن BUY در لمس تراز میانه ۵۰٪ (CE) اولین گپ FVG با تارگت سقف نقدینگی BSL است." if chg >= 0 else "در محدوده فعلی، عرضه موسساتی بر بازار مسلط است. در بازگشت به گپ‌های نزولی (Premium FVG) به دنبال تاییدیه فروش با تارگت استخرهای نقدینگی SSL باشید."
-    news_impact = "شاخص دلار (DXY) و بازده اوراق ۱۰ ساله خزانه‌داری آمریکا تعیین‌کننده جهت پول هوشمند هستند. تضعیف دلار باعث پمپاژ نقدینگی به سهام صنعتی داو شده است. با این حال قبل از رویدادهای قرمز کلان از ریسک تهاجمی بپرهیزید."
-
-    checklist_items = [
-        "۱. ورود دقیق در تراز ۵۰٪ (Consequent Encroachment) گپ‌های FVG بدون شتابزدگی در ورود اولیه.",
-        "۲. قرار دادن حد ضرر ساختاری (SL) در پشت کلاستر نقدینگی و کف اوردربلاک تقاضا.",
-        "۳. هماهنگی کامل با برآیند دلتای تجمیعی (CVD) نینجاتریدر و حجم تیک‌های اتاس.",
-        "۴. قفل کردن معاملات در پنجره ۳۰ دقیقه قبل و بعد از انتشار داده‌های تورمی CPI و نشست FOMC.",
-        "۵. اجرای اصل طلایی سیو ۵۰٪ سود در تارگت اول (+۱۱۵ پوینت) و ریسک‌فری کردن سریع پوزیشن."
-    ]
-
-    return {
-        "ok": True,
-        "interval": interval,
-        "price": p_curr,
-        "bullish_fvgs": bull_fvgs,
-        "bearish_fvgs": bear_fvgs,
-        "volume_comparison": {
-            "buy_pct": buy_pct,
-            "sell_pct": sell_pct,
-            "aggressive_buy_lots": agg_buy,
-            "aggressive_sell_lots": agg_sell,
-            "net_delta_lots": net_delta,
-            "delta_bias": "تقاضای غالب (خرید تهاجمی)" if net_delta > 0 else "عرضه غالب (فروش تهاجمی)"
-        },
-        "actionable_guidance": {
-            "what_to_do": guidance_action,
-            "active_news_context": news_impact,
-            "key_checklist": checklist_items
-        },
-        "delta": {
-            "imbalance_pct": imbalance_pct,
-            "cvd_bias": cvd_trend,
-            "demand_ob": f"{round(p_curr - step * 1.1, 1):,} - {round(p_curr - step * 0.8, 1):,}",
-            "supply_ob": f"{round(p_curr + step * 0.8, 1):,} - {round(p_curr + step * 1.2, 1):,}",
-            "poc_node": round(p_curr - 18.0 if chg >= 0 else p_curr + 18.0, 1)
-        },
-        "updated_at": time.strftime("%Y-%m-%d %H:%M:%S UTC")
-    }
-
+    return _unavailable_module("orderflow", "OHLCV از DIA یا شاخص عمومی orderflow واقعی/Level 2 را نشان نمی‌دهد؛ CVD و بلوک‌ترید ساختگی ارائه نمی‌شوند.")
 
 @app.get("/api/dow/volatility")
 def dow_volatility():
@@ -839,8 +743,11 @@ def dow_tradeplan(
     risk: float = Query(1.0, gt=0, le=20),
     multi: bool = Query(False),
 ):
+    if "US30" not in md.selected_symbol().upper() or "DIA" in md.selected_symbol().upper():
+        return _unavailable_module("tradeplan", "DATA_SYMBOL فعلی نماد اجرایی US30 نیست؛ پلن معاملاتی غیرفعال است.")
+    if interval in getattr(execguard, "BAD_INTERVALS", set()):
+        return _unavailable_module("tradeplan", "این تایم‌فریم هنوز برای سیگنال مستقل تأیید نشده است.")
     return dowres.trade_plan(interval, equity, risk, multi)
-
 
 @app.get("/api/dow/cross")
 def dow_cross():
@@ -854,8 +761,11 @@ def dow_agent(
     with_ml: bool = Query(False),
     with_mtf: bool = Query(False),
 ):
+    if "US30" not in md.selected_symbol().upper() or "DIA" in md.selected_symbol().upper():
+        return _unavailable_module("agent", "DATA_SYMBOL فعلی نماد اجرایی US30 نیست؛ عامل سیگنال خروجی معاملاتی نمی‌دهد.")
+    if interval in getattr(execguard, "BAD_INTERVALS", set()):
+        return _unavailable_module("agent", "این تایم‌فریم هنوز برای سیگنال مستقل تأیید نشده است.")
     return dowres.agent(interval, equity, with_ml, with_mtf)
-
 
 @app.get("/api/dow/suite")
 def dow_suite(
@@ -1023,7 +933,7 @@ def get_us30_telegram_config() -> Dict[str, Any]:
     _us30_sentinel_stats["session_info"] = session_info
     _us30_sentinel_stats["market_reason"] = market_reason
 
-    masked = f"{bot_token[:6]}...{bot_token[-4:]}" if len(bot_token) > 12 else bot_token
+    masked = (f"{bot_token[:3]}{'*' * max(4, len(bot_token) - 6)}{bot_token[-3:]}" if len(bot_token) > 8 else ("****" if bot_token else ""))
     j_stats = get_dispatched_journal_stats()
     return {
         "is_configured": bool(bot_token and chat_id),
@@ -1041,81 +951,51 @@ def get_us30_telegram_config() -> Dict[str, Any]:
     }
 
 def format_us30_composite_telegram(data: Dict[str, Any]) -> str:
+    """Format only supplied values; never fabricate market prices or trade levels."""
     tehran_str = datetime.now(timezone(timedelta(hours=3, minutes=30))).strftime("%Y/%m/%d ساعت %H:%M:%S")
+    action = str(data.get("action", "WAIT")).upper()
+    if action not in {"BUY", "SELL"}:
+        return (
+            "⚪ <b>داوجونز [#US30] — بدون ستاپ معتبر</b>\n"
+            "قیمت یا سطوح معتبر ورود/حدضرر/هدف در دسترس نیست؛ هیچ معامله‌ای پیشنهاد نمی‌شود.\n"
+            f"⏰ {tehran_str} (تهران)"
+        )
+    price = data.get("price")
+    sl, tp1, tp2 = data.get("stop_loss"), data.get("tp1"), data.get("tp2")
+    if not all(isinstance(v, (int, float)) and float(v) > 0 for v in (price, sl, tp1, tp2)):
+        return (
+            "⚪ <b>داوجونز [#US30] — دادهٔ ناکافی</b>\n"
+            "سطوح معتبر معامله در دسترس نیست؛ سیگنال ارسال نشد.\n"
+            f"⏰ {tehran_str} (تهران)"
+        )
+    direction = "🟢 خرید (LONG)" if action == "BUY" else "🔴 فروش (SHORT)"
+    return (
+        "💎 <b>سیگنال داوجونز [#US30]</b>\n"
+        f"🧭 <b>جهت:</b> {direction}\n"
+        f"⏱️ <b>تایم‌فریم:</b> <code>{data.get('interval', '—')}</code>\n"
+        f"💰 <b>قیمت:</b> <code>${float(price):,.1f}</code>\n"
+        f"🎯 <b>ورود:</b> <code>{data.get('entry_zone', '—')}</code>\n"
+        f"🛑 <b>حد ضرر:</b> <code>${float(sl):,.1f}</code>\n"
+        f"🎯 <b>TP1:</b> <code>${float(tp1):,.1f}</code>\n"
+        f"🎯 <b>TP2:</b> <code>${float(tp2):,.1f}</code>\n"
+        f"⏰ <b>زمان:</b> <code>{tehran_str} (تهران)</code>"
+    )
 
-    last_price = float(data.get("price") or 51570.0)
-    action = data.get("action", "BUY")
-    dir_str = "🟢 خرید (LONG)" if action == "BUY" else ("🔴 فروش (SHORT)" if action == "SELL" else "⚪ خنثی / بدون پوزیشن")
-    interval = data.get("interval", "15m")
-    entry_zone = data.get("entry_zone", f"${last_price:,.1f}")
-    sl = float(data.get("stop_loss") or (last_price - 12.0))
-    sl_pts = int(data.get("stop_loss_pts", 12))
-    tp1 = float(data.get("tp1") or (last_price + 24.0))
-    tp1_pts = int(data.get("tp1_pts", 24))
-    tp2 = float(data.get("tp2") or (last_price + 48.0))
-    tp2_pts = int(data.get("tp2_pts", 48))
-
-    sl_usd = round(sl_pts * 0.10, 2)
-    tp1_usd = round(tp1_pts * 0.10, 2)
-
-    return f"""💎 <b>سیگنال داوجونز [#US30]</b>
-━━━━━━━━━━━━━━━━━━━━
-🏢 <b>بروکر مرجع:</b> <code>ترندو آنلاین (Trendo Live Feed)</code>
-🧭 <b>جهت معامله:</b> <b>{dir_str}</b>
-⏱️ <b>تایم‌فریم:</b> <code>{interval}</code>
-💰 <b>قیمت لحظه صدور:</b> <code>${last_price:,.1f}</code>
-🎯 <b>قیمت ورود قطعی:</b> <code>{entry_zone}</code>
-🛑 <b>حد ضرر (SL):</b> <code>${sl:,.1f} (-{sl_pts} pt / -${sl_usd:.2f} در 0.01 لات)</code>
-🎯 <b>حد سود اول (TP1):</b> <code>${tp1:,.1f} (+{tp1_pts} pt / +${tp1_usd:.2f} در 0.01 لات)</code>
-🎯 <b>حد سود دوم (TP2):</b> <code>${tp2:,.1f} (+{tp2_pts} pt)</code>
-📦 <b>حجم و اهرم پیشنهادی:</b> <code>0.01 لات | اهرم 1:500 یا 1:1000 ترندو</code>
-⏰ <b>تاریخ و ساعت صدور:</b> <code>{tehran_str} (ایران 🇮🇷)</code>
-⏳ <b>انقضا / اعتبار ستاپ:</b> <code>تا زمان برخورد به حد سود یا حد ضرر</code>
-━━━━━━━━━━━━━━━━━━━━""".strip()
-
-format_us30_telegram_signal = format_us30_composite_telegram
-
-def dispatch_to_telegram_raw(token: str, chat: str, message: str) -> Dict[str, Any]:
-    try:
-        url = f"https://api.telegram.org/bot{token}/sendMessage"
-        payload = {
-            "chat_id": chat,
-            "text": message,
-            "parse_mode": "HTML",
-            "disable_web_page_preview": False,
-            "reply_markup": {
-                "inline_keyboard": [
-                    [
-                        {"text": "📊 چارت آنلاین داوجونز (TradingView)", "url": "https://www.tradingview.com/chart/?symbol=TVC:DJI"},
-                        {"text": "🦅 مشاهده داشبورد اختصاصی US30", "url": "https://us30-aseman-1.onrender.com"}
-                    ]
-                ]
-            }
-        }
-        data = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=12) as resp:
-            return json.loads(resp.read().decode())
-    except urllib.error.HTTPError as e:
-        err_msg = ""
-        try:
-            err_body = json.loads(e.read().decode())
-            err_msg = err_body.get("description", str(e))
-        except Exception:
-            err_msg = str(e)
-        return {"ok": False, "description": f"خطای سرور تلگرام ({e.code}): {err_msg}"}
-    except urllib.error.URLError as e:
-        return {"ok": False, "description": f"خطای اتصال به شبکه تلگرام: {e.reason}"}
-    except Exception as e:
-        return {"ok": False, "description": str(e)}
-
-@app.get("/api/telegram/config")
+@app.get("/api/telegram/config", dependencies=[Depends(verify_admin_auth)])
 def telegram_config():
     return get_us30_telegram_config()
 
 @app.post("/api/telegram/config", dependencies=[Depends(verify_admin_auth)])
 def save_telegram_config(cfg: US30TelegramConfigRequest):
     try:
+        if cfg.bot_token and len(cfg.bot_token.strip()) > 256:
+            return JSONResponse(status_code=400, content={"success": False, "message": "طول توکن غیرمجاز است."})
+        if cfg.chat_id and len(cfg.chat_id.strip()) > 128:
+            return JSONResponse(status_code=400, content={"success": False, "message": "طول شناسهٔ چت غیرمجاز است."})
+        if cfg.interval_minutes is not None and not 5 <= int(cfg.interval_minutes) <= 1440:
+            return JSONResponse(status_code=400, content={"success": False, "message": "فاصلهٔ ارسال باید بین ۵ تا ۱۴۴۰ دقیقه باشد."})
+        if cfg.min_score is not None and not 0 <= int(cfg.min_score) <= 100:
+            return JSONResponse(status_code=400, content={"success": False, "message": "حداقل امتیاز باید بین صفر تا ۱۰۰ باشد."})
         existing = {}
         if TG_CONFIG_FILE.exists():
             try:
@@ -1144,6 +1024,7 @@ def save_telegram_config(cfg: US30TelegramConfigRequest):
     except Exception as e:
         return JSONResponse(status_code=500, content={"success": False, "message": f"خطا در ذخیره تنظیمات: {str(e)}"})
 
+# (format_us30_master_signal_telegram defined later)
 def format_us30_master_signal_telegram(ms_data: Dict[str, Any]) -> str:
     now_utc = datetime.now(timezone.utc)
     tehran_time = now_utc + timedelta(hours=3, minutes=30)
@@ -1151,10 +1032,12 @@ def format_us30_master_signal_telegram(ms_data: Dict[str, Any]) -> str:
     valid_until = (tehran_time + timedelta(hours=2)).strftime("%H:%M")
 
     p = float(ms_data.get("current_price") or 0.0)
-    direction = ms_data.get("direction", "BUY")
-    dir_fa = ms_data.get("direction_fa", "خرید قوی نهادی")
+    direction = ms_data.get("direction", "NEUTRAL")
+    dir_fa = ms_data.get("direction_fa", "بدون ستاپ معتبر")
     dir_emoji = "🚀" if direction == "BUY" else ("🔻" if direction == "SELL" else "⏸️")
-    score = ms_data.get("confluence_score", 89)
+    score = ms_data.get("confluence_score")
+    if p <= 10000 or direction not in {"BUY", "SELL"} or score is None or not ms_data.get("tradable"):
+        return "⚪ <b>US30 — بدون ستاپ معتبر</b>\nداده یا گارد اجرایی تأیید نشده است؛ پیام معاملاتی ارسال نمی‌شود."
     grade = ms_data.get("confluence_grade", "A+ Institutional Confluence")
     entry_zone = ms_data.get("entry_zone", f"${p-15:,.1f} - ${p:,.1f}")
     sl = float(ms_data.get("stop_loss", p - 65.0))
@@ -1209,6 +1092,7 @@ def format_us30_master_signal_telegram(ms_data: Dict[str, Any]) -> str:
     return msg.strip()
 
 DISPATCHED_SIGNALS_FILE = Path(__file__).resolve().parent / "dispatched_signals.jsonl"
+_journal_file_lock = threading.Lock()
 
 def append_dispatched_signal(rec: Dict[str, Any]):
     try:
@@ -1217,111 +1101,113 @@ def append_dispatched_signal(rec: Dict[str, Any]):
         if not active:
             print(f"[JOURNAL GUARD] Suppressed signal record because market is closed: {reason}")
             return
-        with open(DISPATCHED_SIGNALS_FILE, "a", encoding="utf-8") as f:
-            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        with _journal_file_lock:
+            with open(DISPATCHED_SIGNALS_FILE, "a", encoding="utf-8") as f:
+                f.write(json.dumps(rec, ensure_ascii=False) + "\n")
     except Exception as e:
         print(f"Error appending dispatched signal: {e}")
 
-@app.post("/api/telegram/send")
+@app.post("/api/telegram/send", dependencies=[Depends(verify_admin_auth)])
 def telegram_send(req: US30TelegramSendRequest):
+    """Dispatch only a real-index signal that passes the execution guard."""
     try:
-        # Strict Market Hours Guard: Disallow manual or auto signal dispatch when market is closed
         market_active, market_reason, _ = is_us30_market_in_active_session()
         if not market_active:
-            return JSONResponse(status_code=400, content={
-                "success": False,
-                "message": f"⛔ بازار داوجونز هم‌اکنون تعطیل است ({market_reason}). امکان ارسال و ثبت سیگنال در بازار بسته وجود ندارد."
-            })
+            return JSONResponse(status_code=409, content={"success": False, "error": "MARKET_CLOSED", "message": market_reason})
 
-        tok = req.bot_token or os.environ.get("TELEGRAM_BOT_TOKEN") or ""
-        chat = req.chat_id or os.environ.get("TELEGRAM_CHAT_ID") or ""
+        tok = (req.bot_token or os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
+        chat = (req.chat_id or os.environ.get("TELEGRAM_CHAT_ID") or "").strip()
+        if len(tok) > 256 or len(chat) > 128:
+            return JSONResponse(status_code=400, content={"success": False, "error": "INVALID_TELEGRAM_CONFIG", "message": "طول توکن یا شناسهٔ چت غیرمجاز است."})
         if not tok or not chat:
             if TG_CONFIG_FILE.exists():
-                with open(TG_CONFIG_FILE, "r", encoding="utf-8") as f:
-                    saved = json.load(f)
-                    tok = tok or saved.get("bot_token", "")
-                    chat = chat or saved.get("chat_id", "")
-
+                try:
+                    saved = json.loads(TG_CONFIG_FILE.read_text(encoding="utf-8"))
+                    tok = tok or str(saved.get("bot_token", "")).strip()
+                    chat = chat or str(saved.get("chat_id", "")).strip()
+                except Exception:
+                    pass
         if not tok or not chat:
-            return JSONResponse(status_code=400, content={"success": False, "message": "توکن ربات یا شناسه چت تنظیم نشده است. لطفاً توکن ربات و شناسه چت را در کادرهای بالا وارد کرده و دکمه ذخیره تنظیمات را بزنید."})
+            return JSONResponse(status_code=400, content={"success": False, "error": "TELEGRAM_NOT_CONFIGURED", "message": "توکن و شناسهٔ چت تنظیم نشده‌اند."})
 
-        # Fetch current price (Prioritize Trendo Broker Official Live Tick)
-        p_curr = None
-        try:
-            import trendo_engine
-            t_data = trendo_engine.get_trendo_us30_live()
-            if t_data.get("ok"):
-                p_curr = t_data.get("bid")
-            else:
-                cash_info = dcash.freshest()
-                p_curr = cash_info.get("best", {}).get("index")
-        except Exception:
-            pass
+        target = str(req.signal_type or "scalp").lower()
+        if target not in {"scalp", "swing"}:
+            return JSONResponse(status_code=400, content={"success": False, "error": "INVALID_SIGNAL_TYPE", "message": "هر درخواست فقط scalp یا swing را می‌فرستد؛ both باید جداگانه ارسال شود."})
 
-        # Send Unified Signal (Minimal Schema Requested by User)
         import us30_unified_signals as uus
-        unif = uus.get_us30_unified_signals(p_curr or None)
-        target_sig_type = (req.signal_type or "scalp").lower()
-        
-        if target_sig_type == "swing":
-            sig = unif.get("swing", {})
-            msg = uus.format_us30_minimal_telegram_signal(sig, is_swing=True)
-            sig_name = "سوئینگ جامع (Swing)"
-            tp1_val = sig.get("tp1", p_curr + 550)
-            tp2_val = sig.get("tp2", p_curr + 1450)
-            tp3_val = sig.get("tp3", p_curr + 2200)
-            sl_val = sig.get("stop_loss", p_curr - 280)
-            dur = sig.get("holding_duration", "۲ تا ۵ روز")
-            tf = "4H"
-            tp_pts = 550
-            sl_pts = 280
-        else:
-            sig = unif.get("scalp", {})
-            msg = uus.format_us30_minimal_telegram_signal(sig, is_swing=False)
-            sig_name = "میکرو-اسکالپ تک‌تیرانداز (1m Sniper)"
-            tp1_val = sig.get("tp1", p_curr + 24.0)
-            tp2_val = sig.get("tp2", p_curr + 48.0)
-            tp3_val = sig.get("tp3", p_curr + 72.0)
-            sl_val = sig.get("stop_loss", p_curr - 12.0)
-            dur = sig.get("holding_duration", "۳ الی ۱۰ دقیقه (خروج سریع)")
-            tf = "1m"
-            tp_pts = 24
-            sl_pts = 12
+        quote_result = _valid_us30_quote(req.interval or "15m")
+        if not quote_result.get("ok"):
+            return JSONResponse(status_code=503, content={"success": False, "error": "LIVE_QUOTE_UNAVAILABLE", "message": quote_result.get("message") or quote_result.get("error")})
+        quote_price = float(quote_result["price"])
 
+        unif = uus.get_us30_unified_signals(quote_price)
+        if not isinstance(unif, dict) or not unif.get("ok"):
+            return JSONResponse(status_code=503, content={"success": False, "error": "SIGNAL_UNAVAILABLE", "message": (unif or {}).get("message", "سیگنال معتبر تولید نشد.")})
+        sig = unif.get("swing" if target == "swing" else "scalp")
+        if not isinstance(sig, dict) or sig.get("tradable") is not True or sig.get("direction_code") not in {"LONG", "SHORT"}:
+            return JSONResponse(status_code=409, content={"success": False, "error": "SIGNAL_NOT_TRADABLE", "message": "سیگنال خنثی است یا منبع/پلن معتبر ندارد؛ ارسال مسدود شد."})
+
+        try:
+            entry = float(sig["entry"])
+            sl = float(sig["stop_loss"])
+            tp1 = float(sig["tp1"])
+            tp2 = float(sig["tp2"])
+            tp3 = float(sig["tp3"])
+        except (KeyError, TypeError, ValueError):
+            return JSONResponse(status_code=409, content={"success": False, "error": "INVALID_TRADE_PLAN", "message": "Entry/SL/TP ناقص است؛ ارسال مسدود شد."})
+        if min(entry, sl, tp1, tp2, tp3) <= 0:
+            return JSONResponse(status_code=409, content={"success": False, "error": "INVALID_TRADE_LEVELS", "message": "سطوح معامله نامعتبرند."})
+        is_long = sig["direction_code"] == "LONG"
+        coherent = (sl < entry < tp1 < tp2 < tp3) if is_long else (sl > entry > tp1 > tp2 > tp3)
+        if not coherent:
+            return JSONResponse(status_code=409, content={"success": False, "error": "INCOHERENT_TRADE_LEVELS", "message": "ترتیب Entry/SL/TP با جهت معامله سازگار نیست."})
+        max_entry_deviation = max(abs(entry - sl) * 0.25, quote_price * 0.0005)
+        if abs(quote_price - entry) > max_entry_deviation:
+            return JSONResponse(status_code=409, content={"success": False, "error": "ENTRY_TOO_FAR_FROM_LIVE_PRICE", "message": "قیمت زنده بیش از حد از ورود برنامه‌ریزی‌شده فاصله دارد؛ برای جلوگیری از ورود دیرهنگام ارسال مسدود شد."})
+
+        # Guard the same timeframe and actual engine analysis; proxy candles never pass.
+        guard_interval = "4h" if target == "swing" else "15m"
+        try:
+            analysis = engine.build_analysis(interval=guard_interval, bars=180, force=True)
+        except Exception as exc:
+            return JSONResponse(status_code=503, content={"success": False, "error": "GUARD_ANALYSIS_UNAVAILABLE", "message": str(exc)[:200]})
+        if not isinstance(analysis, dict) or not analysis.get("ok") or not _analysis_is_real_index(analysis):
+            return JSONResponse(status_code=409, content={"success": False, "error": "NON_EXECUTABLE_FEED", "message": "فید کندلی نماد واقعی US30 تأیید نشده است؛ ارسال مسدود شد."})
+        engine_signal = analysis.get("signal") or {}
+        if int(engine_signal.get("direction", 0) or 0) != (1 if is_long else -1):
+            return JSONResponse(status_code=409, content={"success": False, "error": "SIGNAL_DIRECTION_MISMATCH", "message": "جهت سیگنال با تحلیل تازه هم‌خوان نیست؛ ارسال مسدود شد."})
+        guard = execguard.evaluate(analysis, interval=guard_interval, balance=10.0, leverage=50.0, lot=0.01)
+        if not isinstance(guard, dict) or guard.get("trade_allowed") is not True:
+            return JSONResponse(status_code=409, content={"success": False, "error": "EXECUTION_GUARD_BLOCKED", "guard": guard, "message": "گارد ریسک اجازهٔ ارسال این سیگنال را نداد."})
+
+        msg = uus.format_us30_minimal_telegram_signal(sig, is_swing=(target == "swing"))
+        if not msg or "بدون معامله" in msg or sig.get("direction_code") == "NEUTRAL":
+            return JSONResponse(status_code=409, content={"success": False, "error": "EMPTY_OR_NEUTRAL_MESSAGE", "message": "پیام خنثی یا ناقص ارسال نمی‌شود."})
         res = dispatch_to_telegram_raw(tok, chat, msg)
         if not res.get("ok"):
-            return JSONResponse(status_code=400, content={"success": False, "message": res.get("description", "ارسال پیام تلگرام ناموفق بود.")})
+            return JSONResponse(status_code=502, content={"success": False, "message": res.get("description", "ارسال پیام تلگرام ناموفق بود.")})
 
         _us30_sentinel_stats["signals_sent_total"] += 1
         _us30_sentinel_stats["last_signal_time"] = time.strftime("%Y-%m-%d %H:%M:%S UTC")
-
-        # Record in dispatched journal (if not paused)
         if not _journal_is_paused:
             now_tehran = datetime.now(timezone.utc) + timedelta(hours=3, minutes=30)
             dispatched_rec = {
-                "id": f"US30-{int(time.time()) % 100000}",
-                "signal_type": sig_name,
-                "timeframe": tf,
-                "direction": sig.get("direction", "BUY"),
-                "entry": p_curr,
-                "tp1": tp1_val,
-                "tp2": tp2_val,
-                "tp3": tp3_val,
-                "sl": sl_val,
-                "holding_duration": dur,
-                "result": "در جریان (OPEN)",
-                "pnl_pts": 0,
-                "r_mult": round(tp_pts / max(sl_pts, 1), 2),
-                "status": "OPEN",
-                "ts": now_tehran.strftime("%Y/%m/%d ساعت %H:%M:%S")
+                "id": "US30-" + __import__("uuid").uuid4().hex,
+                "signal_type": "Swing" if target == "swing" else "Scalp",
+                "timeframe": guard_interval,
+                "direction": sig["direction_code"],
+                "entry": entry, "tp1": tp1, "tp2": tp2, "tp3": tp3, "sl": sl,
+                "holding_duration": sig.get("holding_duration"),
+                "result": "در جریان (OPEN)", "pnl_pts": 0, "status": "OPEN",
+                "data_source": (analysis.get("meta") or {}).get("symbol"),
+                "ts": now_tehran.strftime("%Y/%m/%d ساعت %H:%M:%S"),
             }
             append_dispatched_signal(dispatched_rec)
-
-        return {"success": True, "message": f"سیگنال {sig_name} با موفقیت به تلگرام مخابره شد.", "result": res}
+        return {"success": True, "message": f"سیگنال {target} پس از عبور از گارد ارسال شد.", "result": res}
     except Exception as e:
-        return JSONResponse(status_code=500, content={"success": False, "message": f"خطای سرور: {str(e)}"})
+        return JSONResponse(status_code=500, content={"success": False, "error": "TELEGRAM_DISPATCH_FAILED", "message": str(e)[:300]})
 
-@app.post("/api/telegram/test")
+@app.post("/api/telegram/test", dependencies=[Depends(verify_admin_auth)])
 def telegram_test(req: US30TelegramSendRequest):
     try:
         tok = req.bot_token or os.environ.get("TELEGRAM_BOT_TOKEN") or ""
@@ -1343,8 +1229,8 @@ def telegram_test(req: US30TelegramSendRequest):
 ━━━━━━━━━━━━━━━━━━━━
 ✅ اتصال وب‌سرویس و ربات تلگرام با موفقیت برقرار شد.
 ⏰ <b>زمان تست (ایران 🇮🇷):</b> <code>ساعت {time_str}</code>
-📈 <b>وضعیت اتصال به فید وال‌استریت:</b> فعال و برخط
-🚀 سامانه هوشمند ۲۴ ساعته آماده ارسال ستاپ‌های معاملاتی است.
+📨 <b>وضعیت فید بازار:</b> در این پیام تست نشده است.
+ℹ️ این پیام فقط اتصال تلگرام را بررسی می‌کند؛ سلامت فید بازار جداگانه ارزیابی می‌شود.
 """
         res = dispatch_to_telegram_raw(tok, chat, test_msg.strip())
         if not res.get("ok"):
@@ -1353,48 +1239,31 @@ def telegram_test(req: US30TelegramSendRequest):
     except Exception as e:
         return JSONResponse(status_code=500, content={"success": False, "message": f"خطای سرور: {str(e)}"})
 
-@app.get("/api/journal/live")
+@app.get("/api/journal/live", dependencies=[Depends(verify_admin_auth)])
 def journal_live():
     try:
         recs = []
-        if DISPATCHED_SIGNALS_FILE.exists():
-            with open(DISPATCHED_SIGNALS_FILE, "r", encoding="utf-8") as f:
-                for line in f:
-                    if line.strip():
-                        try:
-                            recs.append(json.loads(line))
-                        except Exception:
-                            pass
+        with _journal_file_lock:
+            if DISPATCHED_SIGNALS_FILE.exists():
+                with open(DISPATCHED_SIGNALS_FILE, "r", encoding="utf-8") as f:
+                    for line in f:
+                        if line.strip():
+                            try:
+                                recs.append(json.loads(line))
+                            except Exception:
+                                pass
 
-        # Live sweep: Update OPEN records against live Trendo feed
+        # Observe the latest quote, but do not infer trade outcomes from one tick.
+        # Correct TP/SL lifecycle needs tick ordering, partial fills, spread and slippage.
         try:
             import trendo_engine
             t_data = trendo_engine.get_trendo_us30_live()
-            curr_p = float(t_data.get("bid", 0)) if t_data.get("ok") else 0.0
-            if curr_p > 10000:
-                modified = False
-                for r in recs:
-                    if r.get("status") == "OPEN":
-                        is_buy = r.get("direction") in ["BUY", "LONG"]
-                        entry_p = float(r.get("entry", 0))
-                        tp1_p = float(r.get("tp1", 0))
-                        sl_p = float(r.get("sl", 0))
-                        hit_tp1 = (curr_p >= tp1_p) if is_buy else (curr_p <= tp1_p)
-                        hit_sl = (curr_p <= sl_p) if is_buy else (curr_p >= sl_p)
-                        if hit_tp1:
-                            r["status"] = "WIN"
-                            r["result"] = f"تارگت اول تاچ شد (+{abs(round(tp1_p - entry_p, 1))} pt)"
-                            r["pnl_pts"] = abs(round(tp1_p - entry_p, 1))
-                            modified = True
-                        elif hit_sl:
-                            r["status"] = "LOSS"
-                            r["result"] = f"حد ضرر تاچ شد (-{abs(round(sl_p - entry_p, 1))} pt)"
-                            r["pnl_pts"] = -abs(round(sl_p - entry_p, 1))
-                            modified = True
-                if modified:
-                    with open(DISPATCHED_SIGNALS_FILE, "w", encoding="utf-8") as f:
-                        for item in recs:
-                            f.write(json.dumps(item, ensure_ascii=False) + "\n")
+            curr_p = float(t_data.get("bid")) if t_data.get("ok") and t_data.get("bid") is not None else None
+            if curr_p is not None and curr_p > 10000:
+                for rec in recs:
+                    if rec.get("status") == "OPEN":
+                        rec["last_observed_price"] = curr_p
+                        rec["outcome_tracking"] = "NOT_AUTO_RESOLVED_FROM_SINGLE_TICK"
         except Exception:
             pass
 
@@ -1457,7 +1326,7 @@ def journal_live():
 
 _journal_is_paused = False
 
-@app.post("/api/journal/toggle-pause")
+@app.post("/api/journal/toggle-pause", dependencies=[Depends(verify_admin_auth)])
 def journal_toggle_pause():
     global _journal_is_paused
     _journal_is_paused = not _journal_is_paused
@@ -1508,7 +1377,9 @@ def journal_reset():
 @app.post("/api/telegram/toggle-autopilot", dependencies=[Depends(verify_admin_auth)])
 def telegram_toggle_autopilot():
     try:
-        current_state = _us30_sentinel_stats.get("is_running", True)
+        if os.environ.get("ENABLE_TELEGRAM_AUTOPILOT", "0").strip() != "1":
+            return {"ok": False, "is_running": False, "error": "AUTOPILOT_DISABLED_BY_ENV", "message": "ارسال خودکار در تنظیمات سرور غیرفعال است؛ ابتدا فید واقعی و گارد ریسک را تأیید کنید."}
+        current_state = _us30_sentinel_stats.get("is_running", False)
         new_state = not current_state
         _us30_sentinel_stats["is_running"] = new_state
 
@@ -1531,7 +1402,7 @@ def telegram_toggle_autopilot():
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
-@app.get("/api/telegram/interactive-status")
+@app.get("/api/telegram/interactive-status", dependencies=[Depends(verify_admin_auth)])
 def telegram_interactive_status():
     return {
         "ok": True,
@@ -1578,751 +1449,182 @@ def trendo_levels(direction: str = Query("BUY")):
         return {"ok": False, "error": str(e)}
 
 @app.get("/api/dow/composite-signal")
-def dow_composite_signal(interval: str = Query("1m"), broker: str = Query("trendo", description="trendo or forexcom")):
-    broker_clean = str(getattr(broker, "default", broker) or "trendo").lower()
-    if broker_clean not in ["trendo", "forexcom"]:
-        broker_clean = "trendo"
-    broker = broker_clean
-    now_ts = time.time()
-    cache_key = f"{interval}_{broker}"
-    cached = _composite_signal_cache.get(cache_key)
-    if cached and (now_ts - cached["time"] < 2.5):
-        return cached["data"]
-
-    # 1. Fetch live price (Direct from Trendo Broker or Forex.com)
-    trendo_meta = {}
+def dow_composite_signal(
+    interval: str = Query("1m"),
+    broker: str = Query("trendo", description="trendo or forexcom"),
+):
+    """Build a conservative signal from the real OHLCV analysis; no synthetic votes."""
+    allowed = {"1m", "5m", "15m", "30m", "1h", "4h", "1d"}
+    interval = interval if interval in allowed else "1h"
+    broker = str(broker or "trendo").lower()
+    if broker not in {"trendo", "forexcom"}:
+        broker = "trendo"
     try:
-        import trendo_engine
-        trendo_meta = trendo_engine.get_trendo_us30_live()
-    except Exception:
-        pass
+        analysis = engine.build_analysis(interval=interval, bars=180, force=False)
+    except Exception as exc:
+        return {
+            "ok": False, "action": "WAIT", "action_fa": "دادهٔ بازار در دسترس نیست؛ منتظر بمانید",
+            "error": "ANALYSIS_UNAVAILABLE", "detail": str(exc), "interval": interval,
+        }
 
-    if broker == "trendo" and trendo_meta.get("ok"):
-        p_curr = float(trendo_meta.get("bid", 51280.0))
-    else:
-        try:
-            t_data = engine.ticker(interval)
-            p_curr = float(t_data.get("price", 0.0) or 0.0)
-            if p_curr <= 0:
-                cash_info = dcash.freshest()
-                p_curr = float(cash_info.get("best", {}).get("index", 51250.0) or 51250.0)
-        except Exception:
-            p_curr = 51250.0
-
-    # 2. Bank Coalition (60s shared cache)
-    global _coalition_shared_cache, _macro_shared_cache
-    if not hasattr(dow_composite_signal, "_c_cache"):
-        dow_composite_signal._c_cache = {}
-        dow_composite_signal._m_cache = {}
-
-    c_hit = dow_composite_signal._c_cache.get("US30")
-    if c_hit and (now_ts - c_hit["ts"] < 60.0):
-        c_score = c_hit["score"]
-        c_agree = c_hit["agree"]
-        c_verdict = c_hit["verdict"]
-    else:
-        try:
-            import smart_money
-            coalition = smart_money.bank_coalition("US30")
-            c_score = float(coalition.get("score", 0.0) or 0.0)
-            c_agree = float(coalition.get("agreement", 0.5) * 100.0 or 50.0)
-            c_verdict = coalition.get("verdict", "خنثی")
-            dow_composite_signal._c_cache["US30"] = {"ts": now_ts, "score": c_score, "agree": c_agree, "verdict": c_verdict}
-        except Exception:
-            c_score = 0.0
-            c_agree = 50.0
-            c_verdict = "در حال تجدید تحلیل ائتلاف"
-
-    # 3. Macro Shield (60s shared cache)
-    m_hit = dow_composite_signal._m_cache.get("shield")
-    if m_hit and (now_ts - m_hit["ts"] < 60.0):
-        is_frozen = m_hit["is_frozen"]
-        event_name = m_hit["event_name"]
-    else:
-        try:
-            macro = aseman.AsemanMacroShieldUS30.get_macro_shield_status()
-            is_frozen = macro.get("is_frozen", False)
-            event_name = macro.get("current_or_next_event", {}).get("name", "رویداد کلان")
-            dow_composite_signal._m_cache["shield"] = {"ts": now_ts, "is_frozen": is_frozen, "event_name": event_name}
-        except Exception:
-            is_frozen = False
-            event_name = "CPI/FOMC"
-
-    # 4. Engine Analysis for this specific interval (Non-blocking instant resolution)
-    eng_dir = 0
-    eng_score = 50.0
-    eng_bias_fa = "خنثی"
-    imbalance = 0.0
-    htf_dir = 0
-
+    if not isinstance(analysis, dict) or not analysis.get("ok"):
+        return {"ok": False, "action": "WAIT", "action_fa": "تحلیل معتبر در دسترس نیست", "interval": interval}
     try:
-        hit = None
-        for k, v in engine._CACHE.items():
-            if k.startswith(f"{interval}:"):
-                hit = v
-                break
-        if hit and isinstance(hit.get("data"), dict):
-            sig_block = hit["data"].get("signal", {}) or {}
-            eng_dir = int(sig_block.get("direction", 0) or 0)
-            eng_score = float(sig_block.get("score", 50.0) or 50.0)
-            eng_bias_fa = sig_block.get("action_fa", "خنثی")
-            flow_block = hit["data"].get("flow", {}) or {}
-            imbalance = float(flow_block.get("imbalance", 0.0) or 0.0)
-            htf_dir = int(sig_block.get("htf_direction", 0) or eng_dir)
-        else:
-            # Baseline aligned with live multi-platform confluence & session trend
-            try:
-                import ninja_atas_quant_engine as naq
-                ms_sig = naq.get_master_confluence_signal(p_curr)
-                ms_dir_str = ms_sig.get("direction", "BUY")
-                eng_dir = 1 if ms_dir_str == "BUY" else (-1 if ms_dir_str == "SELL" else 0)
-                eng_score = float(ms_sig.get("confluence_score", 85))
-                eng_bias_fa = "خرید قدرتمند نهادی" if eng_dir > 0 else ("فروش قدرتمند نهادی" if eng_dir < 0 else "رنج متعادل")
-                imbalance = 0.28 if eng_dir > 0 else (-0.26 if eng_dir < 0 else 0.02)
-                htf_dir = eng_dir
-            except Exception:
-                eng_dir = 1
-                eng_score = 80.0
-                eng_bias_fa = "خرید قدرتمند نهادی"
-                imbalance = 0.22
-                htf_dir = 1
-    except Exception:
-        pass
+        price = float((analysis.get("price") or {}).get("last"))
+        signal = analysis.get("signal") or {}
+        direction = int(signal.get("direction", 0) or 0)
+        score = float(signal.get("score", 0) or 0)
+        plan = signal.get("plan") if isinstance(signal.get("plan"), dict) else {}
+        entry = float(plan.get("entry")) if plan.get("entry") is not None else None
+        sl = float(plan.get("stop")) if plan.get("stop") is not None else None
+        tp1 = float(plan.get("tp1")) if plan.get("tp1") is not None else None
+        tp2 = float(plan.get("tp2")) if plan.get("tp2") is not None else None
+        tp3 = float(plan.get("tp3")) if plan.get("tp3") is not None else None
+    except (TypeError, ValueError, AttributeError):
+        return {"ok": False, "action": "WAIT", "action_fa": "قیمت یا پلن تحلیل نامعتبر است", "interval": interval}
 
-    scale_map = {
-        "1m": {"atr": 15.0, "sl_mult": 0.47, "tp1_m": 1.47, "tp2_m": 3.67, "tp3_m": 5.67, "name": "⚡ ستاپ میکرو-اسکالپ تک‌تیرانداز ۱ دقیقه‌ای (1m Sniper Pre-Emptive Scalp)"},
-        "5m": {"atr": 45.0, "sl_mult": 1.0, "tp1_m": 1.4, "tp2_m": 2.5, "tp3_m": 4.0, "name": "⚡ ستاپ اسکالپ فوق‌سریع ۵ دقیقه‌ای (High-Speed Scalp)"},
-        "15m": {"atr": 70.0, "sl_mult": 1.0, "tp1_m": 1.4, "tp2_m": 2.5, "tp3_m": 4.0, "name": "🎯 ستاپ مومنتوم ۱۵ دقیقه‌ای (Intraday Momentum)"},
-        "30m": {"atr": 95.0, "sl_mult": 1.0, "tp1_m": 1.4, "tp2_m": 2.5, "tp3_m": 4.2, "name": "📊 ستاپ نیم‌ساعته سشن وال‌استریت (Session Setup)"},
-        "1h": {"atr": 135.0, "sl_mult": 1.0, "tp1_m": 1.4, "tp2_m": 2.6, "tp3_m": 4.5, "name": "🏛️ ستاپ دی‌ترید ۱ ساعته نهادی (Day Trade)"},
-        "4h": {"atr": 260.0, "sl_mult": 1.0, "tp1_m": 1.4, "tp2_m": 2.6, "tp3_m": 4.8, "name": "🌊 ستاپ سوئینگ ۴ ساعته (Multi-Session Swing)"},
-        "1d": {"atr": 520.0, "sl_mult": 1.0, "tp1_m": 1.4, "tp2_m": 2.8, "tp3_m": 5.0, "name": "👑 ستاپ ماژور روزانه وال‌استریت (Macro Trend Position)"},
-    }
-    cfg = scale_map.get(interval, scale_map["1m" if interval == "1m" else "1h"])
-    atr = cfg["atr"]
+    if not price or price <= 10000:
+        return {"ok": False, "action": "WAIT", "action_fa": "قیمت معتبر داوجونز در دسترس نیست", "interval": interval}
 
-    # Module 1: Bank Coalition
-    if c_score > 0.15:
-        mod1_bias = 1
-        mod1_badge = "🟢 ورود سرمایه نهادی"
-        mod1_stat = "pass"
-    elif c_score < -0.15:
-        mod1_bias = -1
-        mod1_badge = "🔴 خروج نقدینگی بانکی"
-        mod1_stat = "fail"
+    levels_ok = all(v is not None and v > 0 for v in (entry, sl, tp1, tp2, tp3))
+    if direction > 0:
+        levels_ok = levels_ok and sl < entry < tp1 < tp2 < tp3
+    elif direction < 0:
+        levels_ok = levels_ok and sl > entry > tp1 > tp2 > tp3
     else:
-        mod1_bias = 0
-        mod1_badge = "⚪ تعادل سفارشات وال‌استریت"
-        mod1_stat = "neutral"
-    mod1_desc = f"هماهنگی {c_agree:.0f}٪ غول‌های وال‌استریت ({c_verdict})"
+        levels_ok = False
 
-    # Module 2: Orderflow & FVG
-    if imbalance > 0.15:
-        mod2_bias = 1
-        mod2_badge = "🟢 برتری جریان تقاضا"
-        mod2_stat = "pass"
-    elif imbalance < -0.15:
-        mod2_bias = -1
-        mod2_badge = "🔴 برتری حجم عرضه"
-        mod2_stat = "fail"
-    else:
-        mod2_bias = 0
-        mod2_badge = "⚪ تعادل گپ‌های ارزش منصفانه"
-        mod2_stat = "neutral"
-    mod2_desc = f"عدم تعادل اردر فلو {imbalance:+.1f}٪ و ساختار نقدینگی تایم {interval}"
-
-    # Module 3: Macro Shield
-    if is_frozen:
-        mod3_bias = -1
-        mod3_badge = "⚠️ فیوز قرمز (سپر فعال)"
-        mod3_stat = "fail"
-        mod3_desc = f"سپر ریسک فعال؛ نزدیک به انتشار {event_name} (کاهش اهرم)"
-    else:
-        mod3_bias = 0
-        mod3_badge = "🟢 فیوز سبز (بدون ریسک)"
-        mod3_stat = "pass"
-        mod3_desc = "فیوز ریسک اخبار نرمال؛ بدون خطر انتشار ناگهانی داده‌های حیاتی"
-
-    # Module 4: Price Action & Market Structure
-    mod4_bias = eng_dir
-    if mod4_bias > 0:
-        mod4_badge = "🟢 ساختار صعودی (CHoCH)"
-        mod4_stat = "pass"
-    elif mod4_bias < 0:
-        mod4_badge = "🔴 ساختار نزولی (BOS)"
-        mod4_stat = "fail"
-    else:
-        mod4_badge = "⚪ اصلاح / پولبک خنثی"
-        mod4_stat = "neutral"
-    mod4_desc = f"روند ساختار {interval}: {eng_bias_fa} | ساختار بلندمدت روزانه: {'صعودی' if htf_dir > 0 else ('نزولی' if htf_dir < 0 else 'خنثی')}"
-
-    # Module 5: Volatility & Multi-Timeframe Alignment
-    if eng_dir > 0 and htf_dir >= 0:
-        mod5_bias = 1
-        mod5_badge = "🟢 هماهنگی کامل چندزمانه"
-        mod5_stat = "pass"
-    elif eng_dir < 0 and htf_dir <= 0:
-        mod5_bias = -1
-        mod5_badge = "🔴 همسویی ریزش چندزمانه"
-        mod5_stat = "fail"
-    else:
-        mod5_bias = 0
-        mod5_badge = "⚪ تعادل رنج و نوسان مارکت"
-        mod5_stat = "neutral"
-    mod5_desc = f"همگرایی ساختار {interval} و جهت کلی مارکت در سشن وال‌استریت"
-
-    total_votes = mod1_bias + mod2_bias + mod4_bias + mod5_bias
-
-    if is_frozen:
-        action = "WAIT"
-        action_fa = "⏸️ سپر اخبار فعال (WAIT - کاهش ریسک)"
-        color = "#ffb300"
-        score = 50
-        grade = "B"
-    elif ms_dir_str == "BUY" or (total_votes >= 2 and mod4_bias >= 0):
-        action = "BUY"
-        action_fa = "🟢 خرید قدرتمند نهادی (STRONG BUY)"
-        color = "#00e676"
-        score = min(98, max(80, int(eng_score * 0.96)))
-        grade = "A+" if score >= 88 else "A"
-    elif ms_dir_str == "SELL" or (total_votes <= -2 and mod4_bias <= 0):
-        action = "SELL"
-        action_fa = "🔴 فروش قدرتمند نهادی (STRONG SELL)"
-        color = "#ff3366"
-        score = min(98, max(80, int(eng_score * 0.96)))
-        grade = "A+" if score >= 88 else "A"
-    else:
-        action = "WAIT"
-        action_fa = "⏸️ خنثی / نظاره بازار (WAIT - فاقد تاییدیه قطعی)"
-        color = "#ffb300"
-        score = max(55, min(70, 60 + total_votes * 5))
-        grade = "B"
-
-    # Setup Persistence & Lock Logic (Levels remain FIXED for the entire trade duration)
-    global _LOCKED_COMPOSITE_SETUPS
-    now_epoch = time.time()
-    lock_durations = {
-        "1m": 300,    # 5 minutes
-        "5m": 600,    # 10 minutes
-        "15m": 1200,  # 20 minutes
-        "30m": 1800,  # 30 minutes
-        "1h": 3600,   # 1 hour
-        "4h": 14400,  # 4 hours
-        "1d": 86400   # 1 day
-    }
-    lock_validity_sec = lock_durations.get(interval, 300)
-
-    cached_setup = _LOCKED_COMPOSITE_SETUPS.get(f"{interval}_{broker}")
-    is_valid_lock = (
-        cached_setup is not None
-        and now_epoch < cached_setup.get("expires_at", 0)
-        and cached_setup.get("entry_low", 0) > 10000
+    # A direction alone is not enough: require a coherent plan and reasonable confidence.
+    real_index_source = _analysis_is_real_index(analysis)
+    timeframe_validated = interval not in getattr(execguard, "BAD_INTERVALS", set())
+    candidate_actionable = bool(real_index_source and timeframe_validated and levels_ok and score >= 65)
+    guard_result = None
+    if candidate_actionable:
+        try:
+            guard_result = execguard.evaluate(analysis, interval=interval, balance=10.0, leverage=50.0, lot=0.01)
+        except Exception as exc:
+            guard_result = {"trade_allowed": False, "reason": str(exc)[:200]}
+    actionable = bool(candidate_actionable and isinstance(guard_result, dict) and guard_result.get("trade_allowed") is True)
+    action = ("BUY" if direction > 0 else "SELL") if actionable else "WAIT"
+    action_fa = (
+        "🟢 خرید بر اساس تحلیل OHLCV" if action == "BUY" else
+        "🔴 فروش بر اساس تحلیل OHLCV" if action == "SELL" else
+        "⚪ خنثی / داده یا تأیید کافی نیست — بدون معامله"
     )
-
-    if is_valid_lock:
-        # Check if current price touched TP or SL
-        c_act = cached_setup["action"]
-        c_sl = cached_setup["sl_price"]
-        c_tp2 = cached_setup["tp2_price"]
-        hit_tp = (p_curr >= c_tp2) if c_act == "BUY" else (p_curr <= c_tp2)
-        hit_sl = (p_curr <= c_sl) if c_act == "BUY" else (p_curr >= c_sl)
-        if hit_tp or hit_sl:
-            is_valid_lock = False
-
-    if is_valid_lock:
-        # Retain 100% LOCKED levels - DO NOT JUMP OR FLOAT WITH TICKS
-        entry_low = cached_setup["entry_low"]
-        entry_high = cached_setup["entry_high"]
-        sl_price = cached_setup["sl_price"]
-        sl_pts = cached_setup["sl_pts"]
-        tp1_price = cached_setup["tp1_price"]
-        tp1_pts = cached_setup["tp1_pts"]
-        tp2_price = cached_setup["tp2_price"]
-        tp2_pts = cached_setup["tp2_pts"]
-        tp3_price = cached_setup["tp3_price"]
-        tp3_pts = cached_setup["tp3_pts"]
-        action = cached_setup["action"]
-        action_fa = cached_setup["action_fa"]
-        color = cached_setup["color"]
-        setup_title = cached_setup["setup_title"]
-    else:
-        # Strict account preservation for $10 balance with 0.01 lot:
-        # Stop Loss is strictly locked between 12 to 14 points ($1.20 - $1.40 risk) across all timeframes.
-        # Take Profits scale dynamically and proportionally with the timeframe so holding longer yields higher rewards:
-        tf_targets = {
-            "1m":  {"sl": 13.0, "tp1": 24.0,  "tp2": 48.0,   "tp3": 75.0,   "dur": "۲ الی ۱۰ دقیقه (میکرو اسکالپ سریع)"},
-            "5m":  {"sl": 13.5, "tp1": 35.0,  "tp2": 70.0,   "tp3": 110.0,  "dur": "۱۰ الی ۳۰ دقیقه (اسکالپ مومنتوم)"},
-            "15m": {"sl": 14.0, "tp1": 55.0,  "tp2": 110.0,  "tp3": 180.0,  "dur": "۱ الی ۳ ساعت (دی‌ترید سشن)"},
-            "30m": {"sl": 14.0, "tp1": 85.0,  "tp2": 160.0,  "tp3": 260.0,  "dur": "۲ الی ۵ ساعت (مومنتوم بین‌سشن)"},
-            "1h":  {"sl": 14.0, "tp1": 140.0, "tp2": 280.0,  "tp3": 450.0,  "dur": "درون‌روز تا فردا (سوئینگ کوتاه)"},
-            "4h":  {"sl": 14.0, "tp1": 280.0, "tp2": 550.0,  "tp3": 900.0,  "dur": "۲ الی ۵ روز (سوئینگ جامع ماکرو)"},
-            "1d":  {"sl": 14.0, "tp1": 600.0, "tp2": 1200.0, "tp3": 2200.0, "dur": "۱ الی ۳ هفته (پوزیشن وال‌استریت)"}
-        }
-        setup_spec = tf_targets.get(interval, tf_targets["15m"])
-        sl_pts = setup_spec["sl"]
-        tp1_pts = setup_spec["tp1"]
-        tp2_pts = setup_spec["tp2"]
-        tp3_pts = setup_spec["tp3"]
-
-        import us30_unified_signals as uus
-        unif = uus.get_us30_unified_signals(p_curr or None)
-        if interval in ["1m", "5m"]:
-            sig_source = unif.get("scalp", {})
-        else:
-            sig_source = unif.get("swing", {})
-
-        action = "BUY" if sig_source.get("direction_code") == "LONG" else ("SELL" if sig_source.get("direction_code") == "SHORT" else "WAIT")
-        action_fa = f"🟢 خرید قدرتمند نهادی (STRONG BUY)" if action == "BUY" else (f"🔴 فروش قدرتمند نهادی (STRONG SELL)" if action == "SELL" else "⏸️ در انتظار تایید سشن (WAIT)")
-        color = "#00e676" if action == "BUY" else ("#ff3366" if action == "SELL" else "#ffb300")
-
-        base_entry = float(sig_source.get("entry", p_curr))
-        sl_price = float(sig_source.get("stop_loss", p_curr - sl_pts if action == "BUY" else p_curr + sl_pts))
-        sl_pts = round(abs(base_entry - sl_price), 1)
-
-        tp1_price = float(sig_source.get("tp1", p_curr + tp1_pts if action == "BUY" else p_curr - tp1_pts))
-        tp1_pts = round(abs(tp1_price - base_entry), 1)
-        tp2_price = float(sig_source.get("tp2", p_curr + tp2_pts if action == "BUY" else p_curr - tp2_pts))
-        tp2_pts = round(abs(tp2_price - base_entry), 1)
-        tp3_price = float(sig_source.get("tp3", p_curr + tp3_pts if action == "BUY" else p_curr - tp3_pts))
-        tp3_pts = round(abs(tp3_price - base_entry), 1)
-
-        if action == "BUY":
-            entry_low = round(base_entry - 2.5, 1)
-            entry_high = base_entry
-        elif action == "SELL":
-            entry_low = base_entry
-            entry_high = round(base_entry + 2.5, 1)
-        else:
-            entry_low = round(p_curr - 20, 1)
-            entry_high = round(p_curr + 20, 1)
-        setup_title = cfg["name"]
-
-        _LOCKED_COMPOSITE_SETUPS[f"{interval}_{broker}"] = {
-            "entry_low": entry_low,
-            "entry_high": entry_high,
-            "sl_price": sl_price,
-            "sl_pts": sl_pts,
-            "tp1_price": tp1_price,
-            "tp1_pts": tp1_pts,
-            "tp2_price": tp2_price,
-            "tp2_pts": tp2_pts,
-            "tp3_price": tp3_price,
-            "tp3_pts": tp3_pts,
-            "action": action,
-            "action_fa": action_fa,
-            "color": color,
-            "setup_title": setup_title,
-            "created_at": now_epoch,
-            "expires_at": now_epoch + lock_validity_sec
-        }
-
-    # Apply 6 Elite Institutional Validation Filters (VIX, VWAP, SMT, News, 5 Dow Giants, NY Killzone)
-    try:
-        import elite_modules as elite
-        validation = elite.validate_us30_signal_confluence(p_curr, action, score, interval)
-        if validation.get("is_vetoed") and "اخبار" in validation.get("veto_reason", ""):
-            action = "WAIT"
-            action_fa = f"⏸️ نظاره بازار ({validation.get('veto_reason')})"
-            color = "#ffb300"
-            score = 50
-            grade = "B"
-        elif validation.get("is_vetoed"):
-            # Retain institutional direction but flag caution
-            score = max(75, score - 6)
-            grade = "A"
-        elif validation.get("passed_count", 0) >= 5 and action in ["BUY", "SELL"]:
-            score = min(99, score + 4)
-            grade = "A+"
-
-        # 7. Apply 3 Execution & Trigger Accelerators (Silver Bullet, EMA Fan, ADR)
-        triggers = elite.get_execution_triggers(interval, p_curr)
-        sb = triggers.get("silver_bullet", {})
-        if sb.get("is_active") and action in ["BUY", "SELL"]:
-            setup_title = "🎯 ستاپ سیلور بولت نیویورک (ICT Silver Bullet) + " + setup_title
-            score = min(99, score + 3)
-
-        # Never clip targets to 0! Ensure robust minimum targets for TP2 and TP3
-        if tp2_pts < 35.0:
-            tp2_pts = 48.0
-        if tp3_pts < 50.0:
-            tp3_pts = 75.0
-        # Targets remain 100% frozen with the locked setup (Never float with p_curr)
-        pass
-    except Exception as ex:
-        print(f"[SIGNAL VALIDATION ERR] {ex}")
-        triggers = {}
-        validation = {
-            "filters_passed": "۶ از ۶ فیلتر نهادی تایید شد",
-            "passed_count": 6,
-            "session_vwap": round(p_curr - 15.0, 1),
-            "filters": [
-                {"name": "۱. فیلتر نوسان VIX", "status": "pass", "badge": "🟢 تایید تعادل نوسان", "detail": "نوسان در محدوده مجاز"},
-                {"name": "۲. خط VWAP سشن", "status": "pass", "badge": "🟢 انطباق با VWAP", "detail": "قیمت در سمت درست میانگین حجم"},
-                {"name": "۳. همسویی دو قلوی SMT", "status": "pass", "badge": "🟢 همسویی S&P500", "detail": "تایید همسویی شاخص‌های وال‌استریت"},
-                {"name": "۴. فیوز محافظ اخبار و اسپرد", "status": "pass", "badge": "🟢 فیوز سبز", "detail": "فاصله زمانی امن از اخبار"},
-                {"name": "۵. ائتلاف ۵ غول داوجونز", "status": "pass", "badge": "🟢 تایید ۵ غول", "detail": "اجماع مثبت غول‌ها"},
-                {"name": "۶. سشن طلایی نیویورک", "status": "pass", "badge": "🔥 سشن فعال", "detail": "سشن معاملاتی پرحجم"}
-            ]
-        }
-
-    # Connect Option Walls from Module 10 / Elite GEX to anchor TP3
-    try:
-        gex_info = elite.get_gex_and_option_walls(p_curr)
-        call_w = float(gex_info.get("call_wall") or 0.0)
-        put_w = float(gex_info.get("put_wall", 51000.0))
-        if action == "BUY" and tp3_price > call_w and abs(call_w - p_curr) > tp2_pts + 30.0:
-            tp3_price = call_w
-            tp3_pts = round(abs(tp3_price - p_curr))
-        elif action == "SELL" and tp3_price < put_w and abs(p_curr - put_w) > tp2_pts + 30.0:
-            tp3_price = put_w
-            tp3_pts = round(abs(p_curr - tp3_price))
-    except Exception:
-        pass
-
-    # Ensure TP3 is strictly greater than TP2 across all timeframes
-    if tp3_pts <= tp2_pts:
-        tp3_pts = round(tp2_pts * 1.5, 1)
-        tp3_price = round(p_curr + tp3_pts if action == "BUY" else p_curr - tp3_pts, 1)
-
-    rr = f"1:{tp2_pts / sl_pts:.1f}"
-
-    hw_data = validation.get("heavyweights", {})
-    kz_data = validation.get("killzone", {})
-
-    # =========================================================================
-    # 15-MODULE INSTITUTIONAL CONFLUENCE SYNCHRONIZATION ENGINE
-    # =========================================================================
-    # Module 4: CFTC COT 6W & 6D
-    try:
-        import cftc_cot_engine
-        cot_res = cftc_cot_engine.get_us30_cot_report()
-        cot_6w_score = cot_res.get("trend_analysis_6_weeks", {}).get("conviction_score", 86)
-        cot_6d_net = cot_res.get("daily_flow_summary_6d", {}).get("total_6d_net_flow", 4820)
-        if cot_6d_net > 0 and cot_6w_score >= 70:
-            mod4_cot_stat = "pass"
-            mod4_cot_badge = f"🟢 انباشت ۶ هفته و ۶ روز (+{cot_6d_net:,} قرارداد)"
-            mod4_cot_desc = f"همگرایی {cot_6w_score}٪ ورود پول هوشمند نهادی در CBOT"
-        elif cot_6d_net < 0 and cot_6w_score < 40:
-            mod4_cot_stat = "fail"
-            mod4_cot_badge = f"🔴 خروج تعهدات (-{abs(cot_6d_net):,} قرارداد)"
-            mod4_cot_desc = "کاهش پوزیشن‌های خرید صندوق‌های وال‌استریت"
-        else:
-            mod4_cot_stat = "neutral"
-            mod4_cot_badge = "⚪ تعادل تعهدات هفتگی"
-            mod4_cot_desc = "تثبیت قراردادهای باز بدون برتری مطلق"
-    except Exception:
-        mod4_cot_stat = "pass"
-        mod4_cot_badge = "🟢 انباشت ۶ هفته و ۶ روز (+۴,۸۲۰ قرارداد)"
-        mod4_cot_desc = "همگرایی ۸۸٪ ورود پول هوشمند نهادی در CBOT"
-
-    # Module 15: Bookmap Liquidity Heatmap
-    try:
-        import bookmap_engine
-        bm_res = bookmap_engine.get_us30_bookmap_data()
-        bm_imb = bm_res.get("imbalance_pct", 18.4)
-        if bm_imb > 5.0:
-            mod15_stat = "pass"
-            mod15_badge = f"🟢 تراز دلتا +{bm_imb}% (حمایت Bid)"
-            mod15_desc = "کف‌های بتنی خرید خوابیده مانع ریزش قیمت هستند"
-        elif bm_imb < -5.0:
-            mod15_stat = "fail"
-            mod15_badge = f"🔴 تراز دلتا {bm_imb}% (فشار Ask)"
-            mod15_desc = "دیوارهای لیمیت سنگین فروش در بالای قیمت متراکم‌اند"
-        else:
-            mod15_stat = "neutral"
-            mod15_badge = "⚪ تعادل عمق سفارشات"
-            mod15_desc = "توازن نسبی عرضه و تقاضا در هیت‌مپ نقدینگی"
-    except Exception:
-        mod15_stat = "pass"
-        mod15_badge = "🟢 تراز دلتا +۱۸.۴٪ (حمایت Bid)"
-        mod15_desc = "کف‌های بتنی خرید خوابیده مانع ریزش قیمت هستند"
-
-    # Module 8: Alpha Cross-Asset Matrix
-    try:
-        import cross_asset
-        ca = cross_asset.live_cross_asset_pulse()
-        ca_score = float(ca.get("composite_score", 0.0) or 0.0)
-        if ca_score > 0.05:
-            mod8_stat = "pass"
-            mod8_badge = "🟢 همسویی بین‌بازاری"
-            mod8_desc = "سازگاری بازده اوراق قرضه US10Y و شاخص دلار با داوجونز"
-        elif ca_score < -0.05:
-            mod8_stat = "fail"
-            mod8_badge = "🔴 واگرایی بین‌بازاری"
-            mod8_desc = "فشار شاخص دلار DXY یا بازده اوراق بر سهام وال‌استریت"
-        else:
-            mod8_stat = "neutral"
-            mod8_badge = "⚪ تعادل متغیرهای کلان"
-            mod8_desc = "نوسانات بدون جهت در طلا، نفت و اوراق قرضه"
-    except Exception:
-        mod8_stat = "pass"
-        mod8_badge = "🟢 همسویی بین‌بازاری"
-        mod8_desc = "سازگاری نرخ بازده اوراق و دلار با شاخص داوجونز"
-
-    # Module 9: Options Gamma & Walls
-    call_w_val = 0.0
-    put_w_val = 51000.0
-    try:
-        call_w_val = float(gex_info.get("call_wall") or 0.0)
-        put_w_val = float(gex_info.get("put_wall", 51000.0))
-    except Exception:
-        pass
-    mod9_stat = "pass" if (p_curr >= put_w_val and p_curr <= call_w_val + 200) else "neutral"
-    mod9_badge = f"🟢 محدوده امن گاما ({put_w_val:,.0f} تا {call_w_val:,.0f})"
-    mod9_desc = f"کال‌وال: {call_w_val:,.0f} | پوت‌وال: {put_w_val:,.0f} (پین گامای مثبت)"
-
-    # Module 10: Dow 30 Leaders Radar
-    hw_pass = hw_data.get("status", "pass") == "pass"
-    mod10_stat = "pass" if hw_pass else "neutral"
-    mod10_badge = hw_data.get("badge", "🟢 تایید ۳۰ سهام پیشران")
-    mod10_desc = hw_data.get("desc", "پیشتازی غول‌های صنعتی داوجونز (UNH, GS, MSFT, CAT)")
-
-    # Module 11: Crash Guard & VIX
-    vix_stat = validation.get("filters", [{}])[0].get("status", "pass")
-    mod11_stat = "pass" if vix_stat == "pass" else "fail"
-    mod11_badge = "🟢 ریسک سقوط نرمال (VIX زیر ۲۲)" if vix_stat == "pass" else "⚠️ هشدار جهش نوسان VIX"
-    mod11_desc = "شاخص ترس بورس شیکاگو در وضعیت آرام و کنترل‌شده"
-
-    # Module 12: Auto Trade Journal & R-Multiples
-    mod12_stat = "pass"
-    mod12_badge = f"🟢 بازدهی اثبات‌شده (R/R {rr})"
-    mod12_desc = "وین‌ریت تاریخی ستاپ بالای ۶۸٪ با برآیند مثبت در ژورنال"
-
-    # Module 13: AI Smart Advisor
-    mod13_stat = "pass"
-    mod13_badge = "🤖 تایید هوش مصنوعی آسمان"
-    mod13_desc = f"انطباق الگوی {interval} با رژیم معاملاتی فعال و تارگت‌های ۳ گانه"
-
-    # Module 14: Execution & Slippage Guard
-    mod14_stat = "pass"
-    mod14_badge = "🔒 گارد اسپرد سبز (اجرای امن)"
-    mod14_desc = "اسپرد داوجونز در بروکرها نرمال و ریسک اسلیپیج به حداقل رسیده است"
-
-    # Module 6: Volatility ATR/ADR
-    mod6_stat = "pass"
-    mod6_badge = f"🟢 دامنه ATR {atr:.0f} pts (تنظیم ریسک)"
-    mod6_desc = f"حد ضرر {sl_pts} پوینت متناسب با توان حرکتی تایم {interval}"
-
-    # Module 7: Session Clocks & NY Killzone
-    mod7_stat = kz_data.get("status", "pass")
-    mod7_badge = kz_data.get("badge", "🔥 سشن فعال نیویورک")
-    mod7_desc = kz_data.get("advice", "همپوشانی حجم معاملات لندن و وال‌استریت")
-
-    # Complete 15-Module Institutional Confluence Checklist
-    checklist = [
-        {"id": 1, "name": "۱. ساختار پرایس‌اکشن نهادی (SMC)", "status": mod4_stat, "detail": mod4_desc, "badge": mod4_badge},
-        {"id": 2, "name": "۲. تقویم اقتصادی و اخبار کلان (Macro)", "status": mod3_stat, "detail": mod3_desc, "badge": mod3_badge},
-        {"id": 3, "name": "۳. ائتلاف ۵ غول بانکی وال‌استریت (Banks)", "status": mod1_stat, "detail": mod1_desc, "badge": mod1_badge},
-        {"id": 4, "name": "۴. تعهدات معامله‌گران رسمی (CFTC COT 6W & 6D)", "status": mod4_cot_stat, "detail": mod4_cot_desc, "badge": mod4_cot_badge},
-        {"id": 5, "name": "۵. جریان سفارشات و خلأ نقدینگی (Orderflow/FVG)", "status": mod2_stat, "detail": mod2_desc, "badge": mod2_badge},
-        {"id": 6, "name": "۶. نوسان‌پذیری واقعی و سنجه ریسک (ATR/ADR)", "status": mod6_stat, "detail": mod6_desc, "badge": mod6_badge},
-        {"id": 7, "name": "۷. سشن‌های معاملاتی و کیل‌زون (Killzone)", "status": mod7_stat, "detail": mod7_desc, "badge": mod7_badge},
-        {"id": 8, "name": "۸. آلفا ماتریس و همبستگی بین‌بازاری (Cross-Asset)", "status": mod8_stat, "detail": mod8_desc, "badge": mod8_badge},
-        {"id": 9, "name": "۹. تحلیل آپشن‌ها و دیوارهای گاما (Options)", "status": mod9_stat, "detail": mod9_desc, "badge": mod9_badge},
-        {"id": 10, "name": "۱۰. رادار لیدرها و ۳۰ سهام پیشران (Dow Leaders)", "status": mod10_stat, "detail": mod10_desc, "badge": mod10_badge},
-        {"id": 11, "name": "۱۱. کرش گارد و مانیتورینگ نوسانات (VIX Guard)", "status": mod11_stat, "detail": mod11_desc, "badge": mod11_badge},
-        {"id": 12, "name": "۱۲. ژورنال خودکار و نسبت R-Multiple", "status": mod12_stat, "detail": mod12_desc, "badge": mod12_badge},
-        {"id": 13, "name": "۱۳. مشاور هوش مصنوعی سناریوها (AI Advisor)", "status": mod13_stat, "detail": mod13_desc, "badge": mod13_badge},
-        {"id": 14, "name": "۱۴. گارد محافظ اجرای معاملات (Execution Guard)", "status": mod14_stat, "detail": mod14_desc, "badge": mod14_badge},
-        {"id": 15, "name": "۱۵. بوک‌مپ نقدینگی و عمق سفارشات (Bookmap Heatmap)", "status": mod15_stat, "detail": mod15_desc, "badge": mod15_badge}
-    ]
-
-    passed_count = sum(1 for item in checklist if item["status"] == "pass")
-    confluence_pct = round((passed_count / 15.0) * 100)
-
-    # Re-boost final score with 15-module multi-confluence
-    final_score = min(99, max(score, int(confluence_pct * 0.95)))
-
-    try:
-        import smt_and_sweep_engine
-        smt_sweep = smt_and_sweep_engine.get_smt_and_sweep_data(p_curr)
-    except Exception:
-        smt_sweep = None
-
-    response_payload = {
+    checklist = []
+    for part in signal.get("parts", [])[:8]:
+        if isinstance(part, dict):
+            checklist.append({"name": str(part.get("name", "جزء تحلیل")), "status": "neutral", "badge": "ℹ️ تحلیل تکنیکال", "detail": str(part.get("detail", ""))})
+    validation = {
+        "is_vetoed": not actionable,
+        "filters_passed": "فقط تحلیل OHLCV؛ تأیید مستقل داده‌های نهادی در دسترس نیست",
+        "passed_count": 1 if actionable else 0,
+        "filters": [
+            {"name": "قیمت/کندل", "status": "pass", "badge": "قابل‌خواندن", "detail": "تحلیل از خروجی موتور OHLCV"},
+            {"name": "تأیید مستقل نهادی", "status": "neutral", "badge": "تأیید نشده", "detail": "دادهٔ زندهٔ معتبر برای این فیلترها تأیید نشده است"},
+        ],
+        "heavyweights": {"status": "neutral", "badge": "داده در دسترس نیست", "members": [], "net_dow_pts": None},
+    }
+    risk = abs(entry - sl) if levels_ok else None
+    rr = (abs(tp2 - entry) / risk) if risk else None
+    fmt = lambda v: f"${v:,.1f}" if isinstance(v, (int, float)) else "—"
+    return {
         "ok": True,
+        "tradable": actionable,
+        "interval": interval,
+        "broker": broker,
+        "price": price,
         "action": action,
         "action_fa": action_fa,
-        "color": color,
-        "grade": "A+" if final_score >= 85 else ("A" if final_score >= 70 else "B"),
-        "score": final_score,
-        "interval": interval,
-        "setup_name": setup_title,
-        "price": p_curr,
-        "entry_zone": f"{entry_low:,.1f} تا {entry_high:,.1f} (کاشت لیمیت در پولبک)",
-        "entry_low": entry_low,
-        "entry_high": entry_high,
-        "stop_loss": sl_price,
-        "stop_loss_pts": sl_pts,
-        "tp1": tp1_price,
-        "tp1_pts": tp1_pts,
-        "tp2": tp2_price,
-        "tp2_pts": tp2_pts,
-        "tp3": tp3_price,
-        "tp3_pts": tp3_pts,
-        "risk_reward": rr,
+        "color": "#00e676" if action == "BUY" else ("#ff3366" if action == "SELL" else "#ffd166"),
+        "grade": signal.get("grade", "D") if actionable else "—",
+        "total_confluence": round(score, 1) if actionable else 0,
+        "score": round(score, 1) if actionable else 0,
+        "risk_reward": f"1:{rr:.2f}" if rr else "—",
+        "setup_name": f"تحلیل تکنیکال US30 · {interval}",
+        "entry_price": entry if actionable else None,
+        "entry_zone": fmt(entry) if actionable else "—",
+        "stop_loss": sl if actionable else None,
+        "stop_loss_pts": round(abs(entry - sl), 1) if actionable else None,
+        "tp1": tp1 if actionable else None,
+        "tp1_pts": round(abs(tp1 - entry), 1) if actionable else None,
+        "tp2": tp2 if actionable else None,
+        "tp2_pts": round(abs(tp2 - entry), 1) if actionable else None,
+        "tp3": tp3 if actionable else None,
+        "tp3_pts": round(abs(tp3 - entry), 1) if actionable else None,
         "checklist": checklist,
-        "total_confluence": f"{confluence_pct}٪ همگرایی تحلیلی ۱۵ ماژول ({passed_count} از ۱۵ تایید)",
-        "modules_passed_count": passed_count,
-        "modules_total": 15,
         "validation": validation,
-        "session_vwap": validation.get("session_vwap", round(p_curr - 15, 1)),
-        "filters_passed": validation.get("filters_passed", f"تایید {passed_count} از ۱۵ ماژول نهادی"),
-        "triggers": triggers,
-        "smt_and_sweep": smt_sweep,
-        "broker": broker,
-        "trendo_info": trendo_meta if trendo_meta.get("ok") else None,
-        "updated_at": time.strftime("%Y-%m-%d %H:%M:%S UTC")
+        "execution_guard": guard_result or {"ok": False, "trade_allowed": False, "reason": "سیگنال یا تایم‌فریم شرایط لازم را ندارد."},
+        "triggers": {"silver_bullet": {"badge": "دادهٔ زنده تأیید نشده", "color": "#ffd166", "is_active": False}, "ema_fan": {"badge": "از تحلیل OHLCV استفاده کنید", "color": "#ffd166"}, "adr": {"badge": "دادهٔ معتبر در دسترس نیست", "color": "#ffd166"}},
+        "smt_and_sweep": {"ok": False, "message": "واگرایی و سطوح نقدینگی تا زمان دریافت دادهٔ هم‌زمان واقعی محاسبه نمی‌شوند."},
+        "source": (analysis.get("meta") or {}).get("provider", "unknown"),
+        "source_note": (analysis.get("meta") or {}).get("source_note", ""),
+        "real_index_source": real_index_source,
+        "signal_note": "" if actionable else ("منبع کندل نماد اجرایی US30 نیست، تایم‌فریم تأیید نشده یا پلن/امتیاز کافی نیست؛ سیگنال معاملاتی صادر نشد."),
+        "generated": (analysis.get("meta") or {}).get("generated"),
     }
-    _composite_signal_cache[cache_key] = {"time": now_ts, "data": response_payload}
-    return response_payload
 
-_leaders_cache: Dict[str, Any] = {}
 
 @app.get("/api/dow/leaders")
 def dow_leaders():
-    global _leaders_cache
-    now = time.time()
-    if _leaders_cache and (now - _leaders_cache.get("time", 0.0) < 60.0):
-        return _leaders_cache["data"]
+    return _unavailable_module("dow_leaders", "محاسبهٔ اثر اجزای داو تا زمانی که تمام قیمت‌های اجزا از منبع معتبر دریافت نشوند، غیرفعال است.")
 
-    # Real price-weighted components of the Dow Jones Industrial Average
-    DOW_COMPONENTS = [
-        ("UNH", "UnitedHealth Group", 8.9),
-        ("GS", "Goldman Sachs", 7.8),
-        ("MSFT", "Microsoft Corp", 6.5),
-        ("HD", "Home Depot", 6.2),
-        ("CAT", "Caterpillar Inc", 6.0),
-        ("CRM", "Salesforce Inc", 5.2),
-        ("V", "Visa Inc", 5.1),
-        ("BA", "Boeing Co", 2.8),
-        ("JPM", "JPMorgan Chase", 4.8),
-        ("AAPL", "Apple Inc", 4.6),
-        ("AMGN", "Amgen Inc", 4.5),
-        ("IBM", "IBM Corp", 3.8)
-    ]
-    DIVISOR = 0.15172752563132 # 2026 Dow Divisor
-
-    from concurrent.futures import ThreadPoolExecutor
-    def fetch_comp(item):
-        sym, name, weight = item
-        try:
-            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?interval=1d&range=2d"
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req, timeout=2.5) as resp:
-                data = json.loads(resp.read().decode())
-                meta = data["chart"]["result"][0]["meta"]
-                p = float(meta.get("regularMarketPrice") or 0.0)
-                prev = float(meta.get("chartPreviousClose") or p)
-                chg_abs = p - prev
-                chg_pct = (chg_abs / prev * 100.0) if prev else 0.0
-                pts_impact = chg_abs / DIVISOR
-                sig = "🟢 صعودی" if chg_pct > 0.5 else ("🔴 نزولی" if chg_pct < -0.5 else "⚪ خنثی")
-                return {
-                    "symbol": sym, "name": name, "price": round(p, 2),
-                    "change_pct": round(chg_pct, 2), "change_abs": round(chg_abs, 2),
-                    "weight_pct": weight, "points_impact": round(pts_impact, 1),
-                    "signal": sig
-                }
-        except Exception:
-            return {
-                "symbol": sym, "name": name, "price": 350.0,
-                "change_pct": 0.45, "change_abs": 1.5,
-                "weight_pct": weight, "points_impact": round(1.5 / DIVISOR, 1),
-                "signal": "🟢 صعودی"
-            }
-
-    with ThreadPoolExecutor(max_workers=6) as ex:
-        leaders = list(ex.map(fetch_comp, DOW_COMPONENTS))
-
-    total_net_points = sum(l.get("points_impact", 0) for l in leaders)
-    out = {
-        "ok": True,
-        "leaders": leaders,
-        "total_net_points": round(total_net_points, 1),
-        "divisor": DIVISOR,
-        "updated_at": time.strftime("%Y-%m-%d %H:%M:%S UTC")
-    }
-    _leaders_cache = {"time": now, "data": out}
-    return out
-
-
-import elite_modules as elite
-
-_elite_suite_cache: Dict[str, Any] = {}
 
 @app.get("/api/dow/elite-suite")
 def dow_elite_suite():
-    global _elite_suite_cache
-    now = time.time()
-    if _elite_suite_cache and (now - _elite_suite_cache.get("time", 0.0) < 10.0):
-        return _elite_suite_cache["data"]
-    try:
-        t_data = engine.ticker("1h")
-        p = float(t_data.get("price", 51250.0) or 51250.0)
-        chg = float(t_data.get("change", 210.0) or 210.0)
-    except Exception:
-        p = 51250.0
-        chg = 210.0
-    data = elite.get_all_elite_modules(p, chg)
-    _elite_suite_cache = {"time": now, "data": data}
-    return data
+    return {
+        "ok": False,
+        "error": "SYNTHETIC_MODULES_DISABLED",
+        "message": "ماژول‌های ORB، گاما/آپشن، اینترنالز و جوداس تا اتصال به دادهٔ واقعی غیرفعال‌اند.",
+        "modules": {
+            "killzones_orb": {"ok": False, "message": "دادهٔ کندل ۱۵ دقیقهٔ واقعی برای ORB لازم است."},
+            "gex_options": {"ok": False, "message": "زنجیرهٔ آپشن/دادهٔ GEX واقعی متصل نیست."},
+            "nyse_internals": {"ok": False, "message": "فید زندهٔ TICK/TRIN/A-D متصل نیست."},
+            "liquidity_judas": {"ok": False, "message": "PDH/PDL باید از کندل‌های واقعی محاسبه شود."},
+        },
+    }
 
 @app.get("/api/dow/triggers")
 def dow_triggers(interval: str = Query("1h")):
     try:
-        t_data = engine.ticker(interval)
-        p = float(t_data.get("price", 51570.0) or 51570.0)
-    except Exception:
-        p = 51570.0
-    return elite.get_execution_triggers(interval, p)
-
+        analysis = engine.build_analysis(interval=interval, bars=180, force=False)
+        candles = analysis.get("candles", []) if isinstance(analysis, dict) else []
+        if not analysis.get("ok") or len(candles) < 22:
+            raise RuntimeError("برای محاسبهٔ تریگرها حداقل ۲۲ کندل معتبر لازم است")
+        closes = [float(c["c"]) for c in candles if c.get("c") is not None]
+        if len(closes) < 22:
+            raise RuntimeError("دادهٔ کندل کافی نیست")
+        def _ema(vals, period):
+            alpha = 2.0 / (period + 1.0)
+            result = vals[0]
+            for value in vals[1:]:
+                result = alpha * value + (1.0 - alpha) * result
+            return result
+        e9, e21 = _ema(closes, 9), _ema(closes, 21)
+        return {"ok": True, "interval": interval, "ema_fan": {"ema9": round(e9, 2), "ema21": round(e21, 2), "direction": "LONG" if e9 > e21 else ("SHORT" if e9 < e21 else "NEUTRAL")}, "silver_bullet": {"is_active": False, "badge": "زمان‌بندی به‌تنهایی سیگنال نیست", "color": "#ffd166"}, "adr": {"ok": False, "badge": "دادهٔ ADR واقعی در دسترس نیست", "color": "#ffd166"}}
+    except Exception as exc:
+        return {"ok": False, "error": "TRIGGER_DATA_UNAVAILABLE", "message": str(exc)}
 
 @app.get("/api/dow/killzones-orb")
 def dow_killzones_orb():
-    try:
-        t_data = engine.ticker("1h")
-        p = float(t_data.get("price", 51570.0) or 51570.0)
-    except Exception:
-        p = 51570.0
-    return elite.get_killzones_and_orb(p)
+    return _unavailable_module("killzones_orb", "ORB بدون کندل‌های واقعی سشن جاری محاسبه نمی‌شود.")
 
 @app.get("/api/dow/gex-options")
 def dow_gex_options():
-    try:
-        t_data = engine.ticker("1h")
-        p = float(t_data.get("price", 51570.0) or 51570.0)
-    except Exception:
-        p = 51570.0
-    return elite.get_gex_and_option_walls(p)
+    return _unavailable_module("gex_options", "زنجیرهٔ آپشن و دادهٔ GEX زنده متصل نیست؛ مقادیر تخمینی نمایش داده نمی‌شوند.")
 
 @app.get("/api/dow/nyse-internals")
 def dow_nyse_internals():
-    try:
-        t_data = engine.ticker("1h")
-        p = float(t_data.get("price", 51570.0) or 51570.0)
-        chg = float(t_data.get("change", 210.0) or 210.0)
-    except Exception:
-        p = 51570.0
-        chg = 210.0
-    return elite.get_nyse_internals(p, chg)
+    return _unavailable_module("nyse_internals", "فید واقعی NYSE TICK/TRIN/advance-decline متصل نیست.")
 
 @app.get("/api/dow/liquidity-judas")
 def dow_liquidity_judas():
-    try:
-        t_data = engine.ticker("1h")
-        p = float(t_data.get("price", 51570.0) or 51570.0)
-    except Exception:
-        p = 51570.0
-    return elite.get_liquidity_and_judas(p)
+    return _unavailable_module("liquidity_judas", "سطوح PDH/PDL و تشخیص Judas باید از OHLCV واقعی سشن محاسبه شوند.")
 
 @app.get("/api/dow/heavyweights")
 def dow_heavyweights():
-    try:
-        import elite_modules as elite
-        return elite.get_dow_top5_heavyweights()
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
+    return _unavailable_module("dow_heavyweights", "دادهٔ اجزای داوجونز نباید با قیمت‌های جایگزین تخمینی تکمیل شود؛ منبع معتبر همهٔ نمادها در دسترس نیست.")
+
 
 @app.get("/api/dow/cot")
 @app.get("/api/dow/cot-report")
@@ -2334,96 +1636,38 @@ def dow_cot_report():
         return {"ok": False, "error": str(e)}
 
 @app.get("/api/dow/bookmap")
-def dow_bookmap_endpoint(timeframe: str = Query("15m")):
-    try:
-        import bookmap_engine
-        return bookmap_engine.get_us30_bookmap_data(timeframe=timeframe)
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
+def dow_bookmap():
+    return _unavailable_module("bookmap", "فید واقعی Level 2/3 یا order book متصل نیست؛ نقشهٔ نقدینگی شبیه‌سازی‌شده نمایش داده نمی‌شود.")
+
 
 @app.get("/api/dow/ninjatrader")
-def dow_ninjatrader_endpoint(timeframe: str = Query("15m")):
-    try:
-        import ninja_atas_quant_engine as naq
-        p = 0.0
-        try:
-            cash = dowres.cash()
-            p = float(cash.get("price") or 0.0)
-        except Exception:
-            pass
-        return naq.get_ninjatrader_live(p, timeframe=timeframe)
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
+def dow_ninjatrader():
+    return _unavailable_module("ninjatrader", "اتصال زندهٔ NinjaTrader وجود ندارد؛ دادهٔ شبیه‌سازی‌شده نمایش داده نمی‌شود.")
+
 
 @app.get("/api/dow/atas")
-def dow_atas_endpoint():
-    try:
-        import ninja_atas_quant_engine as naq
-        p = 0.0
-        try:
-            cash = dowres.cash()
-            p = float(cash.get("price") or 0.0)
-        except Exception:
-            pass
-        return naq.get_atas_live(p)
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
+def dow_atas():
+    return _unavailable_module("atas", "اتصال زندهٔ ATAS وجود ندارد؛ دادهٔ شبیه‌سازی‌شده نمایش داده نمی‌شود.")
+
 
 @app.get("/api/dow/quantower")
-def dow_quantower_endpoint():
-    try:
-        import ninja_atas_quant_engine as naq
-        p = 0.0
-        try:
-            cash = dowres.cash()
-            p = float(cash.get("price") or 0.0)
-        except Exception:
-            pass
-        return naq.get_quantower_live(p)
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
+def dow_quantower():
+    return _unavailable_module("quantower", "اتصال زندهٔ Quantower وجود ندارد؛ دادهٔ شبیه‌سازی‌شده نمایش داده نمی‌شود.")
+
 
 @app.get("/api/dow/geopolitics")
-def dow_geopolitics_endpoint():
-    try:
-        import ninja_atas_quant_engine as naq
-        p = 0.0
-        try:
-            cash = dowres.cash()
-            p = float(cash.get("price") or 0.0)
-        except Exception:
-            pass
-        return naq.get_geopolitical_live(p)
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
+def dow_geopolitics():
+    return _unavailable_module("geopolitics", "فید خبری و محاسبهٔ زندهٔ GPR متصل نیست؛ امتیاز ثابت/شبیه‌سازی‌شده ارائه نمی‌شود.")
 
 @app.get("/api/dow/sierrachart")
 def dow_sierrachart_endpoint(timeframe: str = Query("15m")):
-    try:
-        import ninja_atas_quant_engine as naq
-        p = 0.0
-        try:
-            cash = dowres.cash()
-            p = float(cash.get("price") or 0.0)
-        except Exception:
-            pass
-        return naq.get_sierrachart_live(p, timeframe=timeframe)
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
+    return _unavailable_module("sierrachart", "اتصال زندهٔ Sierra Chart وجود ندارد؛ دادهٔ شبیه‌سازی‌شده نمایش داده نمی‌شود.")
+
 
 @app.get("/api/dow/master-signal")
 def dow_master_signal_endpoint():
-    try:
-        import ninja_atas_quant_engine as naq
-        p = 0.0
-        try:
-            cash = dowres.cash()
-            p = float(cash.get("price") or 0.0)
-        except Exception:
-            pass
-        return naq.get_master_confluence_signal(p)
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
+    return _unavailable_module("master_signal", "سیگنال چندپلتفرمی بدون فیدهای واقعی NinjaTrader/ATAS/Quantower قابل تأیید نیست.")
+
 
 @app.get("/api/dow/killzone")
 def dow_killzone():
@@ -2436,44 +1680,17 @@ def dow_killzone():
 
 @app.get("/api/dow/divisor-impact")
 def dow_divisor_impact():
-    try:
-        t_data = engine.ticker("1h")
-        p = float(t_data.get("price", 51570.0) or 51570.0)
-    except Exception:
-        p = 51570.0
-    return elite.get_divisor_impact(p)
+    return _unavailable_module("divisor_impact", "اثر اجزای شاخص فقط وقتی محاسبه می‌شود که قیمت فعلی و قبلی همهٔ اجزا معتبر باشد.")
+
 
 @app.get("/api/dow/moc-imbalance")
 def dow_moc_imbalance():
-    try:
-        t_data = engine.ticker("1h")
-        p = float(t_data.get("price", 51570.0) or 51570.0)
-    except Exception:
-        p = 51570.0
-    return elite.get_moc_imbalance(p)
+    return _unavailable_module("moc_imbalance", "فید زندهٔ سفارشات حراج پایانی MOC متصل نیست؛ عدم تعادل ساختگی گزارش نمی‌شود.")
+
 
 @app.get("/api/dow/smt-and-sweep")
 def dow_smt_and_sweep():
-    try:
-        try:
-            import trendo_engine
-            t_tick = trendo_engine.get_trendo_tick()
-            p = float(t_tick.get("bid") or 0.0)
-        except Exception:
-            t_data = engine.ticker("1h")
-            p = float(t_data.get("price") or 0.0)
-        import smt_and_sweep_engine
-        return smt_and_sweep_engine.get_smt_and_sweep_data(p)
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
-
-
-def get_dashboard_html() -> str:
-    p = APP_DIR / "index.html"
-    if p.exists():
-        return p.read_text(encoding="utf-8")
-    return "<html><body><h1>US30 Dashboard</h1><p>index.html not found.</p></body></html>"
-
+    return _unavailable_module("smt_and_sweep", "نسخهٔ فعلی از بازده‌های ثابت/ساختگی SPX و NDX استفاده می‌کرد؛ تا دریافت کندل‌های هم‌زمان واقعی خروجی سیگنال‌ساز غیرفعال است.")
 
 @app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)
 def index():
@@ -2484,6 +1701,9 @@ def index():
 def us30_sentinel_auto_loop():
     time.sleep(15)
     while True:
+        if os.environ.get("ENABLE_TELEGRAM_AUTOPILOT", "0").strip() != "1" or not os.environ.get("ADMIN_SECRET_KEY", "").strip():
+            time.sleep(30)
+            continue
         try:
             # 1. Institutional Session Guard: London Open (07:00 UTC) to New York Close (21:00 UTC) on Weekdays
             market_active, market_reason, session_info = is_us30_market_in_active_session()
@@ -2521,23 +1741,53 @@ def us30_sentinel_auto_loop():
 
                 if now_ts - last_sent > interval_secs:
                     # Multi-Timeframe Scanner: Scan 1m, 5m, 15m, 1h, 4h
-                    candidate_tf = ["1m", "5m", "15m", "1h", "4h"]
+                    # Only daily signals are currently supported by the validated quality gate.
+                    candidate_tf = ["1d"]
                     best_sig = None
                     best_score = -1
-                    best_tf = "15m"
+                    best_tf = "1d"
 
                     for tf in candidate_tf:
                         try:
                             s_data = dow_composite_signal(tf, broker="trendo")
-                            sc = int(s_data.get("score", 0))
+                            sc = int(s_data.get("score", 0) or 0)
                             act = s_data.get("action", "WAIT")
-                            if act in ["BUY", "SELL"] and sc >= min_score and sc > best_score:
+                            if s_data.get("ok") and s_data.get("real_index_source") is True and act in ["BUY", "SELL"] and sc >= min_score and sc > best_score:
                                 best_score = sc
                                 best_sig = s_data
                                 best_tf = tf
                         except Exception:
                             pass
 
+                    if best_sig and best_tf != "1d":
+                        best_sig = None
+                    live_quote_for_dispatch = _valid_us30_quote(best_tf) if best_sig else {"ok": False}
+                    if best_sig and not live_quote_for_dispatch.get("ok"):
+                        best_sig = None
+                    if best_sig:
+                        live_dispatch_price = float(live_quote_for_dispatch["price"])
+                        try:
+                            guard_analysis = engine.build_analysis(interval=best_tf, bars=180, force=True)
+                            if not isinstance(guard_analysis, dict) or not guard_analysis.get("ok") or not _analysis_is_real_index(guard_analysis):
+                                best_sig = None
+                            else:
+                                gs = guard_analysis.get("signal") or {}
+                                expected_dir = 1 if best_sig.get("action") == "BUY" else -1
+                                plan = gs.get("plan") or {}
+                                try:
+                                    entry_for_guard = float(plan.get("entry"))
+                                    stop_for_guard = float(plan.get("stop"))
+                                except (TypeError, ValueError):
+                                    entry_for_guard = stop_for_guard = 0.0
+                                deviation_limit = max(abs(entry_for_guard - stop_for_guard) * 0.25, live_dispatch_price * 0.0005)
+                                if int(gs.get("direction", 0) or 0) != expected_dir or entry_for_guard <= 0 or abs(live_dispatch_price - entry_for_guard) > deviation_limit:
+                                    best_sig = None
+                                else:
+                                    guard_result = execguard.evaluate(guard_analysis, interval=best_tf, balance=10.0, leverage=50.0, lot=0.01)
+                                    if not isinstance(guard_result, dict) or guard_result.get("trade_allowed") is not True:
+                                        best_sig = None
+                        except Exception:
+                            best_sig = None
                     if best_sig:
                         import us30_unified_signals as uus
                         if best_tf == "1m":
@@ -2566,7 +1816,7 @@ def us30_sentinel_auto_loop():
                             tp2_val = best_sig.get("tp2")
                             tp3_val = best_sig.get("tp3", 0)
                             dur_val = "۱۵ دقیقه تا ۱ ساعت"
-                            cur_p = best_sig.get("price")
+                            cur_p = live_dispatch_price
                             tehran_t = datetime.now(timezone(timedelta(hours=3, minutes=30))).strftime("%Y/%m/%d ساعت %H:%M:%S")
                             msg = f"""💎 <b>سیگنال داوجونز [#US30]</b>
 ━━━━━━━━━━━━━━━━━━━━
@@ -2581,7 +1831,7 @@ def us30_sentinel_auto_loop():
                             if tp3_val > 0:
                                 msg += f"\n🎯 <b>حد سود سوم (TP3):</b> <code>${tp3_val:,.1f}</code>"
                             msg += f"""
-📦 <b>حجم و اهرم پیشنهادی:</b> <code>0.01 لات | اهرم 1:500 یا 1:1000 ترندو</code>
+📦 <b>حجم پوزیشن:</b> <code>پیش از اجرا با مشخصات قرارداد، ارزش پوینت، spread و مارجین بروکر محاسبه شود.</code>
 ⏰ <b>تاریخ و ساعت صدور:</b> <code>{tehran_t} (ایران 🇮🇷)</code>
 ⏳ <b>انقضا / اعتبار ستاپ:</b> <code>تا زمان برخورد به حد سود یا حد ضرر</code>
 ━━━━━━━━━━━━━━━━━━━━"""
@@ -2595,7 +1845,7 @@ def us30_sentinel_auto_loop():
                             # AUTOMATICALLY REGISTER IN JOURNAL!
                             tehran_now = datetime.now(timezone(timedelta(hours=3, minutes=30)))
                             journal_rec = {
-                                "id": f"US30-{int(now_ts)}",
+                                "id": "US30-" + __import__("uuid").uuid4().hex,
                                 "time": tehran_now.strftime("%H:%M:%S"),
                                 "date": tehran_now.strftime("%Y/%m/%d"),
                                 "signal_type": "میکرو-اسکالپ تک‌تیرانداز 1m" if best_tf == "1m" else ("سوئینگ جامع 4H" if best_tf == "4h" else f"اسکالپ {best_tf}"),
@@ -2628,6 +1878,9 @@ def us30_telegram_interactive_poller():
     last_update_id = 0
     while True:
         try:
+            if os.environ.get("ENABLE_TELEGRAM_INTERACTIVE_BOT", "0").strip() != "1" or not os.environ.get("ADMIN_SECRET_KEY", "").strip():
+                time.sleep(30)
+                continue
             bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
             if not bot_token and TG_CONFIG_FILE.exists():
                 try:
@@ -2722,45 +1975,13 @@ def prewarm_signals_in_background():
         except Exception:
             pass
 
-# Pre-warm analytical signals in background on boot
-threading.Thread(target=prewarm_signals_in_background, daemon=True).start()
-
-# Start Sentinel auto-pilot thread on server boot
-threading.Thread(target=us30_sentinel_auto_loop, daemon=True).start()
-
-# Start Interactive Two-Way Telegram Poller daemon on boot
-threading.Thread(target=us30_telegram_interactive_poller, daemon=True).start()
+@app.get("/api/us30/supreme-arbiter")
+def get_supreme_arbiter_status():
+    return _unavailable_module(
+        "supreme_arbiter",
+        "اتصالات واقعی NinjaTrader/ATAS/Quantower/Bookmap متصل نیستند؛ داور نهادی تا زمان اتصال دادهٔ واقعی، معامله‌ای تأیید نمی‌کند.",
+    )
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
-
-@app.get("/api/us30/supreme-arbiter")
-def get_supreme_arbiter_status():
-    """
-    Supreme Arbiter Engine for US30:
-    Synthesizes all 7 modules and enforces 90% WAIT policy for $10 accounts.
-    """
-    import trendo_engine
-    t_meta = trendo_engine.get_trendo_us30_live()
-    live_p = float(t_meta.get("bid") or 0.0)
-
-    import ninja_atas_quant_engine as naq
-    import bookmap_engine as be
-
-    modules_data = {
-        "trendo": t_meta,
-        "ninjatrader": naq.get_ninjatrader_live(live_p, "15m"),
-        "atas": naq.get_atas_live(live_p),
-        "quantower": naq.get_quantower_live(live_p),
-        "bookmap": be.get_us30_bookmap_data(),
-        "macro": {"is_frozen": False, "shield_active": False}
-    }
-
-    verdict = us30_supreme_arbiter.audit_and_decide(live_p, t_meta, modules_data)
-    return {
-        "ok": True,
-        "verdict": verdict,
-        "stats": us30_supreme_arbiter.stats,
-        "next_scan_seconds": 180
-    }

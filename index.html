@@ -2597,6 +2597,11 @@
           </div>
         </div>
 
+        <div style="margin-bottom: 16px;">
+          <label style="font-size: 0.8rem; color: #ffd166; display: block; margin-bottom: 6px; font-weight: 700;">🔐 کلید مدیریت سرور (ADMIN_SECRET_KEY)</label>
+          <input type="password" id="tgAdminKey" autocomplete="off" placeholder="کلید مدیریتی تنظیم‌شده در Render" class="chat-input" onkeydown="if(event.key==='Enter') loadTelegramConfig()" style="width: 100%; direction: ltr !important; text-align: left !important; font-family: var(--font-mono) !important;">
+          <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">کلید فقط در حافظهٔ نشست همین تب استفاده می‌شود؛ آن را در URL یا پیام تلگرام قرار ندهید.</div>
+        </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px;">
           <div>
             <label style="font-size: 0.8rem; color: #fff; display: block; margin-bottom: 6px; font-weight: 700;">
@@ -4077,13 +4082,31 @@
         }
         _lastCompositeJson = text;
         const data = JSON.parse(text);
-        if (!data.ok) return;
+        if (!data.ok) {
+          // Fail closed: clear any previously displayed signal when current data is unavailable.
+          const actEl = document.getElementById('heroSignalAction');
+          if (actEl) { actEl.textContent = '⚪ داده معتبر در دسترس نیست — بدون معامله'; actEl.style.color = '#ffd166'; }
+          const gradeEl = document.getElementById('heroSignalGrade');
+          if (gradeEl) { gradeEl.textContent = 'GRADE —'; gradeEl.style.color = '#ffd166'; gradeEl.style.borderColor = '#ffd166'; }
+          ['heroEntryZone','heroStopLoss','heroTp1','heroTp2','heroTp3','heroStopLossPts','heroTp1Pts','heroTp2Pts','heroTp3Pts','heroConfluenceScore'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.textContent = '—';
+          });
+          const rr = document.getElementById('heroRiskRewardBadge'); if (rr) rr.textContent = 'R:R —';
+          const title = document.getElementById('heroSetupTitle'); if (title) title.textContent = 'دادهٔ معتبر بازار در دسترس نیست';
+          _activeSignalParams = { action: 'WAIT', entry: 0, sl: 0, tp1: 0 };
+          _secondsSinceRefresh = 0;
+          return;
+        }
 
         // Reset seconds counter
         _secondsSinceRefresh = 0;
 
         // Update Hero Elements
         document.getElementById('heroSetupTitle').textContent = data.setup_name || `ستاپ ${interval}`;
+        if (data.action === 'WAIT' && data.signal_note) {
+          const note = document.getElementById('heroEntrySub');
+          if (note) note.textContent = data.signal_note;
+        }
         const actEl = document.getElementById('heroSignalAction');
         actEl.textContent = data.action_fa;
         actEl.style.color = data.color || '#00e676';
@@ -4104,17 +4127,17 @@
             ? 'با رسیدن خط قرمز به این عدد BUY بزنید'
             : (data.action === 'SELL' ? 'با رسیدن خط آبی به این عدد SELL بزنید' : 'منتظر تاییدیه ورود');
         }
-        document.getElementById('heroStopLoss').textContent = Number(data.stop_loss).toLocaleString();
-        document.getElementById('heroStopLossPts').textContent = `-${data.stop_loss_pts} pts`;
-
-        document.getElementById('heroTp1').textContent = Number(data.tp1).toLocaleString();
-        document.getElementById('heroTp1Pts').textContent = `+${data.tp1_pts} pts`;
-
-        document.getElementById('heroTp2').textContent = Number(data.tp2).toLocaleString();
-        document.getElementById('heroTp2Pts').textContent = `+${data.tp2_pts} pts`;
-
-        document.getElementById('heroTp3').textContent = Number(data.tp3).toLocaleString();
-        document.getElementById('heroTp3Pts').textContent = `+${data.tp3_pts} pts`;
+        const hasTrade = data.action === 'BUY' || data.action === 'SELL';
+        const showPrice = value => hasTrade && Number.isFinite(Number(value)) ? Number(value).toLocaleString() : '—';
+        const showPts = (value, sign) => hasTrade && Number.isFinite(Number(value)) ? `${sign}${value} pts` : '—';
+        document.getElementById('heroStopLoss').textContent = showPrice(data.stop_loss);
+        document.getElementById('heroStopLossPts').textContent = showPts(data.stop_loss_pts, '-');
+        document.getElementById('heroTp1').textContent = showPrice(data.tp1);
+        document.getElementById('heroTp1Pts').textContent = showPts(data.tp1_pts, '+');
+        document.getElementById('heroTp2').textContent = showPrice(data.tp2);
+        document.getElementById('heroTp2Pts').textContent = showPts(data.tp2_pts, '+');
+        document.getElementById('heroTp3').textContent = showPrice(data.tp3);
+        document.getElementById('heroTp3Pts').textContent = showPts(data.tp3_pts, '+');
 
         // Update active signal parameters for real-time audio triggers
         _activeSignalParams = {
@@ -4775,7 +4798,7 @@
       }
 
       try {
-        const res = await fetch('/api/telegram/send', {
+        const res = await adminFetch('/api/telegram/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ interval: _activeInterval || '15m' })
@@ -6099,9 +6122,29 @@
     }
 
     // 14.5. TELEGRAM SENTINEL FUNCTIONS
+    function getUs30AdminKey() {
+      const field = document.getElementById('tgAdminKey');
+      const typed = field ? field.value.trim() : '';
+      if (typed) {
+        try { sessionStorage.setItem('us30_admin_key', typed); } catch (e) {}
+        return typed;
+      }
+      try { return sessionStorage.getItem('us30_admin_key') || ''; } catch (e) { return ''; }
+    }
+    async function adminFetch(url, options = {}) {
+      const key = getUs30AdminKey();
+      if (!key) throw new Error('ابتدا ADMIN_SECRET_KEY را در کادر کلید مدیریت وارد کنید.');
+      const headers = { ...(options.headers || {}), 'X-Admin-Key': key };
+      return fetch(url, { ...options, headers });
+    }
     async function loadTelegramConfig() {
+      if (!getUs30AdminKey()) {
+        const badge = document.getElementById('tgConfigStatusBadge');
+        if (badge) { badge.textContent = '🔐 برای مشاهده تنظیمات، کلید مدیریت را وارد کنید'; badge.style.color = '#ffd166'; }
+        return;
+      }
       try {
-        const res = await fetch('/api/telegram/config');
+        const res = await adminFetch('/api/telegram/config');
         if (!res.ok) return;
         const data = await res.json();
         const badge = document.getElementById('tgConfigStatusBadge');
@@ -6205,12 +6248,13 @@
         return;
       }
       try {
-        const res = await fetch('/api/telegram/config', {
+        const res = await adminFetch('/api/telegram/config', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ bot_token: token, chat_id: chat })
         });
         const data = await res.json();
+        if (!res.ok || data.success === false) throw new Error(data.message || `HTTP ${res.status}`);
         if (fb) {
           fb.style.display = 'block';
           fb.style.background = 'rgba(0, 230, 118, 0.15)';
@@ -6218,14 +6262,14 @@
           fb.style.border = '1px solid #00e676';
           fb.textContent = '✅ تنظیمات تلگرام با موفقیت روی سرور ذخیره شد.';
         }
-        loadTelegramConfig();
+        await loadTelegramConfig();
       } catch (e) {
         if (fb) {
           fb.style.display = 'block';
           fb.style.background = 'rgba(255, 51, 102, 0.15)';
           fb.style.color = '#ff3366';
           fb.style.border = '1px solid #ff3366';
-          fb.textContent = '❌ خطا در ذخیره تنظیمات تلگرام.';
+          fb.textContent = '❌ خطا در ذخیره تنظیمات تلگرام: ' + (e.message || 'درخواست ناموفق بود.');
         }
       }
     }
@@ -6242,7 +6286,7 @@
         fb.textContent = '⏳ در حال ارسال پیام تست به تلگرام...';
       }
       try {
-        const res = await fetch('/api/telegram/test', {
+        const res = await adminFetch('/api/telegram/test', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ bot_token: token, chat_id: chat })
@@ -6304,7 +6348,7 @@
       updateSentinelCountdownDisplay();
 
       // Sync backend sentinel interval
-      fetch('/api/telegram/config', {
+      adminFetch('/api/telegram/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ interval_minutes: minutes })
@@ -6343,7 +6387,7 @@
         fb.textContent = `⏳ در حال ارسال سیگنال ${sigTitle} به تلگرام...`;
       }
       try {
-        const res = await fetch('/api/telegram/send', {
+        const res = await adminFetch('/api/telegram/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -6385,7 +6429,7 @@
       const btn = document.getElementById('btnToggleTgSentinel');
       const badge = document.getElementById('tgConfigStatusBadge');
       try {
-        const res = await fetch('/api/telegram/toggle-autopilot', { method: 'POST' });
+        const res = await adminFetch('/api/telegram/toggle-autopilot', { method: 'POST' });
         const data = await res.json();
         if (data.ok) {
           if (btn) {
@@ -6416,7 +6460,7 @@
       const btn = document.getElementById('btnToggleJournalPause');
       const badge = document.getElementById('journalPauseBadge');
       try {
-        const res = await fetch('/api/journal/toggle-pause', { method: 'POST' });
+        const res = await adminFetch('/api/journal/toggle-pause', { method: 'POST' });
         const data = await res.json();
         if (data.ok) {
           if (btn) {
@@ -6447,7 +6491,7 @@
         return;
       }
       try {
-        const res = await fetch('/api/journal/reset', { method: 'POST' });
+        const res = await adminFetch('/api/journal/reset', { method: 'POST' });
         const data = await res.json();
         if (data.ok) {
           // Immediately zero out DOM elements so user sees instant 0% and $0.00
@@ -6663,7 +6707,7 @@
 
     async function fetchJournalData() {
       try {
-        const res = await fetch('/api/journal/live');
+        const res = await adminFetch('/api/journal/live');
         if (!res.ok) return;
         const data = await res.json();
         if (!data.ok) return;

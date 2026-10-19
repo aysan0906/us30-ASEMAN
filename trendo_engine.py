@@ -42,6 +42,8 @@ def _fetch_trendo_raw(timeout: float = 2.0) -> Optional[Dict[str, Any]]:
                     ask = float(item.get("Ask", 0.0))
                     bid = float(item.get("Bid", 0.0))
                     spread = round(ask - bid, 2)
+                    if bid <= 10000 or ask <= 10000 or ask < bid or spread < 0 or spread > 50:
+                        continue
                     yesterday_close = float(item.get("yesterday_close", 0.0))
                     change_pts = round(bid - yesterday_close, 1) if yesterday_close > 0 else 0.0
                     change_pct = round((change_pts / yesterday_close) * 100, 2) if yesterday_close > 0 else 0.0
@@ -59,6 +61,10 @@ def _fetch_trendo_raw(timeout: float = 2.0) -> Optional[Dict[str, Any]]:
                         "change_pts": change_pts,
                         "change_pct": change_pct,
                         "status": "LIVE_DIRECT",
+                        "source": "trendo_live",
+                        "tradable": True,
+                        "is_synthetic": False,
+                        "age_seconds": 0.0,
                         "timestamp": time.time()
                     }
     except Exception:
@@ -75,7 +81,8 @@ def _fetch_trendo_raw(timeout: float = 2.0) -> Optional[Dict[str, Any]]:
         "spread": None,
         "mid": None,
         "tradable": False,
-        "is_synthetic": True,
+        "is_synthetic": False,
+        "source": "unavailable",
         "error": "عدم دسترسی به قیمت زنده ترندو",
         "status": "UNAVAILABLE",
         "timestamp": time.time()
@@ -95,9 +102,17 @@ def _trendo_background_poller():
             pass
         time.sleep(0.6)  # Stream fresh tick every 600ms
 
-# Launch single background worker on import
-_poller_thread = threading.Thread(target=_trendo_background_poller, daemon=True)
-_poller_thread.start()
+# No network polling starts on import. The caller may explicitly opt into a worker if needed.
+_poller_thread = None
+
+def start_background_poller() -> bool:
+    global _poller_thread
+    with _TRENDO_LOCK:
+        if _poller_thread is not None and _poller_thread.is_alive():
+            return False
+        _poller_thread = threading.Thread(target=_trendo_background_poller, daemon=True, name="trendo-live-poller")
+        _poller_thread.start()
+        return True
 
 def get_trendo_us30_live(timeout: float = 2.0) -> Dict[str, Any]:
     """Instant sub-millisecond retrieval of live Trendo quote."""
@@ -107,7 +122,9 @@ def get_trendo_us30_live(timeout: float = 2.0) -> Dict[str, Any]:
     # If memory cache is recent (< 2.5s), return in 0.05ms!
     with _TRENDO_LOCK:
         if _TRENDO_CACHE and (now - _TRENDO_CACHE_TS < 2.5):
-            return _TRENDO_CACHE
+            cached = dict(_TRENDO_CACHE)
+            cached["age_seconds"] = round(now - _TRENDO_CACHE_TS, 3)
+            return cached
 
     # If cache is not ready, do one synchronous fetch
     fresh = _fetch_trendo_raw(timeout=timeout)
@@ -137,7 +154,8 @@ def get_trendo_us30_live(timeout: float = 2.0) -> Dict[str, Any]:
         "spread": None,
         "mid": None,
         "tradable": False,
-        "is_synthetic": True,
+        "is_synthetic": False,
+        "source": "unavailable",
         "error": "عدم دسترسی به قیمت زنده ترندو",
         "status": "UNAVAILABLE",
         "timestamp": time.time()

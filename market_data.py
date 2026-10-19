@@ -33,6 +33,7 @@ INTERVAL_PERIODS = {
     "15m": "60d",
     "30m": "60d",
     "1h": "730d",
+    "4h": "730d",
     "1d": "5y",
 }
 
@@ -78,15 +79,28 @@ def request_timeout() -> float:
 
 
 def display_scale_for(symbol: Optional[str] = None) -> float:
+    sym = (symbol or selected_symbol()).upper().strip()
+    # Never multiply an actual US30/DJI/DOW index by 100, even if env is misconfigured.
+    if "DIA" not in sym and any(token in sym for token in ("US30", "^DJI", "DJI", "DOW")):
+        return 1.0
+    # DIA is an ETF proxy; by default keep the project's display convention DIA x 100.
+    if sym in {"DIA", "NYSEARCA:DIA"}:
+        return 100.0
     raw = _env("DISPLAY_SCALE", "")
     if raw:
         try:
-            return float(raw)
+            scale = float(raw)
+            if scale > 0:
+                return scale
         except Exception:
             pass
-    sym = (symbol or selected_symbol()).upper().strip()
-    # DIA is an ETF trading around 1/100 of the Dow Jones index.
-    return 100.0 if sym in {"DIA", "NYSEARCA:DIA"} else 1.0
+    return 1.0
+
+
+def is_index_symbol(symbol: Optional[str]) -> bool:
+    """Recognize index-like symbols; scale=1 alone never makes an ETF an index."""
+    sym = str(symbol or "").upper().replace(" ", "")
+    return bool(sym) and "DIA" not in sym and any(token in sym for token in ("US30", "^DJI", "DJI", "DOW"))
 
 
 def _normalize_df(df: pd.DataFrame) -> pd.DataFrame:
@@ -110,6 +124,14 @@ def _normalize_df(df: pd.DataFrame) -> pd.DataFrame:
     for c in out.columns:
         out[c] = pd.to_numeric(out[c], errors="coerce")
     out = out.dropna(subset=need, how="any")
+    # Reject malformed/negative candles before indicators or plans are built.
+    valid = (
+        (out["Open"] > 0) & (out["High"] > 0) & (out["Low"] > 0) & (out["Close"] > 0)
+        & (out["High"] >= out["Low"])
+        & (out["High"] >= out[["Open", "Close"]].max(axis=1))
+        & (out["Low"] <= out[["Open", "Close"]].min(axis=1))
+    )
+    out = out.loc[valid]
     out = out[~out.index.duplicated(keep="last")]
     out = out.sort_index()
     if out.empty:
@@ -187,7 +209,7 @@ def fetch_yahoo(interval: str, bars: int, symbol: Optional[str] = None) -> Fetch
         source_note=f"Yahoo Finance chart endpoint / {sym} / UA Mozilla/5.0",
         fetched_at=time.time(),
         display_scale=display_scale_for(sym),
-        raw_price_is_index=(display_scale_for(sym) == 1.0),
+        raw_price_is_index=is_index_symbol(sym),
     )
 
 
@@ -229,7 +251,7 @@ def fetch_twelvedata(interval: str, bars: int) -> FetchResult:
         })
     df = pd.DataFrame(rows).set_index("time")
     df = _normalize_df(df)
-    return FetchResult(df, "twelvedata", sym, f"TwelveData / {sym}", time.time(), display_scale_for(sym), display_scale_for(sym) == 1.0)
+    return FetchResult(df, "twelvedata", sym, f"TwelveData / {sym}", time.time(), display_scale_for(sym), is_index_symbol(sym))
 
 
 def _polygon_range(interval: str) -> Tuple[int, str, int]:
@@ -264,7 +286,7 @@ def fetch_polygon(interval: str, bars: int) -> FetchResult:
         raise RuntimeError("Polygon results خالی است")
     df = pd.DataFrame(rows).set_index("time")
     df = _normalize_df(df)
-    return FetchResult(df, "polygon", sym, f"Polygon / {sym}", time.time(), display_scale_for(sym), display_scale_for(sym) == 1.0)
+    return FetchResult(df, "polygon", sym, f"Polygon / {sym}", time.time(), display_scale_for(sym), is_index_symbol(sym))
 
 
 def fetch_finnhub(interval: str, bars: int) -> FetchResult:
@@ -288,7 +310,7 @@ def fetch_finnhub(interval: str, bars: int) -> FetchResult:
         raise RuntimeError("Finnhub candles خالی است")
     df = pd.DataFrame(rows).set_index("time")
     df = _normalize_df(df)
-    return FetchResult(df, "finnhub", sym, f"Finnhub / {sym}", time.time(), display_scale_for(sym), display_scale_for(sym) == 1.0)
+    return FetchResult(df, "finnhub", sym, f"Finnhub / {sym}", time.time(), display_scale_for(sym), is_index_symbol(sym))
 
 
 def fetch_alphavantage(interval: str, bars: int) -> FetchResult:
@@ -328,7 +350,7 @@ def fetch_alphavantage(interval: str, bars: int) -> FetchResult:
         })
     df = pd.DataFrame(rows).set_index("time")
     df = _normalize_df(df)
-    return FetchResult(df, "alphavantage", sym, f"AlphaVantage / {sym}", time.time(), display_scale_for(sym), display_scale_for(sym) == 1.0)
+    return FetchResult(df, "alphavantage", sym, f"AlphaVantage / {sym}", time.time(), display_scale_for(sym), is_index_symbol(sym))
 
 
 _PROVIDER_FUNCS = {
@@ -343,23 +365,39 @@ _PROVIDER_FUNCS = {
 
 
 def fetch_ohlcv(interval: str = "1h", bars: int = 180, provider: Optional[str] = None) -> FetchResult:
-    interval = interval if interval in VALID_INTERVALS else _env("DEFAULT_INTERVAL", "1h")
+    if interval not in VALID_INTERVALS:
+        raise ValueError(f"تایم‌فریم نامعتبر: {interval!r}; allowed={VALID_INTERVALS}")
     bars = max(80, min(int(bars or 180), 600))
     prov = (provider or selected_provider()).lower().strip() or "yahoo"
+    if interval == "4h":
+        base = fetch_ohlcv("1h", min(600, max(320, bars * 4)), provider=prov)
+        df = base.df.resample("4h").agg({
+            "Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"
+        }).dropna(subset=["Open", "High", "Low", "Close"])
+        df = _normalize_df(df).tail(bars).copy()
+        if len(df) < 80:
+            raise RuntimeError("دادهٔ کافی برای تایم‌فریم 4h پس از resample وجود ندارد")
+        return FetchResult(
+            df=df, provider=base.provider, symbol=base.symbol,
+            source_note=f"4h resampled from 1h / {base.source_note}",
+            fetched_at=base.fetched_at, display_scale=base.display_scale,
+            raw_price_is_index=base.raw_price_is_index,
+        )
     fn = _PROVIDER_FUNCS.get(prov)
     if fn is None:
         raise RuntimeError(f"DATA_PROVIDER نامعتبر است: {prov}")
 
     errors = []
     try:
-        if prov == "yahoo":
-            return fetch_yahoo(interval, bars)
-        return fn(interval, bars)  # type: ignore[misc]
+        result = fetch_yahoo(interval, bars) if prov == "yahoo" else fn(interval, bars)  # type: ignore[misc]
+        result.df = result.df.tail(bars).copy()
+        return result
     except Exception as e:
         errors.append(f"{prov}: {e}")
         if prov != "yahoo" and _bool_env("DATA_FALLBACK", True):
             try:
                 out = fetch_yahoo(interval, bars, symbol="DIA")
+                out.df = out.df.tail(bars).copy()
                 out.provider = f"{prov}->yahoo_fallback"
                 out.source_note = f"Fallback Yahoo/DIA after {errors[0]}"
                 return out
