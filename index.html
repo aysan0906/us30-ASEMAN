@@ -736,6 +736,19 @@
       display: block;
     }
   </style>
+
+<style id="clean-architecture-style">
+  /* Hide synthetic / mock order flow tabs and containers cleanly */
+  button[data-tab="bookmap"], button[data-tab="ninjatrader"], button[data-tab="atas"], 
+  button[data-tab="quantower"], button[data-tab="sierra"], button[data-tab="arbiter"],
+  #tab-bookmap, #tab-ninjatrader, #tab-atas, #tab-quantower, #tab-sierra, #tab-arbiter {
+    display: none !important;
+  }
+  .synthetic-disclaimer {
+    display: none !important;
+  }
+</style>
+
 </head>
 <body>
 
@@ -1075,7 +1088,7 @@
       <div class="tab-nav-grid" id="mainTabNavGrid" style="display: grid; margin-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
       
         <!-- HUB 1: COMMAND & JOURNAL -->
-        <button class="tab-card-btn active" data-hub="CMD" id="btnNavMasterSignal" onclick="switchTab('masterSignalTab', this)">
+        <!-- Hidden Synthetic: <button class="tab-card-btn active" data-hub="CMD" id="btnNavMasterSignal" onclick="switchTab('masterSignalTab', this)">
           <div class="tab-card-icon">👑</div>
           <div class="tab-card-name">سیگنال طلایی تک‌تیرانداز</div>
           <div class="tab-card-sub">همگرایی ۹ ابزار نهادی</div>
@@ -1110,9 +1123,9 @@
           <div class="tab-card-icon">🔥</div>
           <div class="tab-card-name">بوک‌مپ نقدینگی (Bookmap)</div>
           <div class="tab-card-sub">هیت‌مپ عمق سفارشات و Iceberg</div>
-        </button>
+        </button> -->
 
-        <button class="tab-card-btn" data-hub="OF" id="btnNavNinja" onclick="switchTab('ninjatraderTab', this)" style="display: none;">
+        <!-- Hidden Synthetic: <button class="tab-card-btn" data-hub="OF" id="btnNavNinja" onclick="switchTab('ninjatraderTab', this)" style="display: none;">
           <div class="tab-card-icon">🎯</div>
           <div class="tab-card-name">نینجاتریدر آنلاین (NinjaTrader)</div>
           <div class="tab-card-sub">SuperDOM و ۱۲ کندل فوت‌پرینت</div>
@@ -2695,7 +2708,7 @@
             <!-- Multi-Timeframe Switcher Buttons for Bookmap -->
             <div style="display: flex; gap: 4px; align-items: center; background: rgba(0,0,0,0.6); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(255,215,0,0.3);">
               <span style="font-size: 0.72rem; color: #ffd700; margin-left: 4px; font-weight: 700;">⏱️ تایم‌فریم بوک‌مپ:</span>
-              <button class="bm-tf-btn active" data-tf="1m" onclick="setBookmapTimeframe('1m')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1.5px solid #ffd700; background: rgba(255,215,0,0.25); color: #ffd700; font-weight: 800; cursor: pointer; transition: all 0.2s;">1m اسکالپ</button>
+              <button class="bm-tf-btn active" data-tf="1m" onclick="setBookmapTimeframe('1m')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1.5px solid #ffd700; background: rgba(255,215,0,0.25); color: #ffd700; font-weight: 800; cursor: pointer; transition: all 0.2s;">1m اسکالپ</button> -->
               <button class="bm-tf-btn" data-tf="5m" onclick="setBookmapTimeframe('5m')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer; transition: all 0.2s;">5m</button>
               <button class="bm-tf-btn" data-tf="15m" onclick="setBookmapTimeframe('15m')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer; transition: all 0.2s;">15m</button>
               <button class="bm-tf-btn" data-tf="1h" onclick="setBookmapTimeframe('1h')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer; transition: all 0.2s;">1h</button>
@@ -3334,7 +3347,7 @@
       </div>
 
       <div class="edu-nav-tabs">
-        <button class="edu-tab-btn active" onclick="switchEduTab('eduTab1', this)">🏛️ ۱. داوجونز چیست؟</button>
+        <!-- Hidden Synthetic: <button class="edu-tab-btn active" onclick="switchEduTab('eduTab1', this)">🏛️ ۱. داوجونز چیست؟</button>
         <button class="edu-tab-btn" onclick="switchEduTab('eduTab2', this)">⚡ ۲. راهنمای ۱۵ ماژول سایت</button>
         <button class="edu-tab-btn" onclick="switchEduTab('eduTab3', this)">🔥 ۳. آموزش تخصصی بوک‌مپ</button>
         <button class="edu-tab-btn" onclick="switchEduTab('eduTab4', this)">🏆 ۴. استراتژی ۸۰٪ وین‌ریت</button>
@@ -3478,7 +3491,7 @@
         <span style="font-size: 0.78rem; color: #94a3b8;">💡 سوال خاصی دارید؟ مشاور هوشمند ۲۴ ساعته در تب ۶ آماده است!</span>
         <button onclick="closeEducationModal(); switchTab('chatTab', document.getElementById('btnNavChat'));" style="background: linear-gradient(135deg, #00d2ff, #0077ff); color: #fff; border: none; padding: 6px 16px; border-radius: 6px; font-weight: 700; font-size: 0.78rem; cursor: pointer;">
           💬 باز کردن چت هوشمند
-        </button>
+        </button> -->
       </div>
     </div>
   </div>

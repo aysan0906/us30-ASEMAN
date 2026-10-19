@@ -1692,6 +1692,31 @@ def dow_moc_imbalance():
 def dow_smt_and_sweep():
     return _unavailable_module("smt_and_sweep", "نسخهٔ فعلی از بازده‌های ثابت/ساختگی SPX و NDX استفاده می‌کرد؛ تا دریافت کندل‌های هم‌زمان واقعی خروجی سیگنال‌ساز غیرفعال است.")
 
+
+# In-memory journal store with thread safety
+_JOURNAL_LOCK = threading.Lock()
+_JOURNAL_STORE: List[Dict[str, Any]] = []
+
+@app.get("/api/journal")
+@app.get("/api/journal/live")
+@app.get("/api/journal/stats")
+def get_journal_records():
+    """Returns actual recorded signal lifecycle records cleanly."""
+    with _JOURNAL_LOCK:
+        wins = sum(1 for r in _JOURNAL_STORE if r.get("status") in ["WIN", "TP1", "TP2", "TP3"])
+        losses = sum(1 for r in _JOURNAL_STORE if r.get("status") in ["LOSS", "SL"])
+        total = len(_JOURNAL_STORE)
+        wr = round((wins / total * 100), 1) if total > 0 else 0.0
+        return {
+            "ok": True,
+            "total_signals": total,
+            "win_rate": wr,
+            "wins": wins,
+            "losses": losses,
+            "records": _JOURNAL_STORE[-50:] # last 50 trades
+        }
+
+
 def get_dashboard_html() -> str:
     p = APP_DIR / "index.html"
     if p.exists():
