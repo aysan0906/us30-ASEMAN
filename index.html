@@ -2474,7 +2474,7 @@
     </div>
 
     <!-- ==================== TAB 21: MASTER SIGNAL DEDICATED TAB ==================== -->
-    <div id="masterSignalTab" class="tab-pane">
+    <div id="masterSignalTab" class="tab-pane active">
       <div class="content-card" style="border: 1.5px solid rgba(255, 215, 0, 0.4); background: rgba(14, 12, 26, 0.95); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
         <div class="card-header-flex">
           <div>
@@ -6889,6 +6889,24 @@
       }, 800);
     });
 
+</script>
+<script id="bootstrapper-fix">
+<script>
+  window.addEventListener('DOMContentLoaded', function() {
+    console.log('[US30] Initializing default active tab...');
+    // Ensure at least one tab-pane is active
+    var activePane = document.querySelector('.tab-pane.active');
+    if (!activePane) {
+      var msTab = document.getElementById('masterSignalTab') || document.getElementById('analysisTab');
+      if (msTab) {
+        msTab.classList.add('active');
+        msTab.style.display = 'block';
+      }
+    } else {
+      activePane.style.display = 'block';
+    }
+  });
+</script>
 </script>
 </body>
 </html>
