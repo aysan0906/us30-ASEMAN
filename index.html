@@ -749,25 +749,8 @@
   }
 </style>
 
-</head>
-<body>
 
-  <!-- Top Real-Time Sticky Header -->
-  <header>
-    <div class="header-inner">
-      <div class="logo-area">
-        <div class="logo-icon">📈</div>
-        <div class="logo-text">
-          <h1>سامانه تحلیلی داو جونز آسمان (US30 Terminal)</h1>
-          <span>داده‌های لحظه‌ای بورس نیویورک & FOREXCOM:US30 | متصل به موتور SMC و کلان</span>
-        </div>
-      </div>
-
-      <!-- Live Heartbeat & Quote Ticker -->
-      <div class="live-ticker-box">
-        <button onclick="openEducationModal()" style="background: linear-gradient(135deg, #ffd700, #ffb300); color: #000; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 800; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(255, 215, 0, 0.35); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
-          <span>🎓</span> حالت آموزش و مدرسه داوجونز
-        </button>
+<style id="purge-bookmap-style">
         <div class="ticker-item">
           <span class="ticker-label">نماد و منبع زنده</span>
           <span class="ticker-val" style="color: #00d2ff; font-size: 0.95rem;">FOREXCOM:US30</span>
@@ -1119,11 +1102,7 @@
         </button>
 
         <!-- HUB 2: ORDER FLOW PLATFORMS -->
-        <button class="tab-card-btn" data-hub="OF" id="btnNavBookmap" onclick="switchTab('bookmapTab', this)" style="display: none;">
-          <div class="tab-card-icon">🔥</div>
-          <div class="tab-card-name">بوک‌مپ نقدینگی (Bookmap)</div>
-          <div class="tab-card-sub">هیت‌مپ عمق سفارشات و Iceberg</div>
-        </button> -->
+         -->
 
         <!-- Hidden Synthetic: <button class="tab-card-btn" data-hub="OF" id="btnNavNinja" onclick="switchTab('ninjatraderTab', this)" style="display: none;">
           <div class="tab-card-icon">🎯</div>
@@ -1914,7 +1893,6 @@
           <button class="chat-prompt-pill" onclick="sendQuickPrompt('اتاس و معاملات بزرگ نهادی بالای ۵۰ لات چی میگه؟')" style="background: rgba(255, 140, 0, 0.15); color: #fb923c; border-color: rgba(255, 140, 0, 0.4); font-weight: 800;">⚡ اتاس و معاملات بزرگ</button>
           <button class="chat-prompt-pill" onclick="sendQuickPrompt('کوانت تاور و مارکت پروفایل TPO و نودها چیه؟')" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.4); font-weight: 800;">🏛️ کوانت‌تاور و مارکت پروفایل</button>
           <button class="chat-prompt-pill" onclick="sendQuickPrompt('ریسک ژئوپلیتیک و فاندامنتال ۳۰ سهم داو چطوره؟')" style="background: rgba(255, 51, 102, 0.15); color: #ff3366; border-color: rgba(255, 51, 102, 0.4); font-weight: 800;">🌐 ژئوپلیتیک و فاندامنتال</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('بوک مپ چی میگه الان و چطوری باهاش ترید کنم؟')" style="background: rgba(255, 140, 0, 0.15); color: #fb923c; border-color: rgba(255, 140, 0, 0.4); font-weight: 800;">🔥 بوک‌مپ و اوردرهای کوه یخ</button>
           <button class="chat-prompt-pill" onclick="sendQuickPrompt('گزارش ۶ روزه و ۶ هفته ای تعهدات cot چی میگه؟')" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border-color: rgba(0, 210, 255, 0.35); font-weight: 800;">📜 تعهدات COT وال‌استریت</button>
           <button class="chat-prompt-pill" onclick="sendQuickPrompt('دستور ورود و ستاپ پوزیشن چیه؟')" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border-color: rgba(0, 230, 118, 0.35); font-weight: 800;">⚡ ستاپ همگام ورود/SL/TP</button>
           <button class="chat-prompt-pill" onclick="sendQuickPrompt('استراتژی معامله داوجونز با وین ریت ۸۰ درصد چطوریه؟')" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.35); font-weight: 800;">🏆 استراتژی وین‌ریت ۸۰٪</button>
@@ -2662,205 +2640,6 @@
         </p>
         <div id="guardStatusContent" style="font-size: 0.85rem; line-height: 1.8;">
           در حال بررسی سلامت لایه‌های اجرایی و اسپرد وال‌استریت...
-        </div>
-      </div>
-    </div>
-
-    <!-- ==================== TAB 15: BOOKMAP LIQUIDITY HEATMAP ==================== -->
-    <div id="bookmapTab" class="tab-pane">
-      <div class="content-card" style="border: 1px solid rgba(255, 215, 0, 0.35); background: rgba(10, 14, 25, 0.95); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-        <div class="card-header-flex">
-          <div>
-            <h3 class="card-title" style="display: flex; align-items: center; gap: 8px;">
-              <span>🔥</span> ترمینال بوک‌مپ نقدینگی و عمق سفارشات وال‌استریت (Bookmap Liquidity Heatmap)
-            </h3>
-            <div style="font-size: 0.78rem; color: var(--text-muted);">
-              نمایش زنده سفارشات لیمیت خوابیده (Resting Limit Orders)، دیوارهای سنگین هج‌فاندها، استخرهای نقدینگی استاپ‌ها و ردیاب اوردرهای مخفی کوه یخ (Iceberg) روی داوجونز
-            </div>
-          </div>
-          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <span id="bmL3TierBadge" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(0, 210, 255, 0.2)); color: #ffd700; border: 1px solid #ffd700; padding: 4px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 800;">
-              👑 سطح ۳ نهادی (Level 3 MBO)
-            </span>
-            <span id="bmTfBadge" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1px solid #ffd700; padding: 4px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 800;">
-              ⏱️ تایم فعال: ۱ دقیقه‌ای اسکالپ
-            </span>
-            <span id="bmImbalanceBadge" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border: 1px solid #00d2ff; padding: 4px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 800;">
-              تراز دلتا: در حال محاسبه...
-            </span>
-            <span id="bmLivePriceBadge" class="mono" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1px solid #ffd700; padding: 4px 12px; border-radius: 6px; font-size: 0.82rem; font-weight: 800;">
-              🔵 نرخ زنده ترندو: ---
-            </span>
-          </div>
-        </div>
-
-        <!-- Bookmap Visual Heatmap Canvas Container & Dual View -->
-        <div style="position: relative; background: #050811; border: 1px solid rgba(255, 215, 0, 0.25); border-radius: 10px; padding: 14px; margin-bottom: 18px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.78rem; color: #94a3b8; flex-wrap: wrap; gap: 8px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="display: inline-flex; align-items: center; gap: 5px; background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 0.72rem;">
-                <span class="pulse-dot" style="width: 6px; height: 6px; background: #00e676;"></span>
-                🔴 آنلاین و زنده (Live Stream 60 FPS)
-              </span>
-              <span style="color: #cbd5e1; font-weight: 600;">📊 هیت‌مپ نقدینگی و عمق سفارشات وال‌استریت</span>
-            </div>
-
-            <!-- Multi-Timeframe Switcher Buttons for Bookmap -->
-            <div style="display: flex; gap: 4px; align-items: center; background: rgba(0,0,0,0.6); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(255,215,0,0.3);">
-              <span style="font-size: 0.72rem; color: #ffd700; margin-left: 4px; font-weight: 700;">⏱️ تایم‌فریم بوک‌مپ:</span>
-              <button class="bm-tf-btn active" data-tf="1m" onclick="setBookmapTimeframe('1m')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1.5px solid #ffd700; background: rgba(255,215,0,0.25); color: #ffd700; font-weight: 800; cursor: pointer; transition: all 0.2s;">1m اسکالپ</button> -->
-              <button class="bm-tf-btn" data-tf="5m" onclick="setBookmapTimeframe('5m')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer; transition: all 0.2s;">5m</button>
-              <button class="bm-tf-btn" data-tf="15m" onclick="setBookmapTimeframe('15m')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer; transition: all 0.2s;">15m</button>
-              <button class="bm-tf-btn" data-tf="1h" onclick="setBookmapTimeframe('1h')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer; transition: all 0.2s;">1h</button>
-              <button class="bm-tf-btn" data-tf="4h" onclick="setBookmapTimeframe('4h')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; cursor: pointer; transition: all 0.2s;">4h</button>
-            </div>
-
-            <!-- Dual-View Mode Switcher Buttons -->
-            <div style="display: flex; gap: 6px; align-items: center;">
-              <button id="btnBmViewCanvas" onclick="switchBookmapView('canvas')" style="background: rgba(255, 215, 0, 0.2); color: #ffd700; border: 1px solid #ffd700; padding: 4px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; cursor: pointer; transition: all 0.2s;">
-                🔥 هیت‌مپ آنلاین بوک‌مپ
-              </button>
-              <button id="btnBmViewTv" onclick="switchBookmapView('tv')" style="background: rgba(255, 255, 255, 0.05); color: #94a3b8; border: 1px solid rgba(255, 255, 255, 0.15); padding: 4px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; cursor: pointer; transition: all 0.2s;">
-                📊 چارت آنلاین تریدینگ‌ویو US30
-              </button>
-            </div>
-          </div>
-
-          <!-- Canvas View -->
-          <div id="bookmapCanvasWrap" style="position: relative;">
-            <canvas id="bookmapCanvas" width="1000" height="340" style="width: 100%; height: 340px; display: block; border-radius: 8px; background: #030712;"></canvas>
-            <div id="bmLiveCrosshairTag" style="position: absolute; right: 10px; top: 130px; background: rgba(0,0,0,0.85); border: 1px solid #ffd700; color: #ffd700; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-family: var(--font-mono); font-weight: 800; pointer-events: none; z-index: 5;">
-              ◄ LIVE TICK
-            </div>
-          </div>
-
-          <!-- TradingView Embedded View for Bookmap -->
-          <div id="bookmapTvWrap" style="display: none; height: 450px; width: 100%; border-radius: 8px; overflow: hidden; background: #030712;">
-            <div id="tradingview_bookmap_widget" style="height: 100%; width: 100%;"></div>
-          </div>
-        </div>
-
-        <!-- Two Columns: Resting Ask Walls vs Resting Bid Shelves -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 18px;">
-          <!-- Ask Liquidity (Selling Walls above price) -->
-          <div style="background: rgba(255, 51, 102, 0.05); border: 1px solid rgba(255, 51, 102, 0.25); border-radius: 10px; padding: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <span style="font-weight: 800; color: #ff3366; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
-                <span>🧱</span> دیوارهای لیمیت فروش خوابیده (Resting Ask Walls)
-              </span>
-              <span id="bmTotalAskVol" class="mono" style="font-size: 0.76rem; color: #cbd5e1;">مجموع: --- لات</span>
-            </div>
-            <div id="bmAskWallsList" style="display: flex; flex-direction: column; gap: 8px;">
-              <!-- Dynamic Ask items -->
-            </div>
-          </div>
-
-          <!-- Bid Liquidity (Buying Shelves below price) -->
-          <div style="background: rgba(0, 230, 118, 0.05); border: 1px solid rgba(0, 230, 118, 0.25); border-radius: 10px; padding: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <span style="font-weight: 800; color: #00e676; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
-                <span>🛡️</span> کف‌های بتنی خرید خوابیده (Resting Bid Shelves)
-              </span>
-              <span id="bmTotalBidVol" class="mono" style="font-size: 0.76rem; color: #cbd5e1;">مجموع: --- لات</span>
-            </div>
-            <div id="bmBidShelvesList" style="display: flex; flex-direction: column; gap: 8px;">
-              <!-- Dynamic Bid items -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Iceberg Orders & HFT Liquidity Sweeps Radar -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px;">
-          <!-- Icebergs -->
-          <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 14px;">
-            <div style="font-size: 0.82rem; font-weight: 800; color: #ffd166; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-              <span>🧊</span> ردیاب سفارشات پنهان کوه یخ (Iceberg Execution Detector)
-            </div>
-            <div id="bmIcebergList" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.78rem;">
-              <!-- Dynamic Iceberg items -->
-            </div>
-          </div>
-
-          <!-- Liquidity Verdict & Sweep Advice -->
-          <div style="background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 14px;">
-            <div style="font-size: 0.82rem; font-weight: 800; color: #38bdf8; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-              <span>🧭</span> جمع‌بندی استراتژیک عمق نقدینگی بوک‌مپ
-            </div>
-            <div id="bmVerdictText" style="font-size: 0.8rem; line-height: 1.8; color: #e2e8f0;">
-              در حال ارزیابی توازن عرضه و تقاضای عمق بازار...
-            </div>
-          </div>
-        </div>
-
-        <!-- DETAILED STEP-BY-STEP PERSIAN BOOKMAP GUIDE FOR TRADERS -->
-        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px dashed rgba(255, 215, 0, 0.25);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 1.2rem;">🎓</span>
-              <h4 style="font-size: 1.02rem; font-weight: 800; color: #ffd700;">
-                راهنمای جامع و آسان درک بوک‌مپ برای افراد مبتدی (چگونه با بوک‌مپ سود کنیم؟)
-              </h4>
-            </div>
-            <button onclick="sendQuickPrompt('بوک مپ چی میگه الان و چطوری باهاش ترید کنم؟'); switchTab('chatTab', document.getElementById('btnNavChat'));" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border: 1px solid #00d2ff; padding: 4px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 800; cursor: pointer;">
-              💬 تحلیل لایو بوک‌مپ در چت هوشمند
-            </button>
-          </div>
-
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 16px;">
-            <!-- Card 1: Colors -->
-            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px;">
-              <div style="font-weight: 800; color: #38bdf8; font-size: 0.85rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-                <span>🎨</span> ۱. معنی رنگ‌های هیت‌مپ
-              </div>
-              <p style="font-size: 0.78rem; line-height: 1.7; color: #cbd5e1;">
-                • <strong>سرمه‌ای و تیره:</strong> سفارش لیمیت ناچیز؛ قیمت به راحتی از آن عبور می‌کند.<br>
-                • <strong>نارنجی:</strong> سفارشات لیمیت متراکم متوسط.<br>
-                • <strong>زرد و طلایی درخشان:</strong> <strong>دیوار بتنی سنگین بانک‌ها</strong>؛ حجم سفارشات بسیار بالاست و قیمت معمولاً با برخورد به آن پس می‌زند!
-              </p>
-            </div>
-
-            <!-- Card 2: Ask vs Bid Walls -->
-            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px;">
-              <div style="font-weight: 800; color: #ff3366; font-size: 0.85rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-                <span>🧱</span> ۲. دیوارهای فروش و کف‌های خرید
-              </div>
-              <p style="font-size: 0.78rem; line-height: 1.7; color: #cbd5e1;">
-                • <strong>دیوارهای قرمز (Ask Walls):</strong> سفارشات فروش خوابیده بالای قیمت. هج‌فاندها اجازه عبور آسان به قیمت نمی‌دهند.<br>
-                • <strong>کف‌های سبز (Bid Shelves):</strong> سفارشات خرید خوابیده زیر قیمت. تشک نجات بازار که مانع ریزش شارپ می‌شود.
-              </p>
-            </div>
-
-            <!-- Card 3: Iceberg Orders -->
-            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px;">
-              <div style="font-weight: 800; color: #ffd166; font-size: 0.85rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-                <span>🧊</span> ۳. سفارشات پنهان کوه یخ (Iceberg)
-              </div>
-              <p style="font-size: 0.78rem; line-height: 1.7; color: #cbd5e1;">
-                بانک‌ها وقتی قصد دارند ۳,۰۰۰ لات بخرند، هرگز تمام آن را روی تابلو قرار نمی‌دهند تا بازار گران نشود! فقط ۵۰ لات را آشکار می‌کنند و به محض پر شدن، رباتشان بلافاصله ۵۰ لات دیگر شارژ می‌کند. این ماژول این کوه‌های یخ مخفی را برای شما آشکار می‌سازد.
-              </p>
-            </div>
-
-            <!-- Card 4: Stop Hunts BSL / SSL -->
-            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px;">
-              <div style="font-weight: 800; color: #a855f7; font-size: 0.85rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-                <span>🧲</span> ۴. استخرهای نقدینگی و استاپ‌هانتینگ
-              </div>
-              <p style="font-size: 0.78rem; line-height: 1.7; color: #cbd5e1;">
-                • <strong>BSL (Buy-Side Liquidity):</strong> بالای سقف‌ها قرار دارد؛ جایی که استاپ‌لاس فروشندگان جمع شده و قیمت مثل آهنربا جذب آن می‌شود تا نقدینگی را ببلعد.<br>
-                • <strong>SSL (Sell-Side Liquidity):</strong> زیر کف‌ها قرار دارد و استاپ خریداران را هدف قرار می‌دهد.
-              </p>
-            </div>
-          </div>
-
-          <!-- Strategy Rule Box -->
-          <div style="background: linear-gradient(135deg, rgba(0, 230, 118, 0.08), rgba(0, 210, 255, 0.05)); border: 1px solid rgba(0, 230, 118, 0.3); border-radius: 8px; padding: 14px; font-size: 0.82rem; line-height: 1.8;">
-            <strong style="color: #00e676; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-              <span>🏆</span> استراتژی ۳ گام معامله با بوک‌مپ برای سود حداکثری:
-            </strong>
-            <strong>گام ۱:</strong> به نشانگر «تراز دلتا» نگاه کنید؛ اگر مثبت بود یعنی قدرت در دست خریداران است.<br>
-            <strong>گام ۲:</strong> نقطه ورود خرید خود را نزدیک به نزدیک‌ترین «کف بتنی خرید (Bid Shelf)» بگذارید و حد ضرر را ۲ تا ۵ پوینت زیر آن مخفی کنید.<br>
-            <strong>گام ۳:</strong> حد سود (TP) خود را دقیقاً ۲ تا ۵ پوینت قبل از اولین «دیوار سنگین فروش (Ask Wall)» قرار دهید تا دقیقاً پیش از واکنش و برگشت قیمت، با سود کامل خارج شوید!
-          </div>
         </div>
       </div>
     </div>
