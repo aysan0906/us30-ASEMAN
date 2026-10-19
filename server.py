@@ -1692,6 +1692,13 @@ def dow_moc_imbalance():
 def dow_smt_and_sweep():
     return _unavailable_module("smt_and_sweep", "نسخهٔ فعلی از بازده‌های ثابت/ساختگی SPX و NDX استفاده می‌کرد؛ تا دریافت کندل‌های هم‌زمان واقعی خروجی سیگنال‌ساز غیرفعال است.")
 
+def get_dashboard_html() -> str:
+    p = APP_DIR / "index.html"
+    if p.exists():
+        return p.read_text(encoding="utf-8")
+    return "<html><body><h1>US30 Dashboard</h1><p>index.html not found.</p></body></html>"
+
+
 @app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)
 def index():
     return HTMLResponse(get_dashboard_html(), status_code=200)
