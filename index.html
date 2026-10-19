@@ -1232,7 +1232,7 @@
           <span>🏛️</span> دسته‌بندی ایستگاه‌های کاری داوجونز (Workstation Hubs)
         </div>
         <div style="font-size: 0.75rem; color: #94a3b8;" id="us30HubSubLabel">
-          هاب انتخابی: <strong style="color: #38bdf8;" id="activeHubNameDisplay">اتاق فرمان و سیگنال طلایی</strong>
+          هاب انتخابی: <strong style="color: #a855f7;" id="activeHubNameDisplay">ماژول ۱: چارت زنده، لیدرهای داو & ساختار SMC</strong>
         </div>
       </div>
 
@@ -1248,27 +1248,104 @@
         </button>
       </div>
 
-      <!-- Sub-tabs within Active Hub (Filtered dynamically) -->
-      <div class="tab-nav-grid" id="mainTabNavGrid" style="display: grid; margin-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
       
-        <!-- HUB 1: COMMAND & JOURNAL -->
-        
+      <!-- Sub-tabs within Active Hub (Filtered dynamically) -->
+      <div class="tab-nav-grid" id="mainTabNavGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
+      
+        <!-- MODULE 1 SUB-TABS (TECH / SMC / CHART / SIGNAL / JOURNAL) -->
+        <button class="tab-card-btn active" data-hub="TECH" id="btnNavChart" onclick="switchTab('chartTab', this)" style="display: flex;">
+          <div class="tab-card-icon">📊</div>
+          <div class="tab-card-name">نمودار زنده تریدینگ‌ویو</div>
+          <div class="tab-card-sub">FOREXCOM:US30 زنده</div>
+        </button>
 
-        
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('گزارش ۶ روزه و ۶ هفته ای تعهدات cot چی میگه؟')" style="background: rgba(0, 210, 255, 0.15); color: #00d2ff; border-color: rgba(0, 210, 255, 0.35); font-weight: 800;">📜 تعهدات COT وال‌استریت</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('دستور ورود و ستاپ پوزیشن چیه؟')" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border-color: rgba(0, 230, 118, 0.35); font-weight: 800;">⚡ ستاپ همگام ورود/SL/TP</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('استراتژی معامله داوجونز با وین ریت ۸۰ درصد چطوریه؟')" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.35); font-weight: 800;">🏆 استراتژی وین‌ریت ۸۰٪</button>
-          <button class="chat-prompt-pill" onclick="sendQuickPrompt('توضیح کامل ۱۵ ماژول سایت رو برام بگو برای فرد مبتدی')" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border-color: rgba(255, 215, 0, 0.4); font-weight: 800;">🎓 راهنمای ماژول‌های سایت برای مبتدیان</button>
-        </div>
+        <button class="tab-card-btn" data-hub="TECH" id="btnNavRadar" onclick="switchTab('radarTab', this)" style="display: flex;">
+          <div class="tab-card-icon">🎯</div>
+          <div class="tab-card-name">لیدرهای داو ۳۰</div>
+          <div class="tab-card-sub">۱۲ نماد سنگین‌وزن شاخص</div>
+        </button>
 
-        <!-- Chat Messages Container -->
-        <div class="chat-messages" id="chatMessages">
-          <div class="chat-bubble-wrapper agent-wrapper">
-            <div class="chat-avatar" title="مشاور هوشمند داو جونز">🤖</div>
-            <div class="chat-bubble bubble-agent">
-              سلام! من مشاور هوشمند و سازمانی داو جونز (US30) هستم. من بازار را بر پایه جریان نقدینگی نهادی وال‌استریت، ائتلاف بانک‌های گلدمن ساکس و جی‌پی مورگان، تقویم کلان فدرال‌رزرو (CPI/FOMC) و گپ‌های ارزش منصفانه (FVG) تحلیل می‌کنم. هر سوالی دارید از دکمه‌های آماده بالا استفاده کنید یا پیام خود را تایپ نمایید!
-            </div>
-          </div>
+        <button class="tab-card-btn" data-hub="TECH" id="btnNavAnalysis" onclick="switchTab('analysisTab', this)" style="display: flex;">
+          <div class="tab-card-icon">🧭</div>
+          <div class="tab-card-name">تحلیل ۳۶۰ درجه SMC</div>
+          <div class="tab-card-sub">شکست ساختار (BOS) و نقدینگی</div>
+        </button>
+
+        <button class="tab-card-btn" data-hub="TECH" id="btnNavAlpha" onclick="switchTab('alphaTab', this)" style="display: flex;">
+          <div class="tab-card-icon">⚡</div>
+          <div class="tab-card-name">ماتریس آلفای سکتورها</div>
+          <div class="tab-card-sub">۱۲ سکتور پیشران وال‌استریت</div>
+        </button>
+
+        <button class="tab-card-btn" data-hub="TECH" id="btnNavMasterSignal" onclick="switchTab('masterSignalTab', this)" style="display: flex;">
+          <div class="tab-card-icon">👑</div>
+          <div class="tab-card-name">سیگنال طلایی تک‌تیرانداز</div>
+          <div class="tab-card-sub">همگرایی ساختار پرایس‌اکشن</div>
+        </button>
+
+        <button class="tab-card-btn" data-hub="TECH" id="btnNavJournal" onclick="switchTab('journalTab', this)" style="display: flex;">
+          <div class="tab-card-icon">📖</div>
+          <div class="tab-card-name">ژورنال معاملات و نتایج</div>
+          <div class="tab-card-sub">ثبت و Win Rate حساب</div>
+        </button>
+
+        <button class="tab-card-btn" data-hub="TECH" id="btnNavSentinel" onclick="switchTab('sentinelTab', this)" style="display: flex;">
+          <div class="tab-card-icon">✈️</div>
+          <div class="tab-card-name">دیده‌بان و ربات تلگرام</div>
+          <div class="tab-card-sub">ارسال آنی ستاپ‌های تاییدشده</div>
+        </button>
+
+        <button class="tab-card-btn" data-hub="TECH" id="btnNavGuard" onclick="switchTab('guardTab', this)" style="display: flex;">
+          <div class="tab-card-icon">🔒</div>
+          <div class="tab-card-name">گارد محافظ اسلیپیج</div>
+          <div class="tab-card-sub">کنترل ریسک اکانت ۱۰ دلاری</div>
+        </button>
+
+        <button class="tab-card-btn" data-hub="TECH" id="btnNavKelly" onclick="switchTab('kellyTab', this)" style="display: flex;">
+          <div class="tab-card-icon">💼</div>
+          <div class="tab-card-name">ماشین‌حساب کِلی</div>
+          <div class="tab-card-sub">محاسبه دقیق حجم لوریج و لات</div>
+        </button>
+
+        <!-- MODULE 2 SUB-TABS (MACRO / BANKS / GEOPOLITICS) -->
+        <button class="tab-card-btn" data-hub="MACRO" id="btnNavMacro" onclick="switchTab('macroTab', this)" style="display: none;">
+          <div class="tab-card-icon">🛡️</div>
+          <div class="tab-card-name">تقویم کلان ۱۱ شاخصه</div>
+          <div class="tab-card-sub">شبیه‌ساز سناریو و FedWatch</div>
+        </button>
+
+        <button class="tab-card-btn" data-hub="MACRO" id="btnNavCoalition" onclick="switchTab('coalitionTab', this)" style="display: none;">
+          <div class="tab-card-icon">🏛️</div>
+          <div class="tab-card-name">ائتلاف غول‌های بانکی</div>
+          <div class="tab-card-sub">انباشت نهادی و گزارش COT</div>
+        </button>
+
+        <button class="tab-card-btn" data-hub="MACRO" id="btnNavCross" onclick="switchTab('crossTab', this)" style="display: none;">
+          <div class="tab-card-icon">🌐</div>
+          <div class="tab-card-name">همبستگی دارایی‌ها</div>
+          <div class="tab-card-sub">انس طلا، نفت و شاخص دلار</div>
+        </button>
+
+        <button class="tab-card-btn" data-hub="MACRO" id="btnNavGeopolitics" onclick="switchTab('geopoliticsTab', this)" style="display: none;">
+          <div class="tab-card-icon">🌐</div>
+          <div class="tab-card-name">فاندامنتال & ژئوپلیتیک</div>
+          <div class="tab-card-sub">شاخص ریسک جهانی GPR</div>
+        </button>
+
+        <button class="tab-card-btn" data-hub="MACRO" id="btnNavOptions" onclick="switchTab('optionsTab', this)" style="display: none;">
+          <div class="tab-card-icon">🎲</div>
+          <div class="tab-card-name">آپشن و گامای بازار</div>
+          <div class="tab-card-sub">Max Pain و تمایلات اختیار معامله</div>
+        </button>
+
+        <button class="tab-card-btn" data-hub="MACRO" id="btnNavChat" onclick="switchTab('chatTab', this)" style="display: none;">
+          <div class="tab-card-icon">🤖</div>
+          <div class="tab-card-name">مشاور هوشمند AI</div>
+          <div class="tab-card-sub">چت زنده تحلیلی داوجونز</div>
+        </button>
+
+      </div>
+</div>
         </div>
 
         <!-- Input Area -->
