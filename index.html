@@ -917,20 +917,188 @@
         </div>
 
         <!-- STAGE 2: ORDER FLOW SYNTHESIS -->
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 12px; padding: 12px 14px; position: relative;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-size: 0.68rem; font-weight: 800; color: #a855f7; background: rgba(168, 85, 247, 0.12); padding: 2px 8px; border-radius: 6px;">مرحله ۲</span>
+            <span style="font-size: 0.68rem; color: #a855f7;">ساختار نقدینگی و پرایس‌اکشن</span>
+          </div>
+          <div style="font-size: 0.88rem; font-weight: 800; color: #fff; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+            <span>🌊</span> تاییدیه اسمارت مانی (SMC)
+          </div>
+          <div style="font-size: 0.74rem; color: #94a3b8; line-height: 1.4; margin-bottom: 8px;">شناسایی خلاء نقدینگی (FVG) + هانت استاپ‌ها (Liquidity Sweep) + اردربلاک‌های تاییدشده</div>
+          <div style="font-size: 0.74rem; color: #cbd5e1; font-weight: 700;">همسویی ساختاری: <span style="color: #a855f7;" id="plStateP2">تایید ساختار و سوپلای/دیمند</span></div>
+        </div>
+        <div class="logo-text">
+          <h1>سامانه تحلیلی داو جونز آسمان (US30 Terminal)</h1>
+          <span>داده‌های لحظه‌ای بورس نیویورک & FOREXCOM:US30 | متصل به موتور SMC و کلان</span>
+        </div>
+      </div>
+
+      <!-- Live Heartbeat & Quote Ticker -->
+      <div class="live-ticker-box">
+        <button onclick="openEducationModal()" style="background: linear-gradient(135deg, #ffd700, #ffb300); color: #000; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 800; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(255, 215, 0, 0.35); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+          <span>🎓</span> حالت آموزش و مدرسه داوجونز
+        </button>
+        <div class="ticker-item">
+          <span class="ticker-label">نماد و منبع زنده</span>
+          <span class="ticker-val" style="color: #00d2ff; font-size: 0.95rem;">FOREXCOM:US30</span>
+        </div>
+        <div class="ticker-item">
+          <span class="ticker-label">قیمت لحظه‌ای</span>
+          <span class="ticker-val" id="topLivePrice">در حال بارگذاری...</span>
+        </div>
+        <div class="ticker-item">
+          <span class="ticker-label">تغییر روزانه</span>
+          <span class="ticker-val" id="topLiveChange" style="color: #94a3b8;">--</span>
+        </div>
+        <div class="ticker-item">
+          <span class="ticker-label">وضعیت ارتباط شبکه</span>
+          <span style="font-size: 0.72rem; color: #00e676; font-weight: 800; display: flex; align-items: center; gap: 4px;">
+            <span class="pulse-dot" style="width: 7px; height: 7px;"></span>
+            <span id="liveHeartbeatText">اتصال زنده برقرار است</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Live Session & Shamsi / Tehran Clocks Bar -->
+    <div class="session-banner">
+      <div class="session-indicator">
+        <div class="pulse-dot"></div>
+        <strong id="sessionStatusFa">سشن بازار: بازار وال‌استریت (NYSE Regular Session)</strong>
+      </div>
+      <div style="display: flex; gap: 18px; font-family: var(--font-mono); font-size: 0.8rem; align-items: center; flex-wrap: wrap;">
+        <div>📅 <span id="clockShamsiDate" style="color: #ffd700; font-family: 'Vazirmatn'; font-weight: 700;">شنبه، ۲۵ مهر ۱۴۰۵</span></div>
+        <div>🇮🇷 تهران: <span id="clockTehran" style="color: #00d2ff; font-weight: 800;">15:42:00</span></div>
+        <div>🇺🇸 نیویورک: <span id="clockNY" style="color: #ffd166; font-weight: 800;">08:12:00</span></div>
+        <div>⏳ زنگ وال‌استریت: <span id="sessionCountdown" style="color: #00e676; font-weight: 800;">01:17:40</span></div>
+        <button id="btnAudioAlerts" onclick="toggleAudioAlerts()" style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; border-radius: 6px; padding: 4px 10px; font-size: 0.76rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: 0.2s;">
+          <span id="audioAlertsIcon">🔊</span>
+          <span id="audioAlertsLabel">اعلان صوتی: فعال</span>
+        </button>
+        <button onclick="openEducationModal()" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1px solid #ffd700; border-radius: 6px; padding: 4px 10px; font-size: 0.76rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+          <span>🎓</span> راهنمای مبتدی
+        </button>
+        <div style="font-size: 0.72rem; color: #94a3b8; font-family: 'Vazirmatn';">⏱️ بازخوانی: <span id="lastRefreshSecs" style="color: #38bdf8; font-family: var(--font-mono);">۰s پیش</span></div>
+      </div>
+    </div>
+
+    <!-- COMPREHENSIVE COMPOSITE SIGNAL HERO BANNER -->
+    <div class="hero-scalp-card">
+      <!-- TRENDO BROKER OFFICIAL TICK FEED & SYNC BAR -->
+      <div style="background: rgba(10, 16, 32, 0.95); border: 1.5px solid rgba(0, 210, 255, 0.4); border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.3rem;">🔵</span>
+            <div>
+              <strong style="color: #00d2ff; font-size: 0.9rem;">فید رسمی و مستقیم تیک‌های بروکر ترندو (Trendo Live Ticks)</strong>
+              <div style="font-size: 0.72rem; color: #94a3b8;" id="trendoSessionDesc">سشن لندن / آسیا (اسپرد استاندارد ۱.۲ پوینت)</div>
+            </div>
+          </div>
+          <!-- Live Bid (Blue Line - خط آبی چارت) -->
+          <div style="background: rgba(0, 210, 255, 0.12); border: 1.5px solid #00d2ff; border-radius: 6px; padding: 5px 14px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 0.74rem; color: #94a3b8; font-weight: 700;">خط آبی چارت (Bid):</span>
+            <span id="trendoBidVal" class="mono" style="color: #00d2ff; font-weight: 900; font-size: 1.15rem;">در انتظار داده</span>
+          </div>
+          <!-- Live Ask (Red Line - خط قرمز خرید) -->
+          <div style="background: rgba(255, 51, 102, 0.12); border: 1.5px solid #ff3366; border-radius: 6px; padding: 5px 14px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 0.74rem; color: #94a3b8; font-weight: 700;">خط قرمز خرید (Ask):</span>
+            <span id="trendoAskVal" class="mono" style="color: #ff3366; font-weight: 900; font-size: 1.15rem;">در انتظار داده</span>
+          </div>
+          <!-- Live Spread -->
+          <div style="background: rgba(255, 215, 0, 0.12); border: 1px solid #ffd700; border-radius: 6px; padding: 5px 12px; display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 0.74rem; color: #ffd700; font-weight: 700;">اسپرد زنده:</span>
+            <span id="trendoSpreadVal" class="mono" style="color: #ffd700; font-weight: 900; font-size: 0.95rem;">1.20 pt</span>
+          </div>
+        </div>
+
+        <!-- Broker Mode Toggle Buttons -->
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <span style="font-size: 0.74rem; color: #cbd5e1; font-weight: 700;">منبع قیمت:</span>
+          <button id="btnBrokerTrendo" onclick="setBrokerMode('trendo')" style="background: linear-gradient(135deg, rgba(0, 210, 255, 0.25), rgba(0, 119, 182, 0.35)); color: #00d2ff; border: 1.5px solid #00d2ff; padding: 5px 14px; border-radius: 6px; font-size: 0.76rem; font-weight: 800; cursor: pointer; transition: all 0.2s;">
+            🔵 ترندو آنلاین (فعال)
+          </button>
+          <button id="btnBrokerForex" onclick="setBrokerMode('forexcom')" style="background: rgba(255, 255, 255, 0.05); color: #94a3b8; border: 1px solid rgba(255, 255, 255, 0.15); padding: 5px 14px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+            🟢 فارکس‌کام
+          </button>
+        </div>
+      </div>
+      <!-- Timeframe Switcher Bar -->
+      
+    <!-- =========================================================================
+         🚀 4-STAGE INSTITUTIONAL PIPELINE & UNIFIED MASTER SIGNAL COCKPIT (US30)
+         معماری یکپارچه، خط تولید ۴ مرحله‌ای و تک‌سیگنال قطعی وال‌استریت
+         ========================================================================= -->
+    
+    <!-- STAGE PIPELINE COMMAND CENTER -->
+    <div id="signalPipelineCommandCenter" style="background: linear-gradient(135deg, rgba(11, 15, 25, 0.98), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: 14px; padding: 18px 22px; margin-bottom: 22px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; overflow: hidden;">
+      <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #38bdf8, #a855f7, #ffd700, #00e676);"></div>
+      
+      <!-- Top Bar: Title & Countdown Timer -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.6rem; filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));">⚡</span>
+          <div>
+            <div style="font-size: 1.1rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+              خط تولید و فیلترینگ خودکار سیگنال داو جونز (US30 4-Stage Pipeline)
+              <span style="background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid #00e676; padding: 2px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 800;">اکانت ۱۰ دلاری محفوظ</span>
+            </div>
+            <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px;">
+              از رادار ۱۲ لیدر سنگین‌وزن تا سنتز ۹ پلتفرم، ۸ لایه دفاعی دروازه‌بان، استاپ ۱۲.۸ پوینتی و فیبوناچی OTE
+            </div>
+          </div>
+        </div>
+
+        <!-- Scan Countdown & Manual Audit Button -->
+        <div style="display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(56, 189, 248, 0.25); padding: 6px 14px; border-radius: 10px;">
+          <div style="text-align: right;">
+            <div style="font-size: 0.68rem; color: #94a3b8;">شمارش معکوس اسکن ائتلاف:</div>
+            <div id="us30ArbiterCountdown" style="font-family: var(--font-mono); font-size: 1.15rem; font-weight: 900; color: #38bdf8; letter-spacing: 1px;">03:00</div>
+          </div>
+          <button onclick="fetchUS30ArbiterData(true)" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-size: 0.76rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);">
+            <span>🔄</span> اسکن آنی
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 Connected Pipeline Stages -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+        
+        <!-- STAGE 1: DOW LEADERS & MACRO -->
+        <div style="background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 10px; padding: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 0.72rem; font-weight: 800; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 8px; border-radius: 6px;">مرحله ۱</span>
+            <span style="font-size: 0.68rem; color: #38bdf8;">رادار ۱۲ لیدر داو ۳۰</span>
+          </div>
+          <div style="font-size: 0.88rem; font-weight: 800; color: #fff; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+            <span>🎯</span> کشف جهت وال‌استریت
+          </div>
+          <div style="font-size: 0.74rem; color: #94a3b8; line-height: 1.5; min-height: 38px;">
+            پایش لحظه‌ای ۱۲ سهم تعیین‌کننده (UNH, GS, MSFT) و همبستگی اوراق قرضه آمریکا
+          </div>
+          <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.72rem; color: #cbd5e1; display: flex; justify-content: space-between;">
+            <span>اثر پوینتی لیدرها:</span>
+            <strong style="color: #00e676;" id="pipeRadarStatus">در حال پایش لیدرها... (صعودی)</strong>
+          </div>
+        </div>
+
+        <!-- STAGE 2: SMC & LIQUIDITY STRUCTURE -->
         <div style="background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 10px; padding: 14px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <span style="font-size: 0.72rem; font-weight: 800; color: #a855f7; background: rgba(168, 85, 247, 0.12); padding: 2px 8px; border-radius: 6px;">مرحله ۲</span>
-            <span style="font-size: 0.68rem; color: #a855f7;">سنتز جریان سفارشات</span>
+            <span style="font-size: 0.68rem; color: #a855f7;">ساختار نقدینگی و پرایس‌اکشن</span>
           </div>
           <div style="font-size: 0.88rem; font-weight: 800; color: #fff; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-            <span>🌊</span> ارزیابی نهادی
+            <span>🌊</span> تاییدیه اسمارت مانی (SMC)
           </div>
           <div style="font-size: 0.74rem; color: #94a3b8; line-height: 1.5; min-height: 38px;">
-            کلاسترهای نینجاتریدر + دیوارهای بوک‌مپ + خریدهای بلوکی ATAS + پروفایل کوانت‌تاور
+            شناسایی خلاء نقدینگی (FVG) + هانت استاپ‌ها (Liquidity Sweep) + اردربلاک‌های تاییدشده
           </div>
           <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.72rem; color: #cbd5e1; display: flex; justify-content: space-between;">
-            <span>همسویی پلتفرم‌ها:</span>
-            <strong style="color: #a855f7;" id="pipeOrderflowStatus">تایید حجم و دلتای CVD</strong>
+            <span>همسویی ساختاری:</span>
+            <strong style="color: #a855f7;" id="pipeOrderflowStatus">تایید ساختار و سوپلای/دیمند</strong>
           </div>
         </div>
 
@@ -1069,21 +1237,14 @@
       </div>
 
       <!-- 4 Main High-Level Hub Buttons -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;" id="us30MainHubButtons">
-        <button type="button" class="us30-hub-btn active" onclick="switchUS30Hub('CMD')" id="hubBtn_CMD" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff; border: 1px solid #38bdf8; border-radius: 10px; padding: 12px 14px; font-weight: 800; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 8px; justify-content: center; transition: all 0.2s;">
-          <span>🎯</span> ۱. اتاق فرماندهی & سیگنال
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 16px;" id="us30MainHubButtons" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 16px;">
+        <!-- Modules 1 & 2 Removed: Promoting Modules 3 & 4 Prominently -->
+        <button type="button" class="us30-hub-btn active" onclick="switchUS30Hub('TECH')" id="hubBtn_TECH" style="background: linear-gradient(135deg, #9333ea, #7e22ce); color: #fff; border: 1px solid #a855f7; border-radius: 12px; padding: 16px 20px; font-weight: 800; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; gap: 10px; justify-content: center; transition: all 0.2s; box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);">
+          <span style="font-size: 1.3rem;">📊</span> ماژول ۱: چارت زنده، لیدرهای داو & ساختار پرایس‌اکشن SMC
         </button>
 
-        <button type="button" class="us30-hub-btn" onclick="switchUS30Hub('OF')" id="hubBtn_OF" style="background: rgba(15, 23, 42, 0.7); color: #ff8c00; border: 1px solid rgba(255, 140, 0, 0.4); border-radius: 10px; padding: 12px 14px; font-weight: 800; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 8px; justify-content: center; transition: all 0.2s;">
-          <span>🌊</span> ۲. اوردر فلو & پلتفرم‌ها
-        </button>
-
-        <button type="button" class="us30-hub-btn" onclick="switchUS30Hub('TECH')" id="hubBtn_TECH" style="background: rgba(15, 23, 42, 0.7); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 10px; padding: 12px 14px; font-weight: 800; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 8px; justify-content: center; transition: all 0.2s;">
-          <span>📊</span> ۳. چارت، لیدرها & SMC
-        </button>
-
-        <button type="button" class="us30-hub-btn" onclick="switchUS30Hub('MACRO')" id="hubBtn_MACRO" style="background: rgba(15, 23, 42, 0.7); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.4); border-radius: 10px; padding: 12px 14px; font-weight: 800; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 8px; justify-content: center; transition: all 0.2s;">
-          <span>🛡️</span> ۴. کلان، بانک‌ها & ژئوپلیتیک
+        <button type="button" class="us30-hub-btn" onclick="switchUS30Hub('MACRO')" id="hubBtn_MACRO" style="background: rgba(15, 23, 42, 0.7); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.4); border-radius: 12px; padding: 16px 20px; font-weight: 800; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; gap: 10px; justify-content: center; transition: all 0.2s;">
+          <span style="font-size: 1.3rem;">🛡️</span> ماژول ۲: تقویم کلان فدرال‌رزرو، ائتلاف بانک‌ها & ژئوپلیتیک
         </button>
       </div>
 
@@ -2681,24 +2842,19 @@
     // =========================================================================
     // 🏛️ 4 INSTITUTIONAL HUBS CONTROLLER (Switch between CMD, OF, TECH, MACRO)
     // =========================================================================
+    
     window.switchUS30Hub = function(hubKey) {
       console.log("[US30 HUB] Switching to hub:", hubKey);
-      const hubNames = {
-        'CMD': '۱. اتاق فرماندهی & سیگنال طلایی',
-        'OF': '۲. اوردر فلو & پلتفرم‌های نهادی',
-        'TECH': '۳. چارت زنده، لیدرهای داو & ساختار SMC',
-        'MACRO': '۴. تحلیل کلان، ائتلاف بانک‌ها & ژئوپلیتیک'
-      };
+      if (hubKey !== 'TECH' && hubKey !== 'MACRO') {
+        hubKey = 'TECH';
+      }
       
       const hubColors = {
-        'CMD': { activeBg: 'linear-gradient(135deg, #0284c7, #2563eb)', border: '#38bdf8', color: '#fff' },
-        'OF': { activeBg: 'linear-gradient(135deg, #ea580c, #c2410c)', border: '#ff8c00', color: '#fff' },
-        'TECH': { activeBg: 'linear-gradient(135deg, #9333ea, #7e22ce)', border: '#a855f7', color: '#fff' },
-        'MACRO': { activeBg: 'linear-gradient(135deg, #16a34a, #15803d)', border: '#00e676', color: '#fff' }
+        'TECH': { activeBg: 'linear-gradient(135deg, #9333ea, #7e22ce)', border: '#a855f7', color: '#fff', shadow: '0 0 20px rgba(168, 85, 247, 0.4)' },
+        'MACRO': { activeBg: 'linear-gradient(135deg, #16a34a, #15803d)', border: '#00e676', color: '#fff', shadow: '0 0 20px rgba(0, 230, 118, 0.4)' }
       };
 
-      // Update Hub Button States
-      ['CMD', 'OF', 'TECH', 'MACRO'].forEach(k => {
+      ['TECH', 'MACRO'].forEach(k => {
         const btn = document.getElementById('hubBtn_' + k);
         if (btn) {
           if (k === hubKey) {
@@ -2706,7 +2862,7 @@
             btn.style.background = hubColors[k].activeBg;
             btn.style.color = '#fff';
             btn.style.borderColor = hubColors[k].border;
-            btn.style.boxShadow = '0 0 15px ' + hubColors[k].border + '55';
+            btn.style.boxShadow = hubColors[k].shadow;
           } else {
             btn.classList.remove('active');
             btn.style.background = 'rgba(15, 23, 42, 0.7)';
@@ -2717,16 +2873,16 @@
         }
       });
 
-      const labelEl = document.getElementById('activeHubNameDisplay');
-      if (labelEl && hubNames[hubKey]) {
-        labelEl.innerText = hubNames[hubKey];
-      }
-
       // Filter Sub-Tabs according to data-hub attribute
       let firstVisibleBtn = null;
       document.querySelectorAll('.tab-card-btn').forEach(btn => {
         const btnHub = btn.getAttribute('data-hub');
-        if (!btnHub || btnHub === hubKey) {
+        // Permanently hide any mock tools
+        if (btnHub === 'OF' || btn.id === 'btnNavNinja' || btn.id === 'btnNavAtas' || btn.id === 'btnNavQuant' || btn.id === 'btnNavSierra' || btn.id === 'btnNavBookmap') {
+          btn.style.display = 'none';
+          return;
+        }
+        if (btnHub === hubKey) {
           btn.style.display = 'flex';
           if (!firstVisibleBtn) firstVisibleBtn = btn;
         } else {
@@ -2742,6 +2898,7 @@
         }
       }
     };
+
 
     function switchTab(tabId, btn) {
       _activeTab = tabId;
